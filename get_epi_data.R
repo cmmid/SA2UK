@@ -1,21 +1,37 @@
-require(data.table)
+suppressPackageStartupMessages({
+  require(data.table)
+})
 
-.debug <- "~/Dropbox/covidLMIC"
+.debug <- "~/Dropbox/SA2UK"
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/ecdc_data.rds"
 ), .debug) else commandArgs(trailingOnly = TRUE)
 
 target <- tail(.args, 1)
-ecdcurl <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
+jhurl <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
+casesurl <- sprintf("%s/time_series_covid19_confirmed_global.csv", jhurl)
+deathsurl <- sprintf("%s/time_series_covid19_deaths_global.csv", jhurl)
+
+fetch <- function(url, vn) melt(fread(casesurl)[
+  `Country/Region` %in% c("South Africa", "United Kingdom") &
+    `Province/State` == ""
+][, -c(1,3,4) ], id.vars = "Country/Region", variable.name = "date", value.name = vn)
 
 #' fetch ECDC data; requires network connection
-res <- fread(ecdcurl)
-res[, date := as.Date(dateRep, format = "%d/%m/%Y") ]
+cases.dt <- fetch(casesurl, "cases")
+deaths.dt <- fetch(deathsurl, "deaths")
+
+res <- cases.dt[deaths.dt, on=.(`Country/Region`, date)]
+res[, date := as.Date(date, format = "%m/%d/%C") ]
 
 #' select the columns of interest; order by key columns
-final <- res[countryterritoryCode != "",
+final <- res[,
   .(cases, deaths),
-  keyby=.(continent = continentExp, iso3=countryterritoryCode, date)
+  keyby=.(
+    continent = fifelse(`Country/Region`=="South Africa","Africa","Europe"),
+    iso3 = fifelse(`Country/Region`=="South Africa","ZAF","GBR"),
+    date
+  )
 ]
 
 #' TODO capture stderr in makefile?

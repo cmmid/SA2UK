@@ -4,10 +4,10 @@
 
 # default assumes subfolders of this repository;
 # example local.makefile overrides these to Dropbox folder
-# n.b.: these paths cannot be identical, but this is *not*
-# enforced by the Makefile
-SOURCE ?= ./inputs
-SINK ?= ./outputs
+DATART ?= .
+
+SOURCE := ${DATART}/inputs
+SINK := ${DATART}/outputs
 
 # for running EpiNow2; should override in local.makefile
 NCORES ?= 4
@@ -21,20 +21,11 @@ NSAMPS ?= 8e3
 COVIDM ?= ../covidm
 COVIDMGIT := https://github.com/nicholasdavies/covidm
 
-# default assumption: Oxford Policy Tracker is a sibling to this repository
-OXDATA ?= ../covid-policy-tracker
-OXGIT := git@github.com:OxCGRT/covid-policy-tracker.git
-
 # TODO correct these - seems to clone in this folder instead?
 ${COVIDM}:
 	cd $(dir $@); git clone ${COVIDMGIT} $(notdir $@)
 
-${OXDATA}:
-	cd $(dir $@); git clone --depth 1 ${OXGIT}
-
-GITLIBS := ${COVIDM} ${OXDATA}
-
-MIRDIR := ~/Dropbox/Covid_LMIC/All_Africa_paper/projections
+GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
 MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 fits introductions scenarios mod_scenarios projections) ${SOURCE}/isos ${SOURCE}/pops ${MIRDIR}
@@ -49,9 +40,12 @@ include support.makefile
 .install: get_install.R rpack.txt
 	${R}
 
-# get + clean the ECDC data
-${SOURCE}/ecdc_data.rds: get_ecdc_data.R | ${SOURCE}
+# get + subset the JHU data
+# was ECDC data, but now that's only weekly
+${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
 	${R}
+
+getdata: ${SOURCE}/epi_data.rds
 
 # re-analyze the Oxford CPT data
 ${SOURCE}/ox_si_timing.csv: est_ox_si_timing.R | ${OXDATA}
@@ -105,8 +99,8 @@ ${SINK}/projections/%.qs: sim_scenarios.R ${SINK}/mod_scenarios/%.rds ${SOURCE}/
 ${SINK}/projections/%.png: fig_projection.R ${SINK}/projections/%.qs ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/ecdc_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/urbanization.rds
 	${Rstar}
 
-ALLISOQS := $(shell ls ${SINK}/projections/*.qs)
-ALLISOS := $(shell more ${SOURCE}/isos/africa.iso) PAK
+# ALLISOQS := $(shell ls ${SINK}/projections/*.qs)
+# ALLISOS := $(shell more ${SOURCE}/isos/africa.iso) PAK
 #ALLISOS := $(subst .qs,,$(shell cd ${SINK}/projections; ls *.qs))
 #$(info ${ALLISOS})
 #$(shell cat ${SOURCE}/isos/africa.iso)
