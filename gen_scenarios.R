@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/covidLMIC/outputs","PAK")
+.debug <- c("~/Dropbox/SA2UK/outputs","ZAF")
 .args <- if (interactive()) sprintf(c(
   "%s/fits/%s.rds",
   "%s/intervention_timing/%s.rds", #' TODO remove
@@ -39,14 +39,20 @@ all.dt <- rbind(
 )[, scen_id := 1L:.N ]
 
 #' if there's a modification era
-if (fit.dt[is.na(work), .N]) {
-  mod.dt <- fit.dt[is.na(work)][1]
+if (fit.dt[era %in% c("modification", "variant"), .N]) {
+  mod.dt <- fit.dt[era == "modification"][1]
+  var.dt <- fit.dt[era == "variant"][1]
   endday <- as.integer(mod.dt[, date] - day0)
   mod <- copy(translated.dt)[, scen_id := (1L:.N)+1L ]
   mod[, c("self_iso", "school", "home", "work", "other") := NA_real_ ]
   mod[, start_day := endday ]
   all.dt[scen_id > 1, end_day := endday ]
-  all.dt <- rbind(all.dt, mod)
+  endday <- as.integer(var.dt[, date] - day0)
+  mod[, end_day := endday ]
+  modv <- copy(translated.dt)[, scen_id := (1L:.N)+1L ]
+  modv[, c("self_iso", "school", "home", "work", "other") := NA_real_ ]
+  modv[, start_day := endday ]
+  all.dt <- rbind(all.dt, mod, modv)
   # set the end date in the translated scenarios
   # for each of the translated scenarios, run to end date
 }
