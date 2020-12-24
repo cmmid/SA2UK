@@ -1,11 +1,11 @@
 #' default simulation parameters
 suppressPackageStartupMessages({
   require(data.table)
+  require(countrycode)
 })
 
-.debug <- c("~/Dropbox/covidLMIC", "PAK")
+.debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/contact_substitutes.csv",
   .debug[2],
   "../covidm",
   "%s/inputs/pops/%s.rds"
@@ -14,7 +14,6 @@ suppressPackageStartupMessages({
 #' .args <- gsub("ZWE","guineabissau",.args)
 #' .args <- gsub("ZWE","palestine",.args)
 
-reference = fread(.args[1], strip.white = FALSE)
 cm_path = tail(.args, 2)[1]
 target = tail(.args, 3)[1]
 outfile = tail(.args, 1)
@@ -28,16 +27,8 @@ suppressPackageStartupMessages({
   source(file.path(cm_path, "R","covidm.R"))
 })
 
-matref <- reference[iso == target, cm_name]
-popcode <- reference[iso == target, ccode]
-
-country <- cm_populations[
-  country_code == popcode,
-  unique(as.character(name))
-]
-
-if (!length(country)) country <- cm_populations[
-  name == matref,
+matref <- country <- cm_populations[
+  country_code == countrycode(target, "iso3c", "iso3n"),
   unique(as.character(name))
 ]
 

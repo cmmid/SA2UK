@@ -53,8 +53,6 @@ ${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_ti
 ${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds | ${SINK}/intervention_timing
 	${Rstar}
 
-default: ${SINK}/intervention_timing/ZAF.png
-
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
 	${R}
 
@@ -66,8 +64,10 @@ ${SOURCE}/urbanization.rds: gen_urbanization.R | ${SOURCE}
 	mv API_SP.URB.TOTL.IN.ZS_DS2_*.csv tmp.urban.csv
 	Rscript $^ tmp.urban.csv $@
 
-${SOURCE}/pops/%.rds: gen_covidm_pop.R ${SOURCE}/contact_substitutes.csv | ${COVIDM} ${SOURCE}/pops
+${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
+
+default: ${SOURCE}/populations.rds ${SOURCE}/urbanization.rds ${SOURCE}/pops/ZAF.rds
 
 NGM.rda: NGM.R
 	${R}
