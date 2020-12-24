@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(qs)
 })
 
-.debug <- c("~/Dropbox/covidLMIC","PAK")
+.debug <- c("~/Dropbox/SA2UK","ZAF")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/r0/%s.rds",
   "%s/inputs/pops/%s.rds",
@@ -46,9 +46,9 @@ load("NGM.rda")
 scens <- data.table(
   expand.grid(
 #    home = c("none", "some"),
-    work = c("small", "large"),
-    school = c("small", "large"),
-    other = c("small", "large"),
+    work = "small",
+    school = "large",
+    other = "small",
 #    symptrans = c("none","some"),
     # qtile = 1:length(preR0),
     stringsAsFactors = FALSE
@@ -146,9 +146,10 @@ fitfun <- function(poppars, preR, postR, scenarios) {
 ret <- fitfun(pars, preR0, postR0, scens)
 
 ret[, date := R0ref[era == "transition"][1, date] ]
+ret[, era := "post" ]
 
-if (R0ref[era == "modification", .N]) {
-  mod <- R0ref[era == "modification", .SD, .SDcols = -c("era")]
+if (R0ref[era %in% c("modification", "variant"), .N]) {
+  mod <- R0ref[era %in% c("modification", "variant"), .SD]
   names(mod)[2:6] <- sprintf("R.%s", c("ll","lo","md","hi","hh"))
   ret <- rbind(
     ret,

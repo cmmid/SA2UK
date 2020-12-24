@@ -53,6 +53,8 @@ ${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_ti
 ${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds | ${SINK}/intervention_timing
 	${Rstar}
 
+int_fig: ${SINK}/intervention_timing/ZAF.png
+
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
 	${R}
 
@@ -67,19 +69,19 @@ ${SOURCE}/urbanization.rds: gen_urbanization.R | ${SOURCE}
 ${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
-default: ${SOURCE}/populations.rds ${SOURCE}/urbanization.rds ${SOURCE}/pops/ZAF.rds
-
 NGM.rda: NGM.R
 	${R}
 
-${SINK}/r0/%.rds: est_r0.R ${SOURCE}/ecdc_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
+${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
-${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/ecdc_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
+${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
 ${SINK}/fits/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
 	${Rstar}
+
+default: ${SINK}/fits/ZAF.rds
 
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}

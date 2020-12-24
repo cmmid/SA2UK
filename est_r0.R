@@ -4,9 +4,9 @@ suppressPackageStartupMessages({
   require(qs)
 })
 
-.debug <- c("~/Dropbox/covidLMIC", "KEN")
+.debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/ecdc_data.rds",
+  "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/pops/%s.rds",
   "%s/inputs/covidm_fit_yu.qs",
@@ -138,6 +138,34 @@ if (lims.dt[era == "modification", .N]) {
       names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
       as.list(qs)
     }, keyby = .(date)][, era:= "modification" ]
+  )
+}
+
+if (lims.dt[era == "variant", .N]) {
+  mod_reported_cases <- with(lims.dt[era == "variant"], fill.case[date > start - 14])
+  mod_reported_cases[, breakpoint := TRUE ]
+  with(lims.dt[era == "variant"], mod_reported_cases[between(date, start, end), breakpoint := FALSE ])
+  mod.est <- estimate_infections(
+    reported_cases = mod_reported_cases,
+    generation_time = generation_time,
+    delays = delay_opts(incubation_period),
+    #   rt = NULL, backcalc = backcalc_opts(),
+    stan = stan_opts(
+      samples = smps,
+      warmup = 200, 
+      cores = crs,
+      control = list(adapt_delta = 0.9)
+    ),
+    gp = NULL,
+    verbose = TRUE
+  )
+  results <- rbind(
+    results,
+    mod.est$samples[variable == "R", .(value), by=.(sample, date)][date == lims.dt[era == "variant", start]][, {
+      qs <- quantile(value, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
+      names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
+      as.list(qs)
+    }, keyby = .(date)][, era:= "variant" ]
   )
 }
 
