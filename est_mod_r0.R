@@ -277,30 +277,26 @@ iv_data <- scenario[scen_id != 1 & !is.na(self_iso)][order(start_day)][.N]
 
 varR <- melt(Rts[era == "variant"], id.vars = "era", measure.vars = 2:6)$value
 
-mapply(function(uf, R) with(
+Rmultipliers_with_depletion <- mapply(function(uf, R) with(
   iv_data,
   R/cm_ngm(params_back, R0_multiplier = uf, contact_reductions = c(home,work,school,other), fIs_reductions = self_iso)$R0
 ), uf = ufs, R = varR)
 
-  
-  tarRs <- varR[, value]
-  baseRs <- run_options[, r0]
-  
-  target_R0 <- run_options[, r0]
-  uf <- target_R0 / refR0
-  
-  ufs <- mapply(
-    function(br, sfrac) br/refR0 * sfrac,
-    br=baseRs,
-    sfrac = lapply(1:5, function(ri) 1-allbind[scen_id == scenario_index & r_id == ri & era == "variant", AR]),
-    SIMPLIFY = FALSE
-  )
-  
-  scenario[3]
-  
-  saveRDS(scenario, tail(.args, 1))
-  
-} else {
-  warning(sprintf("no scenario modification to generate for %s; making a link instead.", tariso))
-  file.link(.args[1], tail(.args, 1))
-}
+ufs_non_depl <- mapply(
+  function(br, sfrac) br/refR0 * sfrac,
+  br = baseRs,
+  sfrac = 1,
+  SIMPLIFY = FALSE
+)
+
+Rmultipliers_non_depletion <- mapply(function(uf, R) with(
+  iv_data,
+  R/cm_ngm(params_back, R0_multiplier = uf, contact_reductions = c(home,work,school,other), fIs_reductions = self_iso)$R0
+), uf = ufs_non_depl, R = varR)
+
+res <- data.table(
+  model = c(rep("cross-protected", 5), rep("susceptible", 5)),
+  Rfactor = c(Rmultipliers_with_depletion, Rmultipliers_non_depletion)
+)
+
+saveRDS(res, tail(.args, 1))
