@@ -45,21 +45,15 @@ include support.makefile
 ${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
 	${R}
 
-getdata: ${SOURCE}/epi_data.rds
-
-# re-analyze the Oxford CPT data
-${SOURCE}/ox_si_timing.csv: est_ox_si_timing.R | ${OXDATA}
-	${Rpipe}
-
-${SINK}/interventions.rds: est_interventions.R ${SOURCE}/ox_si_timing.csv ${SOURCE}/isos/all.iso timing_adjust.csv | ${SINK}
-	${R}
-
-${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R ${SINK}/interventions.rds ${SOURCE}/ecdc_data.rds | ${SINK}/intervention_timing
+# only works for ZAF, placeholder that just sets by hand values identified in covidLMIC
+${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_timing
 	${Rstar}
 
 #${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SINK}/interventions.rds ${SOURCE}/ecdc_data.rds ${SINK}/introductions/%.rds | ${SINK}/intervention_timing
-${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SINK}/interventions.rds ${SOURCE}/ecdc_data.rds | ${SINK}/intervention_timing
+${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds | ${SINK}/intervention_timing
 	${Rstar}
+
+default: ${SINK}/intervention_timing/ZAF.png
 
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
 	${R}

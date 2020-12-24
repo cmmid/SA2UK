@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
 
 .debug <- "~/Dropbox/SA2UK"
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/ecdc_data.rds"
+  "%s/inputs/epi_data.rds"
 ), .debug) else commandArgs(trailingOnly = TRUE)
 
 target <- tail(.args, 1)
@@ -12,7 +12,7 @@ jhurl <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_
 casesurl <- sprintf("%s/time_series_covid19_confirmed_global.csv", jhurl)
 deathsurl <- sprintf("%s/time_series_covid19_deaths_global.csv", jhurl)
 
-fetch <- function(url, vn) melt(fread(casesurl)[
+fetch <- function(url, vn) melt(fread(url)[
   `Country/Region` %in% c("South Africa", "United Kingdom") &
     `Province/State` == ""
 ][, -c(1,3,4) ], id.vars = "Country/Region", variable.name = "date", value.name = vn)
@@ -22,17 +22,20 @@ cases.dt <- fetch(casesurl, "cases")
 deaths.dt <- fetch(deathsurl, "deaths")
 
 res <- cases.dt[deaths.dt, on=.(`Country/Region`, date)]
-res[, date := as.Date(date, format = "%m/%d/%C") ]
+res[, date := as.Date(date, format = "%m/%d/%y") ]
 
 #' select the columns of interest; order by key columns
-final <- res[,
-  .(cases, deaths),
+final <- res[order(date),
+  .(date, cases = c(cases[1], diff(cases)), deaths = c(deaths[1], diff(deaths))),
   keyby=.(
     continent = fifelse(`Country/Region`=="South Africa","Africa","Europe"),
-    iso3 = fifelse(`Country/Region`=="South Africa","ZAF","GBR"),
-    date
+    iso3 = fifelse(`Country/Region`=="South Africa","ZAF","GBR")
   )
 ]
+
+#' @examples 
+#' ggplot(final) + aes(date) + facet_grid(. ~ iso3) +
+#'   geom_line(aes(y=cases)) + theme_minimal() + scale_y_log10()
 
 #' TODO capture stderr in makefile?
 #' alert functions for next steps
