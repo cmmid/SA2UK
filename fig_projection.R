@@ -36,16 +36,6 @@ cases <- melt(
 #cases[order(date), cvalue := cumsum(value), by=compartment ]
 cases[, c("scen_id", "run") := .(0, 3) ]
 
-smoother <- function(dt, n = 7, align = "center") {
-  setkeyv(rbind(
-    dt[, smoothed := FALSE ],
-    dt[order(date),
-       .(value = frollmean(value, n, align), smoothed = TRUE),
-      by = setdiff(key(dt),"date")
-    ]
-  ), key(dt))
-}
-
 lims.dt <- readRDS(.args[5])
 
 dt <- qread(.args[1])[
@@ -59,7 +49,15 @@ pars <- readRDS(.args[2])
 
 pop <- pars$pop[[1]]
 capita <- data.table(
-  pop=c(pop$size, sum(pop$size))*urbfrac, group=c(pop$group_names, "all")
+  pop=urbfrac*c(
+    # pop$size,
+    # sum(pop$size),
+    c(sum(pop$size[1:4]), sum(pop$size[5:8]), sum(pop$size[9:16]))
+  ),
+  age=c(
+    #pop$group_names, "all",
+    "youth", "20-40", ">40"
+  )
 )
 
 dt[, date := day0 + t ]
@@ -68,6 +66,17 @@ allage.dt <- rbind(dt[,
   .(value = sum(value), scen_id = 2),
   keyby=.(run = r_id, compartment, date)
 ], cases)
+
+byage.group.dt <- dt[compartment == "exposed",
+  .(value = sum(value), scen_id = 2),
+  keyby=.(
+    run = r_id, compartment, date,
+    age = fifelse(
+      as.numeric(group) < 5, "youth",
+      fifelse(as.numeric(group) > 8, ">40", "20-40")
+    )
+  )
+]
 
 allage.dt[order(date), cvalue := cumsum(value), by=.(scen_id, run, compartment) ]
 allage.dt[compartment == "exposed", cvalue := value ]
@@ -96,7 +105,7 @@ crd <- function(xlim = as.Date(c("2020-02-01","2021-01-31")), ...) do.call(
 )
 
 p.inc <- ggplot(allage.dt[
-  compartment %in% c("cases") & date < max(date)-60
+  compartment %in% c("cases") & (scen_id == 0 | (date < max(date)-60))
 ][between(run, 2, 4)]) +
 #  facet_grid(compartment ~ ., scales = "free_y") +
   aes(
@@ -104,11 +113,18 @@ p.inc <- ggplot(allage.dt[
     linetype = qs[run], group = interaction(scen_id, run),
     alpha = factor(scen_id)
   ) +
+  geom_rect(
+    aes(
+      ymin = 0.1, ymax = Inf,
+      xmin=start-0.5, xmax=end+0.5,
+      fill = era
+    ), data = eras[!(era %in% c("censor","transition"))], inherit.aes = FALSE,
+    alpha = 0.2
+  ) +
   geom_line() +
   geom_line(data = function(dt) dt[
     scen_id == 0,.(date, value = frollmean(value, 7)), keyby=.(scen_id, run, compartment)
   ], alpha = 1) +
-#  geom_line(aes(color = "observed", linetype = "md", group = NULL), cases) +
   theme_minimal() +
   theme(
     panel.spacing.y = unit(1, "line")
@@ -117,15 +133,11 @@ p.inc <- ggplot(allage.dt[
   scale_y_log10(
     expression("daily incidence ("*log[10]*" scale)"), breaks = function(lims) unique(c(1, scales::log10_trans()$breaks(lims))),
     labels = scales::label_number_si()
-  )
-
-
-+
-  scale_color_manual(
+  ) + scale_color_manual(
     name=NULL,
-    breaks = c(0, 1, 2),
-    labels = c("reported","unmitigated\nscenario","calibrated\nintervention\nscenarios"),
-    values = colvals,
+    breaks = c(0, 2),
+    labels = c("reported","calibrated\ninterventions"),
+    values = c("black","dodgerblue"),
     guide = "legend"
   ) +
   scale_linetype_manual(
@@ -133,97 +145,35 @@ p.inc <- ggplot(allage.dt[
     breaks = c("md","lo","ll"),
     labels = c(ll="2.5-97.5%",lo="25-75%",md="50%"),
     values = c(md="solid", lo="dashed", hi="dashed", ll="dotted", hh="dotted")
-  ) + 
-  scale_fill_manual(
-    guide = "none",
-    values = c(censor = "grey", pre = "firebrick", transition = "grey", post = "dodgerblue")
   ) +
-  crd(ylim=c(1,NA), expand = FALSE) + {
-    nonrefscens <- allage.dt[,length(unique(scen_id))-2]
-    scale_alpha_manual(
-      guide = "none",
-      values = c(0.5,1,rep((1/nonrefscens)^(2/3), nonrefscens))
-    )
-  }
+  scale_fill_manual(
+    name = NULL,
+    breaks=c("pre","post","modification","variant"),
+    labels=c(pre="pre-intervention",post="post-intervention",modification="relaxation",variant="emergent variant"),
+    values = c(pre="firebrick", post="dodgerblue",modification="goldenrod",variant="red")
+  ) +
+  crd(ylim=c(10,NA), expand = FALSE) +
+  scale_alpha_discrete(guide = "none")
+# +
+#   theme(
+#     legend.position = c(1,0), legend.justification = c(1,0)
+#   )
 
-plin <- p.inc + 
-  scale_y_continuous(
-    "daily incidence",
-    labels = scales::label_number_si(),
-    position = "right"
-  )
-
-implied_under_reporting <- allage.dt[][
-  !(scen_id %in% c(0,1)) & run == 3,
-  .(value = median(value)),
-  keyby=.(compartment, date)
-][allage.dt[scen_id == 0, .(value), keyby=.(compartment, date)]]
-
-repperc <- implied_under_reporting[,
-  .(date, reported_percent = fifelse(value == i.value, 1, frollmean(i.value, 7)/value)),
-  by=compartment
-]
-
-rep.p <- ggplot(repperc) + aes(
-  date, reported_percent*100
-) + facet_grid(compartment ~ .) + geom_line() +
-  theme_minimal() +
-  scale_x_date(name = NULL, date_breaks = "months", date_labels = "%b", date_minor_breaks = "weeks") +
-  scale_y_log10(expression("implied reported % ("*log[10]*" scale)")) +
-  crd(expand = FALSE)
-
-c.attack <- allage.dt[
+c.attack <- byage.group.dt[
   compartment == "exposed"
-][order(date), .(date, value = value/capita[group == "all", pop]), keyby=.(scen_id, run)]
+][order(date)][capita, on=.(age)][, .(date, value = value/pop), keyby=.(scen_id, run, age)]
 
 en <- c.attack[, max(date)]
 
-lbl.sz <- 2
-
 att.p <- ggplot(c.attack[between(run, 2, 4)]) + aes(
-  date, value, color = factor(scen_id),
-  linetype = qs[run], group = interaction(scen_id, run),
-  alpha = factor(scen_id)
-) + geom_line() + theme_minimal() +
-  geom_vline(xintercept = cases[, max(date)], alpha = 0.5) +
-  geom_label(
-    aes(
-      label = txt, linetype = NULL, group = NULL, alpha = NULL
-    ),
-    data = cases[, .(date = max(date), value = 0.1, txt = "end of reporting", scen_id = 0)],
-    size = lbl.sz,
-    fill = alpha("white", 0.75),
-    label.size = 0
-  ) +
-  geom_hline(
-    aes(
-      yintercept = threshold, color = factor(scen_id),
-      linetype = qs[run], group = interaction(scen_id, run)
-    ),
-    data=imms.mlt[between(run, 2, 4)],
-    alpha = 0.5
-  ) +
-  geom_label(
-    aes(
-      x = as.Date("2020-03-01"), y = threshold,
-      label = sprintf("herd imm.\nthreshold,\nR0 = %0.2g", value),
-      alpha = NULL
-    ),
-    data = imms.mlt[run == 3],
-    fill = alpha("white", 0.75),
-    label.size = 0, size = lbl.sz
-  ) +
-  crd(ylim = c(0, 1), expand = FALSE) +
+  date, value, color = age,
+  linetype = qs[run], group = interaction(age, run)
+) + geom_line() + 
+  theme_minimal() +
+  crd(ylim = c(0, 0.5), xlim = as.Date(c("2020-06-01","2020-10-01")), expand = FALSE) +
   scale_x_date(name = NULL, date_breaks = "months", date_labels = "%b", date_minor_breaks = "weeks") +
   scale_y_continuous(
-    "cumulative attack proportion\nof urban population",
-    position = "right"
-  ) +
-  scale_color_manual(
-    name=NULL,
-    breaks = c(0, 1, 2),
-    values = colvals,
-    guide = "none"
+    "cumulative attack proportion\nof urban population"
   ) +
   scale_linetype_manual(
     "quantile",
@@ -231,13 +181,7 @@ att.p <- ggplot(c.attack[between(run, 2, 4)]) + aes(
     labels = c(ll="2.5-97.5%",lo="25-75%",md="50%"),
     values = c(md="solid", lo="dashed", hi="dashed", ll="dotted", hh="dotted"),
     guide = "none"
-  ) + {
-    nonrefscens <- allage.dt[,length(unique(scen_id))-2]
-    scale_alpha_manual(
-      guide = "none",
-      values = c(1, rep((1/nonrefscens)^(2/3), nonrefscens))
-    )
-  }
+  )
 
 res <- ((((p.inc + eventop + theme(strip.text = element_blank())) + plin)) / 
   (rep.p + att.p)) + plot_layout(guides = "collect")

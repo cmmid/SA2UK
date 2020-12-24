@@ -79,4 +79,69 @@ p <- ggplot(outcomes) +
   scale_linetype_discrete(name=NULL) +
   coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-02-01","2021-01-01")), expand = FALSE)
 
-p / p.phylo
+
+p.inc <- ggplot(allage.dt[
+  compartment %in% c("cases") & (scen_id == 0 | (date < max(date)-60))
+][between(run, 2, 4)]) +
+  #  facet_grid(compartment ~ ., scales = "free_y") +
+  aes(
+    date, value, color = factor(scen_id),
+    linetype = qs[run], group = interaction(scen_id, run),
+    alpha = factor(scen_id)
+  ) +
+  geom_line() +
+  geom_line(data = function(dt) dt[
+    scen_id == 0,.(date, value = frollmean(value, 7)), keyby=.(scen_id, run, compartment)
+  ], alpha = 1) +
+  theme_minimal() +
+  theme(
+    panel.spacing.y = unit(1, "line")
+  ) +
+  scale_x_date(name = NULL, date_breaks = "months", date_labels = "%b", date_minor_breaks = "weeks") +
+  scale_y_log10(
+    expression("daily incidence ("*log[10]*" scale)"), breaks = function(lims) unique(c(1, scales::log10_trans()$breaks(lims))),
+    labels = scales::label_number_si()
+  ) + scale_color_manual(
+    name=NULL,
+    breaks = c(0, 2),
+    labels = c("reported","calibrated\ninterventions"),
+    values = c("black","dodgerblue"),
+    guide = "legend"
+  ) +
+  scale_linetype_manual(
+    "quantile",
+    breaks = c("md","lo","ll"),
+    labels = c(ll="2.5-97.5%",lo="25-75%",md="50%"),
+    values = c(md="solid", lo="dashed", hi="dashed", ll="dotted", hh="dotted")
+  ) +
+  crd(ylim=c(10,NA), expand = FALSE) +
+  scale_alpha_discrete(guide = "none") +
+  theme(
+    legend.position = c(1,0), legend.justification = c(1,0)
+  )
+
+c.attack <- byage.group.dt[
+  compartment == "exposed"
+][order(date)][capita, on=.(age)][, .(date, value = value/pop), keyby=.(scen_id, run, age)]
+
+att.p <- ggplot(c.attack[between(run, 2, 4)]) + aes(
+  date, value, color = age,
+  linetype = qs[run], group = interaction(age, run)
+) + geom_line() + 
+  theme_minimal() +
+  crd(ylim = c(0, 0.5), xlim = as.Date(c("2020-06-01","2020-10-01")), expand = FALSE) +
+  scale_x_date(name = NULL, date_breaks = "months", date_labels = "%b", date_minor_breaks = "weeks") +
+  scale_y_continuous(
+    "cumulative attack proportion\nof urban population"
+  ) +
+  scale_linetype_manual(
+    "quantile",
+    breaks = c("md","lo","ll"),
+    labels = c(ll="2.5-97.5%",lo="25-75%",md="50%"),
+    values = c(md="solid", lo="dashed", hi="dashed", ll="dotted", hh="dotted"),
+    guide = "none"
+  ) + theme(
+    legend.position = c(0,1), legend.justification = c(0, 1)
+  )
+
+p.inc / (att.p + p.phylo) & theme(text = element_text(size = 8))
