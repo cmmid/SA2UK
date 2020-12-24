@@ -4,9 +4,9 @@ suppressPackageStartupMessages({
   require(qs)
 })
 
-.debug <- c("~/Dropbox/covidLMIC", "ZAF")
+.debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/mod_scenarios/%s.rds",
+  "%s/outputs/scenarios/%s.rds",
   "%s/inputs/pops/%s.rds",
   "%s/inputs/covidm_fit_yu.qs",
   "%s/outputs/r0/%s.rds",
@@ -16,6 +16,9 @@ suppressPackageStartupMessages({
   "../covidm",
   "%s/outputs/projections/%s.qs"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+
+scenario <- readRDS(.args[1])
+tariso <- tail(.args, 3)[1]
 
 load("NGM.rda")
 
@@ -27,12 +30,8 @@ cm_force_shared = T
 cm_version = 2
 
 suppressPackageStartupMessages({
-  source(file.path(cm_path, "R", "covidm.R"))
+  source(file.path(cm_path,"R","covidm.R"))
 })
-
-# identify country / scenario
-scenario <- readRDS(.args[1])
-tarfile <- tail(.args, 1)
 
 yu_fits <- qread(.args[3])[order(ll)]
 yu_fits[, eqs := (1:.N)/.N ]
@@ -42,15 +41,8 @@ yref <- unname(as.matrix(medyu[, .SD, .SDcols = grep("y_",colnames(medyu))]))
 uref <- unname(as.matrix(medyu[, .SD, .SDcols = grep("u_",colnames(medyu))]))
 ys <- rep(yref[1, ], each = 2)
 us <- rep(uref[1, ], each = 2)
-#if (.debug == "NGA") {
-#  ushft <- max(us)/us
-#  us <- 1/(1:length(us)+1)
-#  ys <- ys / ushft
-#}
 
 params <- readRDS(.args[2])
-
-tariso <- tail(.args, 3)[1]
 
 intros <- readRDS(.args[5])[iso3 == tariso][, intro.day := as.integer(date - date[1]) ][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
 urbfrac <- readRDS(.args[6])[iso3 == tariso, value / 100]
@@ -68,8 +60,10 @@ params$pop <- lapply(
   }
 )
 
+Rts <- readRDS(.args[4])[era != "transition"]
+
 run_options <- melt(
-  readRDS(.args[4])[era == "pre"],
+  Rts[era == "pre"],
   measure.vars = c("lo.lo","lo","med","hi","hi.hi"),
   value.name = "r0"
 )[, model_seed := 1234L ]
@@ -78,77 +72,190 @@ refR0 <- cm_ngm(params)$R0
 
 params_back <- params
 
-allbind <- data.table()
+# scenario[, waning_dur := NA_integer_ ]
+# scenario[!(scen_type == "unmitigated"), waning_dur := 90 ]
 
-scenario[, waning_dur := NA_integer_ ]
-#scenario[!(scen_type == "unmitigated"), waning_dur := 90 ]
+allbind <- data.table(
+  run=integer(0),
+  group = factor(),
+  value = integer(),
+  AR = numeric(),
+  r_id = integer()
+)
 
-prg <- txtProgressBar(max = scenario[,.N]*run_options[,.N], style = 3)
-prgind <- 0
-
-for (scenario_index in 1:max(scenario$scen_id)) {
-  #' sub
-  iv_data <- scenario[scen_id == scenario_index][order(trigger_type)]
-  for(i in 1:nrow(run_options)){
-    
-    params <- params_back
-    
-    #adjust r0 to that in current sample
-    target_R0 <- run_options[i, r0]
-    uf <- target_R0 / refR0
-    params$pop <- lapply(
-      params$pop,
-      function(x){
-        x$u <- x$u * uf
-        return(x)
-      }
+iv_data <- scenario[scen_id != 1 & !is.na(self_iso)][order(trigger_type)]
+for(i in 1:nrow(run_options)){
+  params <- params_back
+  # only run until recalc point
+  params$time1 <- iv_data[, max(end_day, na.rm = TRUE)]
+  
+  #' adjust r0 to that in current sample
+  #' TODO use sample y / u?
+  target_R0 <- run_options[i, r0]
+  uf <- target_R0 / refR0
+  params$pop <- lapply(
+    params$pop,
+    function(x){
+      x$u <- x$u * uf
+      return(x)
+    }
+  )
+  
+  # generic interventions
+  for (j in 1:nrow(iv_data[population == -1])) {
+    #pars <- as.list(iv_data[population == -1][j])
+    cons <- with(as.list(iv_data[population == -1][j]), {
+      list(1-c(home, work, school, other), c(1,1,1,1))
+    })
+    tms <- with(as.list(iv_data[population == -1][j]), {
+      as.Date(params$date0)+c(start_day, ifelse(is.finite(end_day),end_day,params$time1))
+    })
+    si <- with(as.list(iv_data[population == -1][j]), {
+      list(rep(1-self_iso, 16), rep(1, 16))
+    })
+    params$schedule[[length(params$schedule)+1]] <- list(
+      parameter = "contact",
+      pops = numeric(),
+      mode = "multiply",
+      values = cons,
+      times = tms
+    )
+    params$schedule[[length(params$schedule)+1]] <- list(
+      parameter = "fIs",
+      pops = numeric(),
+      mode = "multiply",
+      values = si,
+      times = tms
     )
     
-    if (iv_data[!(scen_type == "unmitigated"), .N]) {
-      
-      # generic interventions
-      for (j in 1:nrow(iv_data[population == -1])) {
-        #pars <- as.list(iv_data[population == -1][j])
-        cons <- with(as.list(iv_data[population == -1][j]), {
-          list(1-c(home, work, school, other), c(1,1,1,1))
-        })
-        tms <- with(as.list(iv_data[population == -1][j]), {
-          as.Date(params$date0)+c(start_day, ifelse(is.finite(end_day),end_day,params$time1))
-        })
-        si <- with(as.list(iv_data[population == -1][j]), {
-          list(rep(1-self_iso, 16), rep(1, 16))
-        })
-        params$schedule[[length(params$schedule)+1]] <- list(
-          parameter = "contact",
-          pops = numeric(),
-          mode = "multiply",
-          values = cons,
-          times = tms
-        )
-        params$schedule[[length(params$schedule)+1]] <- list(
-          parameter = "fIs",
-          pops = numeric(),
-          mode = "multiply",
-          values = si,
-          times = tms
-        )
-      }
-    }
-    #run the model
-    sim <- cm_simulate(
-      params, 1,
-      model_seed = run_options[i, model_seed]
-    )$dynamics
     
-    result <- sim[,
-      .(value = sum(value)),
-      keyby = .(run, t, group, compartment)
-    ][, run := i ][, scen_id := scenario_index ]
-    
-    allbind <- rbind(allbind, result)
-    prgind <- prgind + 1
-    setTxtProgressBar(prg, prgind)
   }
+  
+  #' run the model
+  sim <- cm_simulate(
+    params, 1,
+    model_seed = run_options[i, model_seed]
+  )$dynamics[compartment == "R"][
+    order(t), .(value = value[.N]), keyby=.(run, group)
+  ]
+  
+  sim[order(run, group), AR := value / params$pop[[1]]$size ]
+  
+  sim[, r_id := i ]
+  
+  allbind <- rbind(allbind, sim)
+  
+}
+
+modR <- melt(Rts[era == "modification"], id.vars = "era", measure.vars = 2:6)
+tarRs <- modR[, value]
+baseRs <- run_options[, r0]
+
+#' these are the age specific reductions in susceptibility,
+#' due to baseline adjustment to R0 & associated AR
+ufs <- mapply(
+  function(br, sfrac) br/refR0 * sfrac,
+  br = baseRs,
+  sfrac = lapply(1:5, function(ri) 1 - allbind[r_id == ri, AR]),
+  SIMPLIFY = FALSE
+)
+
+#' these are the baseline reductions  
+vs <- scenario[!is.na(self_iso) & scen_id != 1][,c(home, work, school, other, self_iso)]
+
+#' fitting space to model space
+#' del is a single factor for changes to all parameters
+#' del can range from -inf to +inf
+#' del < 0 => decreasing the reduction toward 0%
+#' del > 0 => increasing the reduction toward 100%
+#' del == 0 => no change
+mvs <- function(del) {
+  fac <- ifelse(del >= 0, 1, 0) - sign(del)*exp(-abs(del))
+  return(if (del > 0) {
+    vs*(1-fac) + fac
+  } else {
+    vs*fac
+  })
+}
+
+fn <- function(del) {
+  rs <- mvs(del)
+  sum((sapply(ufs, function(uf)
+    cm_ngm(
+      params_back,
+      uf,
+      contact_reductions = rs[-5],
+      fIs_reductions = rs[5]
+    )$R0
+  ) - rev(tarRs))^2)
+}
+
+#' determine fitting space optimal del    
+odel <- optimize(fn, c(-20, 20))$minimum
+
+#' update scenarios
+scenario[
+  is.na(self_iso) & scen_id != 1 & !is.infinite(end_day),
+  c("home","work","school","other", "self_iso") := as.list(mvs(odel))
+]
+
+allbind <- data.table(
+  run = integer(), t = integer(),
+  group = factor(), compartment = factor(),
+  value = numeric(), r_id = integer()
+)
+
+iv_data <- scenario[scen_id != 1 & !is.na(self_iso)][order(trigger_type)]
+for(i in 1:nrow(run_options)){
+  
+  params <- params_back
+  # only run until recalc point
+  params$time1 <- iv_data[, max(end_day, na.rm = TRUE)+60]
+  
+  #adjust r0 to that in current sample
+  target_R0 <- run_options[i, r0]
+  uf <- target_R0 / refR0
+  params$pop <- lapply(
+    params$pop,
+    function(x){
+      x$u <- x$u * uf
+      return(x)
+    }
+  )
+  
+  cons <- with(iv_data[order(start_day)], mapply(
+    function(h,w,s,o) list(1-c(h,w,s,o)),
+    h=home, w=work, s=school, o=other
+  ))
+  si <- lapply(iv_data[order(start_day)]$self_iso, function(si) {
+    rep(1-si, 16)
+  })
+  tms <- as.Date(params$date0) + iv_data[order(start_day)]$start_day
+  params$schedule[[length(params$schedule)+1]] <- list(
+    parameter = "contact",
+    pops = numeric(),
+    mode = "multiply",
+    values = cons,
+    times = tms
+  )
+  params$schedule[[length(params$schedule)+1]] <- list(
+    parameter = "fIs",
+    pops = numeric(),
+    mode = "multiply",
+    values = si,
+    times = tms
+  )
+  #run the model
+  sim <- cm_simulate(
+    params, 1,
+    model_seed = run_options[i, model_seed]
+  )$dynamics
+  
+  allbind <- rbind(sim[
+    compartment %in% c("cases", "subclinical", "R"),
+    .(value),
+    keyby=.(run, t, group, compartment)
+  ][, r_id := i ], allbind)
   
 }
 
@@ -156,4 +263,4 @@ for (scenario_index in 1:max(scenario$scen_id)) {
 #' require(ggplot2)
 #' ggplot(allbind[compartment == "cases"]) + aes(t, value) + facet_grid(group ~ ., scales = "free_y") + geom_line()
 
-qsave(allbind, tarfile)
+qsave(allbind, tail(.args, 1))

@@ -75,25 +75,28 @@ NGM.rda: NGM.R
 ${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
+int_r0: ${SINK}/r0/ZAF.rds
+
 ${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
-${SINK}/fits/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
+${SINK}/fits/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/fits NGM.rda
 	${Rstar}
-
-default: ${SINK}/fits/ZAF.rds
 
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
 
+${SINK}/projections/%.qs: sim_scenarios.R ${SINK}/scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds | ${SINK}/projections
+	${RSCRIPT} $^ $* ${COVIDM} $@
+
 ${SINK}/mod_scenarios/%.rds: est_mod_r0.R ${SINK}/scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds | ${SINK}/mod_scenarios
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
-${SINK}/projections/%.qs: sim_scenarios.R ${SINK}/mod_scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds | ${SINK}/projections
-	${RSCRIPT} $^ $* ${COVIDM} $@
+default: ${SINK}/projections/ZAF.qs ${SINK}/mod_scenarios/ZAF.rds
 
-${SINK}/projections/%.png: fig_projection.R ${SINK}/projections/%.qs ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/ecdc_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/urbanization.rds
+${SINK}/projections/%.png: fig_projection.R ${SINK}/projections/%.qs ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/urbanization.rds
 	${Rstar}
+
 
 # ALLISOQS := $(shell ls ${SINK}/projections/*.qs)
 # ALLISOS := $(shell more ${SOURCE}/isos/africa.iso) PAK
