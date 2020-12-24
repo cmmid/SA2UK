@@ -7,12 +7,12 @@ suppressPackageStartupMessages({
   require(patchwork)
 })
 
-.debug <- c("~/Dropbox/covidLMIC", "ZAF")
+.debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/projections/%s.qs",
   "%s/inputs/pops/%s.rds",
   "%s/outputs/introductions/%s.rds",
-  "%s/inputs/ecdc_data.rds",
+  "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/urbanization.rds",
   "%s/outputs/r0/%s.rds",
@@ -48,39 +48,12 @@ smoother <- function(dt, n = 7, align = "center") {
 
 lims.dt <- readRDS(.args[5])
 
-scenkey <- scens <- rbind(
-  data.table(work = NA, school = NA, other = NA),
-  data.table(work = NA, school = NA, other = NA),
-  data.table(
-    expand.grid(
-    #    home = c("none", "some"),
-    work = c("small", "large"),
-    school = c("small", "large"),
-    other = c("small", "large"),
-    #    symptrans = c("none","some"),
-    # qtile = 1:length(preR0),
-    stringsAsFactors = FALSE
-  )
-)[!(work == "small" & school == "small" & other == "small")]
-)
-
-scenkey[, scen_id := (1:.N)-1 ]
-scenkey[scen_id == 0, label := "observed" ]
-scenkey[scen_id == 1, label := "unmitigated" ]
-scenkey[scen_id > 1, label := sprintf(
-  "%s%s%s",
-  fifelse(work=="large","W","w"),
-  fifelse(school=="large","S","s"),
-  fifelse(other=="large","O","o")
-)]
-
 dt <- qread(.args[1])[
-  compartment %in% c("cases", "death_o", "R")
+  compartment %in% c("cases", "subclinical", "R")
 ]
 
-dt[compartment == "death_o", compartment := "deaths" ]
 dt[compartment == "R", compartment := "exposed" ]
-dt[, compartment := factor(compartment, levels = c("cases","deaths","exposed"))]
+dt[, compartment := factor(compartment, levels = c("cases","subclinical","exposed"))]
 
 pars <- readRDS(.args[2])
 
@@ -92,14 +65,15 @@ capita <- data.table(
 dt[, date := day0 + t ]
 
 allage.dt <- rbind(dt[,
-  .(value = sum(value)),
-  keyby=.(scen_id, run, compartment, date)
+  .(value = sum(value), scen_id = 2),
+  keyby=.(run = r_id, compartment, date)
 ], cases)
 
 allage.dt[order(date), cvalue := cumsum(value), by=.(scen_id, run, compartment) ]
 allage.dt[compartment == "exposed", cvalue := value ]
 
 r0refs <- readRDS(.args[7])
+#' TODO mod scenario info?
 scenrefs <- readRDS(.args[8])[scen_id > 1]
 
 qraw <- c("lo.lo","lo","med","hi","hi.hi")
@@ -115,48 +89,21 @@ imms.mlt[era == "post", scen_id := 2 ]
 
 qs <- c('ll','lo','md','hi','hh')
 
-collbls <- scenkey[,{ 
-  ret <- label
-  names(ret) <- scen_id
-  ret
-}]
-
-colvals <- c("black","firebrick",rep("dodgerblue", 7))
+# colvals <- c("black","firebrick",rep("dodgerblue", 7))
 
 crd <- function(xlim = as.Date(c("2020-02-01","2021-01-31")), ...) do.call(
   coord_cartesian, c(as.list(environment()), list(...))
 )
 
-eventop <- geom_blank(
-  aes(date, value),
-  data = function(dt) dt[,.SD[which.max(value), .(date, value = 10^ceiling(log10(value)))],by=compartment],
-  inherit.aes = FALSE
-)
-
 p.inc <- ggplot(allage.dt[
-  compartment %in% c("cases", "deaths")
+  compartment %in% c("cases") & date < max(date)-60
 ][between(run, 2, 4)]) +
-  facet_grid(compartment ~ ., scales = "free_y") +
+#  facet_grid(compartment ~ ., scales = "free_y") +
   aes(
     date, value, color = factor(scen_id),
     linetype = qs[run], group = interaction(scen_id, run),
     alpha = factor(scen_id)
   ) +
-  { if (dim(lims.dt)[1]) { list(
-    geom_rect(
-      aes(
-        ymin = 0.1, ymax = Inf,
-        xmin=start-0.5, xmax=end+0.5,
-        fill = era
-      ), data = lims.dt, inherit.aes = FALSE,
-      alpha = 0.2
-    ),
-    geom_text_repel(
-      aes(x=date, y=Inf, label = era, angle = 90),
-      data = lims.dt[era %in% c("pre","post"), .(date = end, era)],
-      inherit.aes = FALSE, hjust = 1
-    )
-  ) } else geom_blank() } +
   geom_line() +
   geom_line(data = function(dt) dt[
     scen_id == 0,.(date, value = frollmean(value, 7)), keyby=.(scen_id, run, compartment)
@@ -170,7 +117,10 @@ p.inc <- ggplot(allage.dt[
   scale_y_log10(
     expression("daily incidence ("*log[10]*" scale)"), breaks = function(lims) unique(c(1, scales::log10_trans()$breaks(lims))),
     labels = scales::label_number_si()
-  ) +
+  )
+
+
++
   scale_color_manual(
     name=NULL,
     breaks = c(0, 1, 2),
