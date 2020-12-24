@@ -27,21 +27,19 @@ p <- ggplot(outcomes) +
       ymin = 0.1, ymax = Inf,
       xmin=start-0.5, xmax=end+0.5,
       fill = era
-    ), data = eras, inherit.aes = FALSE,
+    ), data = eras[!(era %in% c("censor","transition"))], inherit.aes = FALSE,
     alpha = 0.2
   ) +
-  geom_vline(
-    xintercept = eras[era == "pre", end + 3],
-    linetype = "dashed", color = "dodgerblue") +
   theme_minimal() +
   scale_y_log10("incidence", breaks = 10^(0:5), labels = scales::label_number_si()) +
   scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
   scale_fill_manual(
-    name = "fitting era",
-    breaks=c("censor","pre","transition","post","modification","variant"),
-    values = c(censor="grey", pre="firebrick", transition="grey",post="dodgerblue",modification="goldenrod",variant="red")
+    name = NULL,
+    breaks=c("pre","post","modification","variant"),
+    labels=c(pre="pre-intervention","post-intervention","relaxation","emergent variant"),
+    values = c(pre="firebrick", post="dodgerblue",modification="goldenrod",variant="red")
   ) +
-  scale_linetype_discrete(name="outcome") +
-  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-01-01","2021-01-01")))
+  scale_linetype_discrete(name=NULL) +
+  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-02-01","2021-01-01")), expand = FALSE)
   
 ggsave(tail(.args, 1), p, height = 3, width = 6, units = "in", dpi = 300)

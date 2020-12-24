@@ -75,16 +75,18 @@ NGM.rda: NGM.R
 ${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
+int_r0: ${SINK}/r0/ZAF.rds
+
 ${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
-${SINK}/fits/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
+${SINK}/fits/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/fits NGM.rda
 	${Rstar}
-
-default: ${SINK}/fits/ZAF.rds
 
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
+
+default: ${SINK}/scenarios/ZAF.rds
 
 ${SINK}/mod_scenarios/%.rds: est_mod_r0.R ${SINK}/scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds | ${SINK}/mod_scenarios
 	${RSCRIPT} $^ $* ${COVIDM} $@
