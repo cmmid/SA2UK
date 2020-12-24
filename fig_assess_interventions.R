@@ -36,7 +36,7 @@ p <- ggplot(outcomes) +
   scale_fill_manual(
     name = NULL,
     breaks=c("pre","post","modification","variant"),
-    labels=c(pre="pre-intervention","post-intervention","relaxation","emergent variant"),
+    labels=c(pre="pre-intervention",post="post-intervention",modification="relaxation",variant="emergent variant"),
     values = c(pre="firebrick", post="dodgerblue",modification="goldenrod",variant="red")
   ) +
   scale_linetype_discrete(name=NULL) +
