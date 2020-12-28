@@ -103,9 +103,9 @@ sa_case_data <- case_data %>%
   dplyr::filter(iso_code == "ZAF") %>%
   tidyr::drop_na()
 
-dates_num <- seq(1, nrow(south_africa_case_data), 1)
+dates_num <- seq(1, nrow(sa_case_data), 1)
 
-# scaling the CFR using the median, lower and upper 95% 
+# scaling the CFR using the median, lower and upper 95%
 # confidence intervals of the delay distribution
 scaled_cfr_sa_mid <- dates_num %>%
     purrr::map_dfr(~scale_cfr(sa_case_data, hosp_to_death_mid, .))
@@ -128,7 +128,6 @@ scaled_cfr_all <- scaled_cfr_sa_mid %>%
     dplyr::filter(dCFR_low < dCFR_mid & dCFR_high > dCFR_mid) %>%
     dplyr::select(date, nCFR, dCFR_mid, dCFR_low, dCFR_high,
                   dplyr::everything())
-
 
 # just re-calculating the new cases and new deaths each day and
 # dropping and NAs
@@ -158,23 +157,24 @@ cfr_subplot_2_data <- scaled_cfr_all %>%
                       values_to = "cfr") %>%
   dplyr::filter(date >= "2020-05-01")
 
-p1 <- ggplot2::ggplot(cfr_subplot_1_data,
+p1 <- ggplot2::ggplot(cfr_subplot_11_data,
                       ggplot2::aes(x = date)) +
   ggplot2::geom_line(ggplot2::aes(y = cfr, color = cfr_type)) +
   ggplot2::geom_ribbon(data = cfr_subplot_12_data,
                        ggplot2::aes(ymin = dCFR_low, ymax = dCFR_high),
                        fill = "dodgerblue", alpha = 0.2) +
-  ggplot2::labs(x = "Date", y = "Case Fatality Ratio", color = "") +
+  ggplot2::labs(x = "Date", y = "CFR", color = "") +
   ggplot2::scale_y_continuous(labels = scales::percent) +
   viridis::scale_color_viridis(discrete = TRUE, begin = 0.3, end = 0.7,
-  labels = c("dCFR median", "nCFR"))
+  labels = c("dCFR median", "nCFR")) +
+  ggplot2::theme(legend.position = "none")
 
 p2 <- ggplot2::ggplot(cfr_subplot_2_data,
                       ggplot2::aes(x = date)) +
   ggplot2::geom_line(ggplot2::aes(y = cfr, color = cfr_type)) +
   ggplot2::geom_ribbon(ggplot2::aes(ymin = dCFR_low, ymax = dCFR_high),
                        fill = "dodgerblue", alpha = 0.2) +
-  ggplot2::labs(x = "Date", y = "Case Fatality Ratio", color = "") +
+  ggplot2::labs(x = "Date", y = "Case Fatality Ratio", color = "", title = "A") +
   ggplot2::scale_y_continuous(labels = scales::percent) +
   viridis::scale_color_viridis(discrete = TRUE, begin = 0.3, end = 0.7,
   labels = c("dCFR median", "nCFR"))
@@ -185,21 +185,33 @@ inset <- ggplot2::ggplotGrob(p1)
 cfr_plot <- p2 + ggplot2::annotation_custom(grob = inset,
                                             xmin = as.Date("2020-09-01"),
                                             xmax = as.Date("2021-01-08"),
-                                            ymin = 0.0425, ymax = 0.06)
+                                            ymin = 0.035, ymax = 0.06)
 
-#confirmed_cases_plot <- south_africa_case_data %>%
-  #ggplot2::ggplot(ggplot2::aes(x = date, y = new_cases)) + 
-  #ggplot2::geom_col(fill = "dodgerblue", alpha = 0.7, width = 1) +
-  #ggplot2::labs(x = "Date", y = "New cases",  title = "B") 
+confirmed_cases_plot <- sa_case_data %>%
+  ggplot2::ggplot(ggplot2::aes(x = date, y = new_cases)) +
+  ggplot2::geom_col(fill = "dodgerblue", alpha = 0.7, width = 1) +
+  ggplot2::labs(x = "Date", y = "New cases",  title = "B")
 
-#confirmed_deaths_plot <- south_africa_case_data %>%
-  #ggplot2::ggplot(ggplot2::aes(x = date, y = new_deaths)) + 
-  #ggplot2::geom_col(fill = "firebrick1", alpha = 0.6, width = 1) +
-  #ggplot2::labs(x = "Date", y = "New deaths", title = "C")
+confirmed_deaths_plot <- sa_case_data %>%
+  ggplot2::ggplot(ggplot2::aes(x = date, y = new_deaths)) +
+  ggplot2::geom_col(fill = "firebrick1", alpha = 0.6, width = 1) +
+  ggplot2::labs(x = "Date", y = "New deaths", title = "C")
 
-#cfr_plot_final <- cfr_plot_with_inset / confirmed_cases_plot / confirmed_deaths_plot
+cfr_plot_supplementary <- cfr_plot / confirmed_cases_plot / confirmed_deaths_plot
 
 # saving plot as png
+
+ggplot2::ggsave(here::here("figure_S1.png"), cfr_plot_supplementary,
+                width = 8,
+                height = 12,
+                dpi = 300)
+
+# saving plot as pdf
+ggplot2::ggsave(here::here("figure_S1.pdf"), cfr_plot_supplementary,
+                width = 8,
+                height = 12,
+                dpi = 300)
+
 ggplot2::ggsave(here::here("figure_2.png"), cfr_plot,
                 width = 12,
                 height = 8,
