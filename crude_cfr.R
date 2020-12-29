@@ -1,109 +1,65 @@
-case_data_function <- function() {
 
-    owid_path <- "https://covid.ourworldindata.org/data/owid-covid-data.csv"
-    case_data <- read.csv(owid_path) %>%
-    dplyr::tibble() %>%
-    dplyr::mutate(date = lubridate::ymd(date)) %>%
-    dplyr::select(iso_code,
-                  country = location,
-                  date,
-                  new_cases,
-                  new_deaths,
-                  population)
+suppressPackageStartupMessages({
+  require(data.table)
+  require(ggplot2)
+})
 
-  return(case_data)
-}
+.debug <- c("~/Dropbox/SA2UK")
+.args <- if (interactive()) sprintf(c(
+  "%s/inputs/epi_data.rds",
+  "%s/outputs/figs/cfr.rds"
+), .debug) else commandArgs(trailingOnly = TRUE)
 
-case_data <- case_data_function()
+dt <- readRDS(.args[1])[iso3 == "ZAF"]
 
-sa_case_data <- case_data %>%
-  dplyr::filter(iso_code == "ZAF") %>%
-  tidyr::drop_na()
+window <- 7
 
-sa_case_data_reduced <- sa_case_data %>%
-  dplyr::mutate(cases_ma_7  = zoo::rollmean(new_cases, 7,  fill = NA)) %>%
-  dplyr::select(date, new_cases, cases_ma_7)
+dt[,c("cases7","deaths7") := .(frollsum(cases, window),frollsum(deaths, window))]
 
-sa_death_data_reduced <- sa_case_data %>%
-  dplyr::mutate(date = date) %>%
-  dplyr::mutate(deaths_ma_7 = zoo::rollmean(new_deaths, 7, fill = NA)) %>%
-  dplyr::select(date, new_deaths, deaths_ma_7)
+death.delay <- 21
 
-sa_death_data_lagged_reduced <- sa_case_data %>%
-  dplyr::mutate(date = date - 21) %>%
-  dplyr::mutate(deaths_ma_7 = zoo::rollmean(new_deaths, 7, fill = NA)) %>%
-  dplyr::select(date, deaths_ma_7)
+cases <- dt[!is.na(cases7),.(date, cases7)]
+deaths <- dt[!is.na(cases7),.(date, deaths7)]
+undelaydeaths <- copy(deaths)[, date := date - death.delay ]
 
-cfr_crude <- sa_case_data_reduced %>%
-  dplyr::left_join(sa_death_data_reduced) %>%
-  tidyr::drop_na() %>%
-  dplyr::mutate(cfr_lagged_crude = deaths_ma_7 / cases_ma_7)
+cfr_naive <- deaths[cases, on=.(date)][which.max(cases7 > 0):.N]
+#' assert: always have more cases than deaths
+#' @example 
+#' cfr_naive[, all(cases7 >= deaths7)]
 
-cfr_lagged_crude <- sa_case_data_reduced %>%
-  dplyr::left_join(sa_death_data_lagged_reduced) %>%
-  tidyr::drop_na() %>%
-  dplyr::mutate(cfr_lagged_crude = deaths_ma_7 / cases_ma_7)
+cfr_delay <- undelaydeaths[cases, on=.(date)][which.max(cases7 > 0):.N][!is.na(deaths7)]
 
-library(ggplot2)
+bino <- function(ci, pos, tot) as.data.table(t(mapply(
+  function(x, n, p=x/n) binom.test(x, n, p, conf.level = ci)$conf.int,
+  x = pos, n = tot
+)))
 
-p1 <- cfr_crude %>%
-    ggplot2::ggplot() +
-    ggplot2::geom_line(ggplot2::aes(x = date, y = cases_ma_7,
-                         colour = "dodgerblue")) +
-    ggplot2::geom_line(ggplot2::aes(x = date, y = deaths_ma_7,
-                         colour = "firebrick1")) +
-    ggplot2::geom_line(ggplot2::aes(x = date, y = new_cases),
-            colour = "black",
-            linetype = "dashed",
-            alpha = 0.3) +
-    ggplot2::geom_line(ggplot2::aes(x = date, y = new_deaths),
-                       colour = "black",
-                       linetype = "dashed",
-                       alpha = 0.3) +
-    ggplot2::labs(x = "Date",
-                  y = "Incidence",
-                  colour = "",
-                  title = "A") +
-    ggplot2::scale_colour_manual(values = c("dodgerblue",
-                                            "firebrick1",
-                                            "black"),
-                               labels = c("7-day moving average of cases",
-                                          "7-day moving average of deaths",
-                                          "Raw data"))
+res.dt <- rbind(
+  cfr_naive[, c("cfr","ver") := .(deaths7/cases7, "nCFR")],
+  cfr_delay[, c("cfr","ver") := .(deaths7/cases7, "dCFR")]
+)
 
-p2 <- ggplot2::ggplot() +
-      ggplot2::geom_line(data = cfr_lagged_crude,
-                         ggplot2::aes(x = date,
-                                      y = cfr_lagged_crude,
-                                      colour = "dodgerblue"),
-                         alpha = 0.7) +
-      ggplot2::geom_line(data = cfr_crude,
-                         ggplot2::aes(x = date,
-                                      y = cfr_lagged_crude,
-                                      colour = "firebrick1"),
-                         alpha = 0.7) +
-      ggplot2::labs(x = "Date",
-                    y = "CFR",
-                    colour = "",
-                    title = "B") +
-     ggplot2::scale_y_continuous(labels = scales::percent) +
-     ggplot2::scale_colour_manual(values = c("dodgerblue",
-                                             "firebrick1"),
-                               labels = c("Deaths lagged by 21 days",
-                                          "nCFR"))
+res.dt[, c("lo95","hi95") := bino(.95, deaths7, cases7) ]
+res.dt[, c("lo50","hi50") := bino(.50, deaths7, cases7) ]
 
-library(patchwork)
+cfr.p <- force(ggplot(res.dt) + aes(date, cfr) +
+  geom_line(aes(color = ver)) +
+  geom_ribbon(aes(fill = ver, ymin = lo95, ymax = hi95), alpha = 0.2) +
+  geom_ribbon(aes(fill = ver, ymin = lo50, ymax = hi50), alpha = 0.5) +
+  coord_cartesian(
+    ylim = c(0, .1),
+    expand = FALSE
+  ) + 
+  scale_y_continuous("Case Fatality Rate, CFR", labels = function(v) sprintf("%0.2g%%", v*100)) +
+  scale_x_date(name = NULL, date_breaks = "months", date_minor_breaks = "weeks", date_labels = "%b") +
+  scale_color_manual(
+    "CFR Calculation",
+    labels = c(nCFR="naive", dCFR=sprintf("lagged %i days", death.delay)),
+    values = c(nCFR="firebrick", dCFR="dodgerblue"),
+    aesthetics = c("color", "fill")
+  ) + theme_minimal() +
+  theme(
+    legend.position = c(0.5, 1), legend.justification = c(0.5, 1)
+  ))
 
-plot_together <- p1 / p2
-plot(plot_together)
-
-ggplot2::ggsave("figure_2_crude.png",
-                plot_together,
-                width = 10,
-                height = 10)
-
-
-ggplot2::ggsave("figure_2_crude.pdf",
-                plot_together,
-                width = 10,
-                height = 10)
+saveRDS(cfr.p, tail(.args, 1))
