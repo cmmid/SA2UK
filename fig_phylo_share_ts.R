@@ -42,17 +42,18 @@ bino <- function(ci, pos, tot) as.data.table(t(mapply(
   x = pos, n = tot
 )))
 
+plot.dt[, binop := rolling.var/rolling.tot ]
 plot.dt[!is.na(rolling.var),
-        c("lo95","hi95") := bino(.95, rolling.var, rolling.tot)
+  c("lo95","hi95") := bino(.95, rolling.var, rolling.tot)
 ]
 plot.dt[!is.na(rolling.var),
-        c("lo50","hi50") := bino(.50, rolling.var, rolling.tot)
+  c("lo50","hi50") := bino(.50, rolling.var, rolling.tot)
 ]
 
 p.phylo <- force(ggplot(plot.dt[!is.na(rolling.var)]) + aes(date) +
   geom_ribbon(aes(ymin = lo95, ymax = hi95), alpha = 0.1, fill = "red") +
   geom_ribbon(aes(ymin = lo50, ymax = hi50), alpha = 0.2, fill = "red") +
-  geom_line(aes(y=rolling.var/rolling.tot), color = "red") +
+  geom_line(aes(y=binop), color = "red") +
   scale_x_date(
     name = NULL,
     date_breaks = "months", date_minor_breaks = "weeks",
@@ -62,4 +63,4 @@ p.phylo <- force(ggplot(plot.dt[!is.na(rolling.var)]) + aes(date) +
   coord_cartesian(ylim = c(0, 1), xlim = c(as.Date("2020-10-01"), as.Date("2021-01-01")), expand = FALSE) +
   theme_minimal())
 
-saveRDS(p, tail(.args, 1))
+saveRDS(p.phylo, tail(.args, 1))
