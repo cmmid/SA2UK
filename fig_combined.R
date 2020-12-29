@@ -15,38 +15,52 @@ suppressPackageStartupMessages({
 
 rsa.dt <- fread(.args[1])[Country == "South Africa"][order(`Collection Data`)]
 
-plot.dt <- rsa.dt[,
-                  .(.N, iso3c = "ZAF"),
-                  by = .(date=round(`Collection Data`, digits = "weeks"), newvariant = `Clade`=="20C")
+rolling.int <- 7
+
+red.dt <- rsa.dt[,
+  .(.N, iso3c = "ZAF"),
+  by = .(
+    date=`Collection Data`,
+    newvariant = `Clade`=="20C"
+  )
+][date > (as.Date("2020-10-01")-rolling.int) ]
+
+fill.dt <- red.dt[, .(date = as.Date(rep(min(date):max(date), 2), origin = "1970-01-01"))]
+fill.dt[, newvariant := rep(c(TRUE, FALSE), each = .N/2)]
+
+plot.dt <- dcast(red.dt[fill.dt, on=.(date, newvariant), .(date, variant = fifelse(newvariant,"501Y.V2","other"), iso3c="ZAF", N=fifelse(is.na(N), 0, N))], iso3c + date ~ variant, value.var = "N")
+
+plot.dt[, total := `501Y.V2` + other ]
+plot.dt[, rolling.tot := as.integer(frollsum(total, rolling.int)) ]
+plot.dt[, rolling.501Y.V2 := as.integer(frollsum(`501Y.V2`, rolling.int)) ]
+
+bino <- function(ci, pos, tot) as.data.table(t(mapply(
+  function(x, n, p=x/n) binom.test(x, n, p, conf.level = ci)$conf.int,
+  x = pos, n = tot
+)))
+
+plot.dt[!is.na(rolling.501Y.V2),
+        c("lo95","hi95") := bino(.95, rolling.501Y.V2, rolling.tot)
+          # as.data.table(t(mapply(
+          #   function(x, n, p=x/n) binom.test(x, n, p, conf.level = .95)$conf.int,
+          #   x = rolling.501Y.V2, n = rolling.tot
+          # )))
+]
+plot.dt[!is.na(rolling.501Y.V2),
+  c("lo50","hi50") := bino(.50, rolling.501Y.V2, rolling.tot)
 ]
 
-plot.dt[, total := sum(N), by=.(date, iso3c) ]
-
-plot.dt[,
-        c("lo95","hi95") := 
-          as.data.table(t(mapply(
-            function(x, n, p=x/n) binom.test(x, n, p, conf.level = .95)$conf.int,
-            x = N, n = total
-          )))
-][,
-  c("lo50","hi50") := 
-    as.data.table(t(mapply(
-      function(x, n, p=x/n) binom.test(x, n, p, conf.level = .50)$conf.int,
-      x = N, n = total
-    )))
-]
-
-p.phylo <- ggplot(plot.dt[newvariant == TRUE]) + aes(date) +
+p.phylo <- ggplot(plot.dt[!is.na(rolling.501Y.V2)]) + aes(date) +
   geom_ribbon(aes(ymin = lo95, ymax = hi95), alpha = 0.1, fill = "red") +
   geom_ribbon(aes(ymin = lo50, ymax = hi50), alpha = 0.2, fill = "red") +
-  geom_line(aes(y=N/total), color = "red") +
+  geom_line(aes(y=rolling.501Y.V2/rolling.tot), color = "red") +
   scale_x_date(
     name = NULL,
     date_breaks = "months", date_minor_breaks = "weeks",
     date_labels = "%b"
   ) +
   scale_y_continuous("501Y.V2 Fraction") +
-  coord_cartesian(ylim = c(0, 1), xlim = c(as.Date("2020-10-01")-5, as.Date("2020-12-01")+5), expand = FALSE) +
+  coord_cartesian(ylim = c(0, 1), xlim = c(as.Date("2020-10-01"), as.Date("2021-01-01")), expand = FALSE) +
   theme_minimal()
 
 tariso <- tail(.args, 2)[1]
