@@ -28,7 +28,7 @@ ${COVIDM}:
 GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 fits introductions scenarios mod_scenarios projections) ${SOURCE}/isos ${SOURCE}/pops ${MIRDIR}
+MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 fits introductions scenarios mod_scenarios projections figs relaxation) ${SOURCE}/isos ${SOURCE}/pops ${MIRDIR}
 
 # provides non-analysis support
 include support.makefile
@@ -53,8 +53,6 @@ ${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_ti
 ${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds | ${SINK}/intervention_timing
 	${Rstar}
 
-int_fig: ${SINK}/intervention_timing/ZAF.png
-
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
 	${R}
 
@@ -72,8 +70,14 @@ ${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
 NGM.rda: NGM.R
 	${R}
 
+#' TODO strip relaxation calculation
 ${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
+
+${SINK}/relaxation/%.rds: est_relaxation_rt.R ${SOURCE}/epi_data.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/relaxation NGM.rda
+	Rscript $^ 2020-06-10 2020-10-15 $* $@
+
+relax: ${SINK}/relaxation/ZAF.rds
 
 int_r0: ${SINK}/r0/ZAF.rds
 
@@ -97,58 +101,11 @@ default: ${SINK}/projections/ZAF.qs ${SINK}/mod_scenarios/ZAF.rds
 ${SINK}/projections/%.png: fig_projection.R ${SINK}/projections/%.qs ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/urbanization.rds
 	${Rstar}
 
+${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv | ${SINK}/figs
+	${R}
 
-# ALLISOQS := $(shell ls ${SINK}/projections/*.qs)
-# ALLISOS := $(shell more ${SOURCE}/isos/africa.iso) PAK
-#ALLISOS := $(subst .qs,,$(shell cd ${SINK}/projections; ls *.qs))
-#$(info ${ALLISOS})
-#$(shell cat ${SOURCE}/isos/africa.iso)
+${SINK}/figs/relaxed_rt.rds: fig_relaxed_rt.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv | ${SINK}/figs
+	${R}
 
-testiso: ${SINK}/projections/CAF.png
 
-setup: ${COVIDM} .install $(patsubst %,${SOURCE}/%.rds,ecdc_data populations urbanization) NGM.rda
-
-estimate: $($(patsubst %,${SINK}/%.rds,interventions))
-
-${SOURCE}/isos/all.iso: ${SOURCE}/ox_si_timing.csv | ${SOURCE}/isos
-	tail -n+2 $^ | cut -d, -f1 > $@
-
-${SOURCE}/isos/%.iso: gen_iso_files.R ${SOURCE}/isos/all.iso
-	${Rstar}
-
-EMPTY :=
-SPACE := ${EMPTY} ${EMPTY}
-OTHISOS := PAK AFG
-
-${SOURCE}/isos/other.iso:
-	echo "$(subst ${SPACE},\n,${OTHISOS})" > $@
-
-isos: $(patsubst %,${SOURCE}/isos/%.iso,all africa other)
-
-evaluate: $(patsubst %,${SINK}/intervention_timing/%.png,${ALLISOS})
-
-pops: $(patsubst %,${SOURCE}/pops/%.rds,${ALLISOS})
-
-r0: $(patsubst %,${SINK}/r0/%.rds,${ALLISOS})
-
-fits: $(patsubst %,${SINK}/fits/%.rds,${ALLISOS})
-
-intros: $(patsubst %,${SINK}/introductions/%.rds,${ALLISOS})
-
-scenarios: $(patsubst %,${SINK}/scenarios/%.rds,${ALLISOS})
-
-mod_scenarios: $(patsubst %,${SINK}/mod_scenarios/%.rds,${ALLISOS})
-
-projections: $(patsubst %,${SINK}/projections/%.qs,${ALLISOS})
-
-int_figs: $(patsubst %,${SINK}/intervention_timing/%.png,${ALLISOS})
-
-clean_int_figs:
-	rm ${SINK}/intervention_timing/*.png
-
-figs: $(patsubst %,${SINK}/projections/%.png,${ALLISOS})
-
-.PRECIOUS: ${SINK}/scenarios/%.rds ${SINK}/mod_scenarios/%.rds ${SINK}/introductions/%.rds ${SINK}/fits/%.rds ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SINK}/intervention_timing/%.rds
-
-mirror: | ${MIRDIR}
-	cd ${SINK}/projections; rsync -t *.png $|/ 
+figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo)
