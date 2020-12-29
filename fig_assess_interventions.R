@@ -20,8 +20,14 @@ eras <- readRDS(.args[2])
 
 p <- ggplot(outcomes) +
   aes(date) +
-  geom_line(aes(y=cases, linetype="cases")) +
-  geom_line(aes(y=deaths, linetype="deaths")) +
+  geom_line(aes(y=cases, linetype="cases"), alpha = 0.5) +
+  geom_line(aes(y=deaths, linetype="deaths"), alpha = 0.5) +
+  geom_line(aes(y=cases7, linetype="cases"), data = function(dt) dt[order(date),
+    .(date, cases7 = frollmean(cases, 7)), keyby=.(iso3)
+  ], alpha = 1) +
+  geom_line(aes(y=deaths7, linetype="deaths"), data = function(dt) dt[order(date),
+    .(date, deaths7 = frollmean(deaths, 7)), keyby=.(iso3)
+  ], alpha = 1) +
   geom_rect(
     aes(
       ymin = 0.1, ymax = Inf,
@@ -40,6 +46,6 @@ p <- ggplot(outcomes) +
     values = c(pre="firebrick", post="dodgerblue",modification="goldenrod",variant="red")
   ) +
   scale_linetype_discrete(name=NULL) +
-  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-02-01","2021-01-01")), expand = FALSE)
+  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-02-01", "2021-01-01")), expand = FALSE)
   
 ggsave(tail(.args, 1), p, height = 3, width = 6, units = "in", dpi = 300)
