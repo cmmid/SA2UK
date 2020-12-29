@@ -104,8 +104,10 @@ ${SINK}/projections/%.png: fig_projection.R ${SINK}/projections/%.qs ${SOURCE}/p
 ${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv | ${SINK}/figs
 	${R}
 
+${SINK}/figs/cfr.rds: fig_crude_cfr.R ${SOURCE}/epi_data.rds | ${SINK}/figs
+	${R}
+
 ${SINK}/figs/relaxed_rt.rds: fig_relaxed_rt.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv | ${SINK}/figs
 	${R}
 
-
-figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo)
+figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo cfr)
