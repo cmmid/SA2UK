@@ -37,12 +37,12 @@ sa_death_data_lagged_reduced <- sa_case_data %>%
 cfr_crude <- sa_case_data_reduced %>%
   dplyr::left_join(sa_death_data_reduced) %>%
   tidyr::drop_na() %>%
-  dplyr::mutate(cfr_lagged_crude = cumsum(deaths_ma_7) / cumsum(cases_ma_7))
+  dplyr::mutate(cfr_lagged_crude = deaths_ma_7 / cases_ma_7)
 
 cfr_lagged_crude <- sa_case_data_reduced %>%
   dplyr::left_join(sa_death_data_lagged_reduced) %>%
   tidyr::drop_na() %>%
-  dplyr::mutate(cfr_lagged_crude = cumsum(deaths_ma_7) / cumsum(cases_ma_7))
+  dplyr::mutate(cfr_lagged_crude = deaths_ma_7 / cases_ma_7)
 
 library(ggplot2)
 
@@ -99,11 +99,11 @@ plot(plot_together)
 
 ggplot2::ggsave("figure_2_crude.png",
                 plot_together,
-                width = 8,
+                width = 10,
                 height = 10)
 
 
 ggplot2::ggsave("figure_2_crude.pdf",
                 plot_together,
-                width = 8,
+                width = 10,
                 height = 10)
