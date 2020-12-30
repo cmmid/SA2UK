@@ -28,7 +28,7 @@ ${COVIDM}:
 GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 fits introductions scenarios mod_scenarios projections figs relaxation) ${SOURCE}/isos ${SOURCE}/pops ${MIRDIR}
+MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 fits introductions scenarios mod_scenarios projections figs relaxation) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
 # provides non-analysis support
 include support.makefile
@@ -43,6 +43,9 @@ include support.makefile
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
 ${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
+	${R}
+
+${SINK}/phylo.rds: est_phylo_share.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv
 	${R}
 
 # only works for ZAF, placeholder that just sets by hand values identified in covidLMIC
@@ -70,8 +73,11 @@ ${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
 NGM.rda: NGM.R
 	${R}
 
+${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/pops/%.rds | ${SOURCE}/yuqs NGM.rda
+	${R}
+
 #' TODO strip relaxation calculation
-${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/r0 NGM.rda
+${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds | ${SINK}/r0
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
 ${SINK}/relaxation/%.rds: est_relaxation_rt.R ${SOURCE}/epi_data.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/relaxation NGM.rda
@@ -101,7 +107,7 @@ default: ${SINK}/projections/ZAF.qs ${SINK}/mod_scenarios/ZAF.rds
 ${SINK}/projections/%.png: fig_projection.R ${SINK}/projections/%.qs ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/urbanization.rds
 	${Rstar}
 
-${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv | ${SINK}/figs
+${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SINK}/phylo.rds | ${SINK}/figs
 	${R}
 
 ${SINK}/figs/cfr.rds: fig_crude_cfr.R ${SOURCE}/epi_data.rds | ${SINK}/figs

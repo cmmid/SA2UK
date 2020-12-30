@@ -16,7 +16,8 @@ cm_ngm <- function(
   contact_reductions = c(0, 0, 0, 0),
   fIs_reductions = rep(0, 16),
   infected_states = c("E","Ia","Ip","Is"),
-  ts = cm_params$time_step
+  ts = cm_params$time_step,
+  ymod = rep(0.5, 16)
 ) {
   
   ages <- 1:max(sapply(cm_params$pop, function(p) length(p$size)))
@@ -105,10 +106,10 @@ cm_ngm <- function(
     #' n.b. tarXnms all have same age order
     diag(Sigma_ij[
       tarIanms[(ages-1)*ks[2]+1], tarEnms[ages*ks[1]]
-    ]) <- (1-pop$y)*ks[1]/durE
+    ]) <- (1-ymod)*ks[1]/durE
     diag(Sigma_ij[
       tarIpnms[(ages-1)*ks[3]+1], tarEnms[ages*ks[1]]
-    ]) <- pop$y*ks[1]/durE
+    ]) <- ymod*ks[1]/durE
     #' onset: Ip => Is
     diag(Sigma_ij[
       tarIsnms[(ages-1)*ks[4]+1], tarIpnms[ages*ks[3]]
@@ -167,23 +168,26 @@ cm_ss_age_distro <- function(eigenv_ss) {
 }
 
 #' assumes single pop model currently
-cm_generation_time <- function(cm_params, ...) {
-  res <- cm_ngm(cm_params, ...)
-  ws <- cm_ss_age_distro(res$ss)
-  clinfrac <- cm_params$pop[[1]]$y
+cm_generation_time <- function(
+  cm_params, ymod = cm_params$pop[[1]]$y, ...,
+  ngm = cm_ngm(cm_params, ymod = ymod, ...)
+) {
+  ws <- cm_ss_age_distro(ngm$ss)
+  pop <- cm_params$pop[[1]]
+  clinfrac <- ymod
   dur <- function(dX) weighted.mean((seq_along(dX)-1)*cm_params$time_step, dX)
-  durE <- dur(cm_params$pop[[1]]$dE)
-  durIa <- dur(cm_params$pop[[1]]$dIa)
-  durIp <- dur(cm_params$pop[[1]]$dIp)
-  durIs <- dur(cm_params$pop[[1]]$dIs)
+  durE <- dur(pop$dE)
+  durIa <- dur(pop$dIa)
+  durIp <- dur(pop$dIp)
+  durIs <- dur(pop$dIs)
   #' each E takes E[dur E] time to become infectious
   #' the asymp fraction leads integral (foi * time asymp) infections
   ave_gen <- 0
   for (a in 1:length(ws)) {
     outws <- c(
-      cm_params$pop[[1]]$fIa[a]*durIa,
-      cm_params$pop[[1]]$fIp[a]*durIp,
-      cm_params$pop[[1]]$fIs[a]*durIs
+      pop$fIa[a]*durIa,
+      pop$fIp[a]*durIp,
+      pop$fIs[a]*durIs
     )
     ave_gen <- ave_gen + ws[a]*sum((c(durIa,durIp,durIp+durIs)+durE)*outws)/sum(outws)
   }
