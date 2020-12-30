@@ -1,0 +1,34 @@
+
+suppressPackageStartupMessages({
+  require(data.table)
+  require(qs)
+})
+
+.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.args <- if (interactive()) sprintf(c(
+  "%s/inputs/covidm_fit_yu.qs",
+  "%s/inputs/pops/%s.rds",
+  "%s/inputs/yuqs/%s.rds"
+), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+
+yu <- qread(.args[1])
+pop <- readRDS(.args[2])
+
+load("NGM.rda")
+
+uids <- rep(grep("^u_", colnames(yu)), each = 2)
+yids <- rep(grep("^y_", colnames(yu)), each = 2)
+
+qs.dt <- yu[, {
+  umod <- as.numeric(.SD[1,])[1:16]
+  ymod <- as.numeric(.SD[1,])[17:32]
+  ngm <- cm_ngm(
+    pop,
+    R0_multiplier = umod, ymod = ymod
+  )
+  .(baseR = ngm$R0, si = cm_generation_time(pop, ymod = ymod, ngm = ngm))
+}, by=.(trial, chain), .SDcols = c(uids, yids)]
+
+qs.dt[order(baseR), eqs := (1:.N)/.N ]
+
+saveRDS(qs.dt[yu, on=.(trial, chain)], tail(.args, 1))
