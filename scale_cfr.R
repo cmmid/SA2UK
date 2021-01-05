@@ -37,16 +37,62 @@ hosp_to_death_high <- function(x, mu, sigma) {
   plnorm(x + 1, dd_mu_high, dd_sigma_high) - plnorm(x, dd_mu_high, dd_sigma_high)
 }
 
+
+# function to calculate the adjusted number of 'known outcomes'
+# methods from Nishiura et al. (2009)
+scale_cfr_rolling <- function(data_arg,
+                      delay_fun = hosp_to_death_mid,
+                      date_num) {
+  
+  # DEBUG  data_arg <- sa_case_data; delay_fun = hosp_to_death_mid; date_num <- max(dates_num)
+  
+  case_incidence <-  data_arg$new_cases[1:date_num]
+  death_incidence <- data_arg$new_deaths[1:date_num]
+  point_known_t <- NULL # point estimate of cases with known outcome at time tt
+  
+  # Sum over cases up to time tt
+  for (ii in 1:date_num) {
+    
+    known_i <- 0 # number of cases with known outcome at time ii
+    
+    for (jj in 0:(ii - 1)) {
+      known_jj <- (case_incidence[ii - jj] * delay_fun(jj))
+      known_i <- known_i + known_jj
+    }
+
+    # point estimate of known outcomes
+    point_known_t <- c(point_known_t,known_i)
+  }
+  
+  # naive CFR value
+  b_tt_series <- death_incidence / case_incidence
+
+  # corrected CFR estimator (rolling)
+  p_tt_series <- death_incidence / point_known_t
+  
+  results_df <- dplyr::tibble(
+    date = data_arg$date[date_num],
+    nCFR = b_tt_series,
+    cCFR = p_tt_series)
+  
+  return(results_df)
+  
+}
+
+
 # function to calculate the adjusted number of 'known outcomes'
 # methods from Nishiura et al. (2009)
 scale_cfr <- function(data_arg,
                       delay_fun = hosp_to_death_mid,
                       date_num) {
+  
+   # DEBUG  data_arg <- sa_case_data; delay_fun = hosp_to_death_mid; date_num <- max(dates_num)
 
     case_incidence <-  data_arg$new_cases[1:date_num]
     death_incidence <- data_arg$new_deaths[1:date_num]
     cumulative_known_t <- 0 # cumulative cases with known outcome at time tt
-
+    point_known_t <- NULL # point estimate of cases with known outcome at time tt
+    
     # Sum over cases up to time tt
     for (ii in 1:date_num) {
 
@@ -59,13 +105,19 @@ scale_cfr <- function(data_arg,
 
             # tallying cumulative known outcomes
             cumulative_known_t <- cumulative_known_t + known_i
+            
+            # point estimate of known outcomes
+            point_known_t <- c(point_known_t,known_i)
     }
 
     # naive CFR value
     b_tt <- sum(death_incidence) / sum(case_incidence)
 
-    # corrected CFR estimator
+    # corrected CFR estimator (cumulative)
     p_tt <- sum(death_incidence) / cumulative_known_t
+    
+    # corrected CFR estimator (rolling)
+    p_tt_rolling <- death_incidence / point_known_t
 
     results_df <- dplyr::tibble(
         date = data_arg$date[date_num],

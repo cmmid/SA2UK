@@ -35,7 +35,7 @@ prop_sequenced <- 0.057
 
 # Function to calculate CI for total cases
 find_CI <- function(detected_cases,pp){
-  range_nn <- seq(detected_cases,200*detected_cases,1)
+  range_nn <- seq(detected_cases,1e4*detected_cases,1)
   lik <- dbinom(detected_cases,range_nn,pp,log=T)
   
   lik_surface <- lik - max(lik) # Find max likelihood
@@ -45,6 +45,25 @@ find_CI <- function(detected_cases,pp){
   c(round(detected_cases/pp),min(CI_range),max(CI_range))
   
 }
+
+# Epidemic size
+
+final_size <- function(ss,RR){abs(RR*(ss-1)-log(ss))}
+
+attack_rate_base <- 100*(1-optimize(final_size, interval = c(0,1),RR=1.2)$minimum)
+attack_rate_50 <- 100*(1-optimize(final_size, interval = c(0,1),RR=1.2*1.5)$minimum)
+
+
+# 
+ss_range <- seq(0,1,0.01)
+
+final_size(ss_range,RR=1.5)
+
+plot(ss_range,final_size(ss_range,RR=2))
+
+#
+
+total_US <- find_CI(1,pp= 0.5 * 0.0025)
 
 # Total cases
 
