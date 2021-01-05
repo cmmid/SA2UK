@@ -44,10 +44,8 @@ scale_cfr_rolling <- function(data_arg,
                       delay_fun = hosp_to_death_mid,
                       date_num) {
   
-  # DEBUG  data_arg <- sa_case_data; delay_fun = hosp_to_death_mid; date_num <- max(dates_num)
-  
-  case_incidence <-  data_arg$new_cases[1:date_num]
-  death_incidence <- data_arg$new_deaths[1:date_num]
+  case_incidence <-  data_arg$new_cases_smoothed[1:date_num]
+  death_incidence <- data_arg$new_deaths_smoothed[1:date_num]
   point_known_t <- NULL # point estimate of cases with known outcome at time tt
   
   # Sum over cases up to time tt
@@ -71,64 +69,13 @@ scale_cfr_rolling <- function(data_arg,
   p_tt_series <- death_incidence / point_known_t
   
   results_df <- dplyr::tibble(
-    date = data_arg$date[date_num],
+    date = data_arg$date,
+    known_t = point_known_t,
     nCFR = b_tt_series,
     cCFR = p_tt_series)
   
   return(results_df)
   
-}
-
-
-# function to calculate the adjusted number of 'known outcomes'
-# methods from Nishiura et al. (2009)
-scale_cfr <- function(data_arg,
-                      delay_fun = hosp_to_death_mid,
-                      date_num) {
-  
-   # DEBUG  data_arg <- sa_case_data; delay_fun = hosp_to_death_mid; date_num <- max(dates_num)
-
-    case_incidence <-  data_arg$new_cases[1:date_num]
-    death_incidence <- data_arg$new_deaths[1:date_num]
-    cumulative_known_t <- 0 # cumulative cases with known outcome at time tt
-    point_known_t <- NULL # point estimate of cases with known outcome at time tt
-    
-    # Sum over cases up to time tt
-    for (ii in 1:date_num) {
-
-    known_i <- 0 # number of cases with known outcome at time ii
-
-    for (jj in 0:(ii - 1)) {
-            known_jj <- (case_incidence[ii - jj] * delay_fun(jj))
-            known_i <- known_i + known_jj
-    }
-
-            # tallying cumulative known outcomes
-            cumulative_known_t <- cumulative_known_t + known_i
-            
-            # point estimate of known outcomes
-            point_known_t <- c(point_known_t,known_i)
-    }
-
-    # naive CFR value
-    b_tt <- sum(death_incidence) / sum(case_incidence)
-
-    # corrected CFR estimator (cumulative)
-    p_tt <- sum(death_incidence) / cumulative_known_t
-    
-    # corrected CFR estimator (rolling)
-    p_tt_rolling <- death_incidence / point_known_t
-
-    results_df <- dplyr::tibble(
-        date = data_arg$date[date_num],
-        nCFR = b_tt,
-        cCFR = p_tt,
-        total_cases = sum(case_incidence),
-        total_deaths = sum(death_incidence),
-        cum_known_t = round(cumulative_known_t))
-
-  return(results_df)
-
 }
 
 # function which simplifies downloading and importing all data
@@ -155,122 +102,135 @@ sa_case_data <- case_data %>%
   dplyr::filter(iso_code == "ZAF") %>%
   tidyr::drop_na()
 
-dates_num <- seq(1, nrow(sa_case_data), 1)
+# smoothing the new cases and new deaths data
+sa_case_data_smoothed  <- sa_case_data %>%
+    dplyr::mutate(new_cases_smoothed = zoo::rollmean(new_cases, k = 21, na.pad
+                                                     = TRUE)) %>%
+    dplyr::mutate(new_deaths_smoothed = zoo::rollmean(new_deaths, k = 21,
+                                                      na.pad = TRUE)) %>%
+    tidyr::drop_na()
 
-# scaling the CFR using the median, lower and upper 95%
-# confidence intervals of the delay distribution
-scaled_cfr_sa_mid <- dates_num %>%
-    purrr::map_dfr(~scale_cfr(sa_case_data, hosp_to_death_mid, .))
+# calculating the scaled CFR using the median, lower and upper 95% 
+# of the delay distribution
+cfr_rolling_mid <- sa_case_data_smoothed %>%
+    tidyr::drop_na() %>%
+    scale_cfr_rolling(delay_fun = hosp_to_death_mid, date_num =
+                      sa_case_data_smoothed %>% nrow()) %>%
+    dplyr::rename(dCFR_mid = cCFR)
 
-scaled_cfr_sa_low <- dates_num %>%
-    purrr::map_dfr(~scale_cfr(sa_case_data, hosp_to_death_low, .)) %>%
-    dplyr::select(date, dCFR_low = cCFR)
+cfr_rolling_low <- sa_case_data_smoothed %>%
+    tidyr::drop_na() %>%
+    scale_cfr_rolling(delay_fun = hosp_to_death_low, date_num =
+                      sa_case_data_smoothed %>% nrow()) %>%
+    dplyr::rename(dCFR_low = cCFR)
 
-scaled_cfr_sa_high <- dates_num %>%
-    purrr::map_dfr(~scale_cfr(sa_case_data, hosp_to_death_high, .)) %>%
-    dplyr::select(date, dCFR_high = cCFR)
+cfr_rolling_high <- sa_case_data_smoothed %>%
+    tidyr::drop_na() %>%
+    scale_cfr_rolling(delay_fun = hosp_to_death_high, date_num =
+                      sa_case_data_smoothed %>% nrow()) %>%
+    dplyr::rename(dCFR_high = cCFR)
 
-# the uncertainty range doesn't make sense for the first 
-# row, given that it requires more data for the method
-# to make sense
-scaled_cfr_all <- scaled_cfr_sa_mid %>%
-    dplyr::left_join(scaled_cfr_sa_low) %>%
-    dplyr::left_join(scaled_cfr_sa_high) %>%
-    dplyr::rename(dCFR_mid = cCFR) %>%
-    dplyr::filter(dCFR_low < dCFR_mid & dCFR_high > dCFR_mid) %>%
+scaled_cfr_all <- cfr_rolling_mid %>%
+    dplyr::left_join(cfr_rolling_low) %>%
+    dplyr::left_join(cfr_rolling_high) %>%
+    #dplyr::filter(dCFR_low < dCFR_mid & dCFR_high > dCFR_mid) %>%
     dplyr::select(date, nCFR, dCFR_mid, dCFR_low, dCFR_high,
                   dplyr::everything())
 
-# just re-calculating the new cases and new deaths each day and
-# dropping and NAs
-scaled_cfr_sa <- scaled_cfr_all %>%
-    dplyr::mutate(cases  = total_cases - dplyr::lag(total_cases),
-                  deaths = total_deaths - dplyr::lag(total_deaths),
-                  known_outcomes = cum_known_t - dplyr::lag(cum_known_t)) %>%
-    tidyr::drop_na()
+# plotting the daily scaled CFR, as example plot only showing
+# slightly adjusted new method
+scaled_cfr_all %>%
+    dplyr::filter(date > "2020-05-01") %>% 
+    ggplot2::ggplot(ggplot2::aes(x = date)) +  
+    ggplot2::geom_line(ggplot2::aes(y = dCFR_mid)) +  
+    ggplot2::geom_line(ggplot2::aes(y = nCFR), color = "red") +  
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = dCFR_low, ymax = dCFR_high), alpha
+                         = 0.3, fill = "dodgerblue") + 
+    ggplot2::ylim(0, 0.2)
 
 
+#--- OLD PLOTS
 #--- plotting the dCFR results along with the case and death time-series data
-cfr_subplot_11_data <- scaled_cfr_all %>%
-  dplyr::mutate(date = lubridate::ymd(date)) %>%
-  dplyr::filter(date >= "2020-11-01") %>%
-  tidyr::pivot_longer(c(nCFR, dCFR_mid),
-                      names_to  = "cfr_type",
-                      values_to = "cfr")
+#cfr_subplot_11_data <- scaled_cfr_all %>%
+  #dplyr::mutate(date = lubridate::ymd(date)) %>%
+  #dplyr::filter(date >= "2020-11-01") %>%
+  #tidyr::pivot_longer(c(nCFR, dCFR_mid),
+                      #names_to  = "cfr_type",
+                      #values_to = "cfr")
 
-cfr_subplot_12_data <- scaled_cfr_all %>%
-  dplyr::mutate(date = lubridate::ymd(date)) %>%
-  dplyr::filter(date >= "2020-11-01")
+#cfr_subplot_12_data <- scaled_cfr_all %>%
+  #dplyr::mutate(date = lubridate::ymd(date)) %>%
+  #dplyr::filter(date >= "2020-11-01")
 
-cfr_subplot_2_data <- scaled_cfr_all %>%
-  dplyr::mutate(date = lubridate::ymd(date)) %>%
-  tidyr::pivot_longer(c(nCFR, dCFR_mid),
-                      names_to  = "cfr_type",
-                      values_to = "cfr") %>%
-  dplyr::filter(date >= "2020-05-01")
+#cfr_subplot_2_data <- scaled_cfr_all %>%
+  #dplyr::mutate(date = lubridate::ymd(date)) %>%
+  #tidyr::pivot_longer(c(nCFR, dCFR_mid),
+                      #names_to  = "cfr_type",
+                      #values_to = "cfr") %>%
+  #dplyr::filter(date >= "2020-05-01")
 
-p1 <- ggplot2::ggplot(cfr_subplot_11_data,
-                      ggplot2::aes(x = date)) +
-  ggplot2::geom_line(ggplot2::aes(y = cfr, color = cfr_type)) +
-  ggplot2::geom_ribbon(data = cfr_subplot_12_data,
-                       ggplot2::aes(ymin = dCFR_low, ymax = dCFR_high),
-                       fill = "dodgerblue", alpha = 0.2) +
-  ggplot2::labs(x = "Date", y = "CFR", color = "") +
-  ggplot2::scale_y_continuous(labels = scales::percent) +
-  viridis::scale_color_viridis(discrete = TRUE, begin = 0.3, end = 0.7,
-  labels = c("dCFR median", "nCFR")) +
-  ggplot2::theme(legend.position = "none")
+#p1 <- ggplot2::ggplot(cfr_subplot_11_data,
+                      #ggplot2::aes(x = date)) +
+  #ggplot2::geom_line(ggplot2::aes(y = cfr, color = cfr_type)) +
+  #ggplot2::geom_ribbon(data = cfr_subplot_12_data,
+                       #ggplot2::aes(ymin = dCFR_low, ymax = dCFR_high),
+                       #fill = "dodgerblue", alpha = 0.2) +
+  #ggplot2::labs(x = "Date", y = "CFR", color = "") +
+  #ggplot2::scale_y_continuous(labels = scales::percent) +
+  #viridis::scale_color_viridis(discrete = TRUE, begin = 0.3, end = 0.7,
+  #labels = c("dCFR median", "nCFR")) +
+  #ggplot2::theme(legend.position = "none")
 
-p2 <- ggplot2::ggplot(cfr_subplot_2_data,
-                      ggplot2::aes(x = date)) +
-  ggplot2::geom_line(ggplot2::aes(y = cfr, color = cfr_type)) +
-  ggplot2::geom_ribbon(ggplot2::aes(ymin = dCFR_low, ymax = dCFR_high),
-                       fill = "dodgerblue", alpha = 0.2) +
-  ggplot2::labs(x = "Date", y = "Case Fatality Ratio", color = "", title = "A") +
-  ggplot2::scale_y_continuous(labels = scales::percent) +
-  viridis::scale_color_viridis(discrete = TRUE, begin = 0.3, end = 0.7,
-  labels = c("dCFR median", "nCFR"))
+#p2 <- ggplot2::ggplot(cfr_subplot_2_data,
+                      #ggplot2::aes(x = date)) +
+  #ggplot2::geom_line(ggplot2::aes(y = cfr, color = cfr_type)) +
+  #ggplot2::geom_ribbon(ggplot2::aes(ymin = dCFR_low, ymax = dCFR_high),
+                       #fill = "dodgerblue", alpha = 0.2) +
+  #ggplot2::labs(x = "Date", y = "Case Fatality Ratio", color = "", title = "A") +
+  #ggplot2::scale_y_continuous(labels = scales::percent) +
+  #viridis::scale_color_viridis(discrete = TRUE, begin = 0.3, end = 0.7,
+  #labels = c("dCFR median", "nCFR"))
 
 
 
-inset <- ggplot2::ggplotGrob(p1)
-cfr_plot <- p2 + ggplot2::annotation_custom(grob = inset,
-                                            xmin = as.Date("2020-09-01"),
-                                            xmax = as.Date("2021-01-08"),
-                                            ymin = 0.035, ymax = 0.06)
+#inset <- ggplot2::ggplotGrob(p1)
+#cfr_plot <- p2 + ggplot2::annotation_custom(grob = inset,
+                                            #xmin = as.Date("2020-09-01"),
+                                            #xmax = as.Date("2021-01-08"),
+                                            #ymin = 0.035, ymax = 0.06)
 
-confirmed_cases_plot <- sa_case_data %>%
-  ggplot2::ggplot(ggplot2::aes(x = date, y = new_cases)) +
-  ggplot2::geom_col(fill = "dodgerblue", alpha = 0.7, width = 1) +
-  ggplot2::labs(x = "Date", y = "New cases",  title = "B")
+#confirmed_cases_plot <- sa_case_data %>%
+  #ggplot2::ggplot(ggplot2::aes(x = date, y = new_cases)) +
+  #ggplot2::geom_col(fill = "dodgerblue", alpha = 0.7, width = 1) +
+  #ggplot2::labs(x = "Date", y = "New cases",  title = "B")
 
-confirmed_deaths_plot <- sa_case_data %>%
-  ggplot2::ggplot(ggplot2::aes(x = date, y = new_deaths)) +
-  ggplot2::geom_col(fill = "firebrick1", alpha = 0.6, width = 1) +
-  ggplot2::labs(x = "Date", y = "New deaths", title = "C")
+#confirmed_deaths_plot <- sa_case_data %>%
+  #ggplot2::ggplot(ggplot2::aes(x = date, y = new_deaths)) +
+  #ggplot2::geom_col(fill = "firebrick1", alpha = 0.6, width = 1) +
+  #ggplot2::labs(x = "Date", y = "New deaths", title = "C")
 
-cfr_plot_supplementary <- cfr_plot / confirmed_cases_plot / confirmed_deaths_plot
+#cfr_plot_supplementary <- cfr_plot / confirmed_cases_plot / confirmed_deaths_plot
 
-# saving plot as png
+## saving plot as png
 
-ggplot2::ggsave(here::here("figure_S1.png"), cfr_plot_supplementary,
-                width = 8,
-                height = 12,
-                dpi = 300)
+#ggplot2::ggsave(here::here("figure_S1.png"), cfr_plot_supplementary,
+                #width = 8,
+                #height = 12,
+                #dpi = 300)
 
-# saving plot as pdf
-ggplot2::ggsave(here::here("figure_S1.pdf"), cfr_plot_supplementary,
-                width = 8,
-                height = 12,
-                dpi = 300)
+## saving plot as pdf
+#ggplot2::ggsave(here::here("figure_S1.pdf"), cfr_plot_supplementary,
+                #width = 8,
+                #height = 12,
+                #dpi = 300)
 
-ggplot2::ggsave(here::here("figure_2.png"), cfr_plot,
-                width = 12,
-                height = 8,
-                dpi = 300)
+#ggplot2::ggsave(here::here("figure_2.png"), cfr_plot,
+                #width = 12,
+                #height = 8,
+                #dpi = 300)
 
-# saving plot as pdf
-ggplot2::ggsave(here::here("figure_2.pdf"), cfr_plot,
-                width = 12,
-                height = 8,
-                dpi = 300)
+## saving plot as pdf
+#ggplot2::ggsave(here::here("figure_2.pdf"), cfr_plot,
+                #width = 12,
+                #height = 8,
+                #dpi = 300)
