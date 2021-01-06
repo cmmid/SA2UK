@@ -8,9 +8,8 @@ suppressPackageStartupMessages({
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
-  "%s/inputs/pops/%s.rds",
-  "%s/inputs/covidm_fit_yu.qs",
-  "4", "8e3", # cores, samples
+  "%s/inputs/yuqs/%s.rds",
+  "2", "1e3", # cores, samples
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -25,31 +24,11 @@ fill.case <- case.dt[
   case.dt[, .(date = seq(min(date),max(date),by="day"))],
   on=.(date),
   .(date, confirm = fifelse(is.na(confirm), 0, confirm))
-  ]
+]
 
 lims.dt <- readRDS(.args[2])
 
-params <- readRDS(.args[3])
-
-yu_fits <- qread(.args[4])[order(ll)]
-yu_fits[, eqs := (1:.N)/.N ]
-#' using the median yu fits
-medyu <- yu_fits[which.max(eqs > 0.5)]
-yref <- unname(as.matrix(medyu[, .SD, .SDcols = grep("y_",colnames(medyu))]))
-uref <- unname(as.matrix(medyu[, .SD, .SDcols = grep("u_",colnames(medyu))]))
-ys <- rep(yref[1, ], each = 2)
-us <- rep(uref[1, ], each = 2)
-
-params$pop <- lapply(
-  params$pop,
-  function(x){
-    x$y <- ys
-    x$u <- us
-    return(x)
-  }
-)
-
-load("NGM.rda")
+mean_generation_interval <- readRDS(.args[3])[, mean(si)]
 
 # Set up example generation time
 generation_time <- as.list(EpiNow2::generation_times[disease == "SARS-CoV-2",
@@ -60,7 +39,7 @@ tarmcv <- generation_time$mean_sd/generation_time$mean
 tarscv <- generation_time$sd_sd/generation_time$sd
 tarcv <- generation_time$sd/generation_time$mean
 
-generation_time$mean <- unname(cm_generation_time(params))
+generation_time$mean <- mean_generation_interval
 generation_time$mean_sd <- generation_time$mean * tarmcv
 generation_time$sd <- generation_time$mean * tarcv
 generation_time$sd_sd <- generation_time$sd * tarscv
@@ -87,8 +66,8 @@ early_reported_cases[,
   breakpoint := era %in% c("censor", "transition", "tail")
 ]
 
-re.est <- estimate_infections(
-  reported_cases = early_reported_cases,
+Rtcalc <- function(case.dt, keep.start, keep.end, era.labels) estimate_infections(
+  reported_cases = case.dt,
   generation_time = generation_time,
   delays = delay_opts(incubation_period),
   #rt = NULL, backcalc = backcalc_opts(),
@@ -100,44 +79,31 @@ re.est <- estimate_infections(
   ),
   gp = NULL,
   verbose = TRUE
-)
-
-results <- re.est$samples[variable == "R", .(value), by=.(sample, date)][
-  between(date, lims.dt[era == "pre", end], lims.dt[era == "post", start])
+)$samples[variable == "R", .(value), by=.(sample, date)][
+  between(date, keep.start, keep.end)
 ][, {
   qs <- quantile(value, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
   names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
   as.list(qs)
-}, keyby = .(date)][, era:= c("pre",rep("transition",.N-2),"post")]
+}, keyby = .(date)][, era := eval(era.labels) ]
+
+results <- Rtcalc(
+  early_reported_cases,
+  lims.dt[era == "pre", end], lims.dt[era == "post", start],
+  expression(c("pre",rep("transition",.N-2),"post"))
+)
 
 if (results[era %in% c("pre","post"), sign(diff(med)) != -1]) warning(sprintf("did not observe post-intervention reduction for %s", tariso))
 
 #' if we're considering a modification period as well
+#' N.B. a relaxation era is evaluated differently
 if (lims.dt[era == "modification", .N]) {
   mod_reported_cases <- with(lims.dt[era == "modification"], fill.case[between(date, start - 14, end + est.window)])
   mod_reported_cases[, breakpoint := TRUE ]
   with(lims.dt[era == "modification"], mod_reported_cases[between(date, start, end), breakpoint := FALSE ])
-  mod.est <- estimate_infections(
-    reported_cases = mod_reported_cases,
-    generation_time = generation_time,
-    delays = delay_opts(incubation_period),
- #   rt = NULL, backcalc = backcalc_opts(),
-    stan = stan_opts(
-      samples = smps,
-      warmup = 200, 
-      cores = crs,
-      control = list(adapt_delta = 0.9)
-    ),
-    gp = NULL,
-    verbose = TRUE
-  )
   results <- rbind(
     results,
-    mod.est$samples[variable == "R", .(value), by=.(sample, date)][date == lims.dt[era == "modification", start]][, {
-      qs <- quantile(value, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
-      names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
-      as.list(qs)
-    }, keyby = .(date)][, era:= "modification" ]
+    Rtcalc(mod_reported_cases, lims.dt[era == "modification", start], lims.dt[era == "modification", start], "modification")
   )
 }
 
@@ -145,27 +111,9 @@ if (lims.dt[era == "variant", .N]) {
   mod_reported_cases <- with(lims.dt[era == "variant"], fill.case[date > start - 14])
   mod_reported_cases[, breakpoint := TRUE ]
   with(lims.dt[era == "variant"], mod_reported_cases[between(date, start, end), breakpoint := FALSE ])
-  mod.est <- estimate_infections(
-    reported_cases = mod_reported_cases,
-    generation_time = generation_time,
-    delays = delay_opts(incubation_period),
-    #   rt = NULL, backcalc = backcalc_opts(),
-    stan = stan_opts(
-      samples = smps,
-      warmup = 200, 
-      cores = crs,
-      control = list(adapt_delta = 0.9)
-    ),
-    gp = NULL,
-    verbose = TRUE
-  )
   results <- rbind(
     results,
-    mod.est$samples[variable == "R", .(value), by=.(sample, date)][date == lims.dt[era == "variant", start]][, {
-      qs <- quantile(value, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
-      names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
-      as.list(qs)
-    }, keyby = .(date)][, era:= "variant" ]
+    Rtcalc(mod_reported_cases, lims.dt[era == "variant", start], lims.dt[era == "variant", start], "variant")
   )
 }
 
