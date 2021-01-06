@@ -11,6 +11,8 @@ suppressPackageStartupMessages({
 
 plot.dt <- readRDS(.args[1])
 
+var.label <- "501Y.V2"
+
 p.phylo <- force(ggplot(plot.dt[!is.na(rolling.var)]) + aes(date) +
   geom_ribbon(aes(ymin = lo95, ymax = hi95), alpha = 0.1, fill = "red") +
   geom_ribbon(aes(ymin = lo50, ymax = hi50), alpha = 0.2, fill = "red") +
