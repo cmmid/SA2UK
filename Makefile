@@ -53,7 +53,7 @@ ${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_ti
 	${Rstar}
 
 #${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SINK}/interventions.rds ${SOURCE}/ecdc_data.rds ${SINK}/introductions/%.rds | ${SINK}/intervention_timing
-${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds | ${SINK}/intervention_timing
+${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/phylo.rds | ${SINK}/intervention_timing
 	${Rstar}
 
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
@@ -80,13 +80,6 @@ ${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/po
 ${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds | ${SINK}/r0
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
-${SINK}/relaxation/%.rds: est_relaxation_rt.R ${SOURCE}/epi_data.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs | ${SINK}/relaxation NGM.rda
-	Rscript $^ 2020-06-10 2020-10-15 $* $@
-
-relax: ${SINK}/relaxation/ZAF.rds
-
-int_r0: ${SINK}/r0/ZAF.rds
-
 ${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
@@ -96,15 +89,13 @@ ${SINK}/fits/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/c
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
 
-${SINK}/projections/%.qs: sim_scenarios.R ${SINK}/scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds | ${SINK}/projections
+${SINK}/projections/%.rds: sim_relax.R ${SINK}/scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds ${SINK}/intervention_timing/%.rds | ${SINK}/projections
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
-${SINK}/mod_scenarios/%.rds: est_mod_r0.R ${SINK}/scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/covidm_fit_yu.qs ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds | ${SINK}/mod_scenarios
-	${RSCRIPT} $^ $* ${COVIDM} $@
+int_scen: ${SINK}/scenarios/ZAF.rds
+int_proj: ${SINK}/projections/ZAF.rds
 
-default: ${SINK}/projections/ZAF.qs ${SINK}/mod_scenarios/ZAF.rds
-
-${SINK}/projections/%.png: fig_projection.R ${SINK}/projections/%.qs ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/urbanization.rds
+${SINK}/figs/timeseries.rds: fig_relax_proj.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/ZAF.rds ${SINK}/phylo.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs
 	${Rstar}
 
 ${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SINK}/phylo.rds | ${SINK}/figs
@@ -113,7 +104,10 @@ ${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SINK}/phylo.rds | ${SINK}/figs
 ${SINK}/figs/cfr.rds: fig_crude_cfr.R ${SOURCE}/epi_data.rds | ${SINK}/figs
 	${R}
 
+${SINK}/figs/AR.rds: fig_relax_AR.R ${SOURCE}/urbanization.rds ${SOURCE}/pops/ZAF.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs
+	Rscript $^ ZAF $@
+
 ${SINK}/figs/relaxed_rt.rds: fig_relaxed_rt.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv | ${SINK}/figs
 	${R}
 
-figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo cfr)
+figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo cfr timeseries AR)
