@@ -41,9 +41,33 @@ delay_distro <- function(mu, sigma) return(
   function(x) plnorm(x+1, mu, sigma) - plnorm(x, mu, sigma)
 )
 
-hosp_to_death_mid <- delay_distro(dd_mu_mid, dd_sigma_mid)
-hosp_to_death_low <- delay_distro(dd_mu_low, dd_sigma_low)
-hosp_to_death_high <- delay_distro(dd_mu_high, dd_sigma_high)
+length_out_arg <- 10000
+
+mean_interval <- seq(8.7, 20.9, length.out = length_out_arg)
+median_interval <- seq(6.7, 13.7, length.out = length_out_arg)
+
+mu_interval <- seq(
+  log(min(median_interval)),
+  log(max(median_interval)),
+  length.out = length_out_arg
+)
+
+sigma_interval  <- seq(
+  sqrt(2*(log(min(mean_interval)) - min(mu_interval))),
+  sqrt(2*(log(max(mean_interval)) - max(mu_interval))),
+  length.out = length_out_arg
+)
+
+mu_mean <- mean(mu_interval)
+mu_sd <- 2*sd(mu_interval)
+sigma_mean <- mean(sigma_interval)
+sigma_sd <- 2*sd(sigma_interval)
+
+mu_sampler <- function(n) rnorm(n, mean = mu_mean, sd = mu_sd)
+sigma_sampler <- function(n) rnorm(n, mean = sigma_mean, sd = sigma_sd)
+
+bootstrap.dt <- data.table(sample_id = 1:1000)
+bootstrap.dt[, c("mu","sigma") := .(mu_sampler(.N), sigma_sampler(.N)) ]
 
 # function to calculate the adjusted number of 'known outcomes'
 # methods from Nishiura et al. (2009)
@@ -75,13 +99,15 @@ scale_cfr_rolling <- function(
 
 resbase <- dt[!is.na(cases.win)][order(date)][, .(date, cases.win, deaths.win) ]
 
-corrected <- dcast(rbind(
-  copy(resbase)[, q := "lo" ][, cCFR := scale_cfr_rolling(cases.win, deaths.win, hosp_to_death_low)],
-  copy(resbase)[, q := "md" ][, cCFR := scale_cfr_rolling(cases.win, deaths.win, hosp_to_death_mid)],
-  copy(resbase)[, q := "hi" ][, cCFR := scale_cfr_rolling(cases.win, deaths.win, hosp_to_death_high)]
-), date ~ q, value.var = "cCFR")[!is.na(md)]
-
-corrected[, hi := pmax(hi, lo, md) ][, lo := pmin(hi, lo, md) ][, ver := "cCFR" ]
+corrected <- bootstrap.dt[,{
+  dd <- delay_distro(mu, sigma)
+  copy(resbase)[, cCFR := scale_cfr_rolling(cases.win, deaths.win, dd)]
+}, by=.(sample_id)][, {
+  qs <- quantile(cCFR, probs = c(0.025, 0.5, 0.975), na.rm = TRUE)
+  names(qs) <- c("lo","md","hi")
+  as.list(qs)
+}, by=date][!is.na(md)]
+corrected[, ver := "cCFR" ]
 
 bino <- function(ci, pos, tot) as.data.table(t(mapply(
   function(x, n, p=x/n) binom.test(x, n, p, conf.level = ci)$conf.int,
