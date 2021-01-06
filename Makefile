@@ -101,7 +101,7 @@ ${SINK}/figs/timeseries.rds: fig_relax_proj.R ${SOURCE}/epi_data.rds ${SINK}/int
 ${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SINK}/phylo.rds | ${SINK}/figs
 	${R}
 
-${SINK}/figs/cfr.rds: fig_crude_cfr.R ${SOURCE}/epi_data.rds | ${SINK}/figs
+${SINK}/figs/cfr.rds: fig_scaled_cfr.R ${SOURCE}/epi_data.rds | ${SINK}/figs
 	${R}
 
 ${SINK}/figs/AR.rds: fig_relax_AR.R ${SOURCE}/urbanization.rds ${SOURCE}/pops/ZAF.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs

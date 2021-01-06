@@ -66,7 +66,7 @@ sigma_sd <- 2*sd(sigma_interval)
 mu_sampler <- function(n) rnorm(n, mean = mu_mean, sd = mu_sd)
 sigma_sampler <- function(n) rnorm(n, mean = sigma_mean, sd = sigma_sd)
 
-bootstrap.dt <- data.table(sample_id = 1:1000)
+bootstrap.dt <- data.table(sample_id = 1:10000)
 bootstrap.dt[, c("mu","sigma") := .(mu_sampler(.N), sigma_sampler(.N)) ]
 
 # function to calculate the adjusted number of 'known outcomes'
@@ -75,20 +75,13 @@ scale_cfr_rolling <- function(
   cases, deaths, delay_fun
 ) {
   
-  point_known_t <- NULL # point estimate of cases with known outcome at time tt
-  
+  # point estimate of cases with known outcome at time tt
+  point_known_t <- numeric(length(cases))
+  dlys <- delay_fun((1:length(cases))-1)
   # Sum over cases up to time tt
   for (ii in 1:length(cases)) {
-    
-    known_i <- 0 # number of cases with known outcome at time ii
-    
-    for (jj in 0:(ii - 1)) {
-      known_jj <- (cases[ii - jj] * delay_fun(jj))
-      known_i <- known_i + known_jj
-    }
-    
-    # point estimate of known outcomes
-    point_known_t <- c(point_known_t, known_i)
+    inds <- 0:(ii-1)
+    point_known_t[ii] <- sum(cases[ii - inds] * dlys[inds+1])
   }
   
   # corrected CFR estimator (rolling)
@@ -117,7 +110,14 @@ bino <- function(ci, pos, tot) as.data.table(t(mapply(
 naive <- copy(resbase)[cases.win > 0][, md := deaths.win / cases.win ][, ver := "nCFR" ]
 naive[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
 
-plot.dt <- rbind(corrected, naive, fill = TRUE)
+deathdelay <- 21
+
+delayed <- copy(resbase)[which.max(cases.win > 0):.N][,
+  .(date = head(date, -deathdelay), cases.win = head(cases.win, -deathdelay), deaths.win = tail(deaths.win, -deathdelay))
+][, md := deaths.win / cases.win ][, ver := "dCFR" ]
+delayed[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
+
+plot.dt <- rbind(corrected, naive, delayed, fill = TRUE)
 
 cfr.p <- force(ggplot(plot.dt) + aes(date, md) +
   geom_line(aes(color = ver)) +
@@ -136,13 +136,9 @@ cfr.p <- force(ggplot(plot.dt) + aes(date, md) +
   scale_x_date(name = NULL, date_breaks = "months", date_minor_breaks = "weeks", date_labels = "%b") +
   scale_color_manual(
     NULL,
-    labels = c(nCFR="naive", cCFR="corrected"),
-    values = c(nCFR="orchid", cCFR="darkorchid4"),
+    labels = c(nCFR="naive", dCFR = "delayed", cCFR = "corrected"),
+    values = c(nCFR="orchid", dCFR = "mediumorchid", cCFR="darkorchid4"),
     aesthetics = c("color", "fill")
   ) + theme_minimal())
 
 saveRDS(cfr.p, tail(.args, 1))
-
-
-
-
