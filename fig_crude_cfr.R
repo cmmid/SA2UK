@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
 
 dt <- readRDS(.args[1])[iso3 == "ZAF"]
 
-window <- 7
+window <- 28
 
 dt[,c("cases7","deaths7") := .(frollsum(cases, window),frollsum(deaths, window))]
 
@@ -48,18 +48,16 @@ cfr.p <- force(ggplot(res.dt) + aes(date, cfr) +
   geom_ribbon(aes(fill = ver, ymin = lo50, ymax = hi50), alpha = 0.5) +
   coord_cartesian(
     ylim = c(0, .1),
+    xlim = as.Date(c("2020-04-01", "2021-01-01")),
     expand = FALSE
   ) + 
-  scale_y_continuous("Case Fatality Rate, CFR", labels = function(v) sprintf("%0.2g%%", v*100)) +
+  scale_y_continuous(sprintf("Case Fatality Rate (CFR)", window), labels = function(v) sprintf("%0.2g%%", v*100)) +
   scale_x_date(name = NULL, date_breaks = "months", date_minor_breaks = "weeks", date_labels = "%b") +
   scale_color_manual(
-    "CFR Calculation",
+    NULL,
     labels = c(nCFR="naive", dCFR=sprintf("lagged %i days", death.delay)),
-    values = c(nCFR="firebrick", dCFR="dodgerblue"),
+    values = c(nCFR="orchid", dCFR="darkorchid4"),
     aesthetics = c("color", "fill")
-  ) + theme_minimal() +
-  theme(
-    legend.position = c(0.5, 1), legend.justification = c(0.5, 1)
-  ))
+  ) + theme_minimal())
 
 saveRDS(cfr.p, tail(.args, 1))
