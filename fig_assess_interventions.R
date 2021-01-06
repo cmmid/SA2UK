@@ -1,6 +1,5 @@
 suppressPackageStartupMessages({
   require(data.table)
-  require(lubridate)
   require(ggplot2)
 })
 
@@ -8,6 +7,7 @@ suppressPackageStartupMessages({
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
+  "%s/outputs/phylo.rds",
   .debug[2],
   "%s/outputs/intervention_timing/%s.png"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -18,16 +18,36 @@ outcomes <- readRDS(.args[1])[iso3 == tariso]
 
 eras <- readRDS(.args[2])
 
-p <- ggplot(outcomes) +
-  aes(date) +
-  geom_line(aes(y=cases, linetype="cases"), alpha = 0.5) +
-  geom_line(aes(y=deaths, linetype="deaths"), alpha = 0.5) +
-  geom_line(aes(y=cases7, linetype="cases"), data = function(dt) dt[order(date),
-    .(date, cases7 = frollmean(cases, 7)), keyby=.(iso3)
-  ], alpha = 1) +
-  geom_line(aes(y=deaths7, linetype="deaths"), data = function(dt) dt[order(date),
-    .(date, deaths7 = frollmean(deaths, 7)), keyby=.(iso3)
-  ], alpha = 1) +
+phylo.frac <- readRDS(.args[3])
+
+outcomes[, var.frac := 0 ]
+outcomes[phylo.frac[!is.na(binop)], on=.(date), var.frac := binop ]
+outcomes[!between(date, phylo.frac[, min(date)], phylo.frac[, max(date)]), var.frac := NA ]
+
+death.delay <- 21
+
+outcomes[, del.var.frac := 0 ]
+outcomes[phylo.frac[!is.na(binop), .(date = date + 21, binop)], on=.(date), del.var.frac := binop ]
+outcomes[!between(date, phylo.frac[, min(date)+21], phylo.frac[, max(date)+21]), del.var.frac := NA ]
+
+roll.window <- 7
+
+outcomes[order(date), rollcases := frollmean(cases, roll.window), by=iso3 ]
+outcomes[order(date), rolldeaths := frollmean(deaths, roll.window), by=iso3 ]
+outcomes[, rollvarcases := rollcases * var.frac ]
+outcomes[, rollvardeaths := rolldeaths * del.var.frac ]
+
+mlt <- melt(
+  outcomes, id.vars = "date", measure.vars = c("cases", "deaths", "rollcases", "rolldeaths", "rollvarcases", "rollvardeaths")
+)[!is.na(value)]
+
+mlt[, outcome := fifelse(grepl("case", variable), "cases", "deaths")]
+mlt[, measure := fifelse(grepl("roll", variable), "rolling", "raw")]
+mlt[, variant := fifelse(grepl("var", variable), "variant", "all")]
+
+p <- ggplot(mlt[measure == "raw" | (value > 0.1)]) +
+  aes(date, y= value, color = variant, alpha = measure, linetype = outcome) +
+  geom_line() +
   geom_rect(
     aes(
       ymin = 0.1, ymax = Inf,
@@ -37,15 +57,17 @@ p <- ggplot(outcomes) +
     alpha = 0.2
   ) +
   theme_minimal() +
-  scale_y_log10("incidence", breaks = 10^(0:5), labels = scales::label_number_si()) +
+  scale_y_log10(sprintf("incidence (%i rolling mean)", roll.window), breaks = 10^(0:5), labels = scales::label_number_si()) +
   scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
+  scale_color_manual(name = NULL, labels = c(all = "all", variant = "est. 501Y.V2"), values = c(all="black", variant = "red")) +
+  scale_linetype_manual(name = NULL, values = c(cases="0220", deaths = "22")) +
+  scale_alpha_manual(name = NULL, values = c(raw=0.5, rolling = 1)) +
   scale_fill_manual(
     name = NULL,
-    breaks=c("pre","post","modification","variant"),
-    labels=c(pre="pre-intervention",post="post-intervention",modification="relaxation",variant="emergent variant"),
-    values = c(pre="firebrick", post="dodgerblue",modification="goldenrod",variant="red")
+    breaks=c("pre","post","relaxation","variant"),
+    labels=c(pre="pre-intervention",post="post-intervention",relaxation="relaxation",variant="emergent variant"),
+    values = c(pre="firebrick", post="dodgerblue",relaxation="goldenrod",variant="red")
   ) +
-  scale_linetype_discrete(name=NULL) +
   coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-02-01", "2021-01-01")), expand = FALSE)
   
 ggsave(tail(.args, 1), p, height = 3, width = 6, units = "in", dpi = 300)
