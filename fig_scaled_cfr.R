@@ -118,6 +118,7 @@ delayed <- copy(resbase)[which.max(cases.win > 0):.N][,
 delayed[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
 
 plot.dt <- rbind(corrected, naive, delayed, fill = TRUE)
+plot.dt[, ver := factor(ver, c("dCFR","cCFR","nCFR"), ordered = TRUE)]
 
 cfr.p <- force(ggplot(plot.dt) + aes(date, md) +
   geom_line(aes(color = ver)) +
@@ -136,6 +137,7 @@ cfr.p <- force(ggplot(plot.dt) + aes(date, md) +
   scale_x_date(name = NULL, date_breaks = "months", date_minor_breaks = "weeks", date_labels = "%b") +
   scale_color_manual(
     NULL,
+    breaks = c("dCFR","cCFR","nCFR"),
     labels = c(nCFR="naive", dCFR = "delayed", cCFR = "corrected"),
     values = c(nCFR="orchid", dCFR = "mediumorchid", cCFR="darkorchid4"),
     aesthetics = c("color", "fill")

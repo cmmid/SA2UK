@@ -79,7 +79,7 @@ p <- force(ggplot() +
     values = c(all="black", variant = "red", projection = "dodgerblue"),
     aesthetics = c("color", "fill")
   ) +
-  scale_linetype_manual(name = NULL, values = c(cases="solid", deaths = "dashed")) +
+  scale_linetype_manual(name = NULL, values = c(cases="solid", deaths = "longdash")) +
   scale_alpha_manual(name = NULL, values = c(raw=0.4, rolling = 1), guide = "none") +
   coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-04-01", "2021-01-01")), expand = FALSE) +
   theme_minimal())

@@ -55,13 +55,13 @@ AR.p <- force(ggplot(AR.dt) + aes(date, fill = sentinel) +
     ), data = serosurvey
   ) +
   scale_color_manual(
-    name = NULL,
+    name = "Age Groups",
     breaks = c(TRUE, FALSE),
     labels = c("20-49", "<20 & 50+"),
     values = c(`TRUE`="goldenrod", `FALSE`="grey"),
     aesthetics = c("color", "fill")
   ) +
-  scale_y_continuous("Cumulative Attack Fraction") +
+  scale_y_continuous("Cumulative Attack Fraction", labels = function(b) sprintf("%2g%%",b*100)) +
   scale_x_date(name = NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
   theme_minimal())
 
