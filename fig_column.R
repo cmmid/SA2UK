@@ -6,18 +6,12 @@ suppressPackageStartupMessages({
 })
 
 .args <- if (interactive()) sprintf(c(
-  "%s/phylo.rds", "%s/cfr.rds", "%s/timeseries.rds", "%s/AR.rds"
+  "%s/cfr.rds", "%s/timeseries.rds", "%s/AR.rds",
+  "%s/combined.png"
 ), "~/Dropbox/SA2UK/outputs/figs") else commandArgs(trailingOnly = TRUE)
 
 zlow <- as.Date("2020-10-15")
 zend <- as.Date("2021-01-01")
-
-zoom <- annotate(
-  "rect",
-  xmin = zlow, xmax = zend,
-  ymin = 0, ymax = Inf,
-  fill = "grey", alpha = 0.1
-)
 
 altcfrscale <-   list(scale_color_manual(
   NULL,
@@ -35,18 +29,17 @@ phylo <- readRDS(.args[1]) + coord_cartesian(
   ylim = c(0, 1),
   expand = FALSE
 )
-cfr <- readRDS(.args[2]) + theme(
+cfr <- readRDS(.args[1]) + theme(
   legend.position = c(0.4, 1), legend.justification = c(0.4, 1),
   legend.key.height = unit(.75, "line")
 ) + altcfrscale
 
-ts <- readRDS(.args[3]) + theme(
+ts <- readRDS(.args[2]) + theme(
   legend.direction = "horizontal",
   legend.position = c(0.5, 0), legend.justification = c(0.5, 0),
   legend.margin = margin(t=-1, b=-.25, unit = "line")
 )
-ar <- readRDS(.args[4]) +
-coord_cartesian(
+ar <- readRDS(.args[3]) + coord_cartesian(
   xlim = as.Date(c("2020-04-01","2021-01-01")),
   ylim = c(0, 1),
   expand = FALSE
@@ -65,4 +58,4 @@ DDEE
 res <- ts / ar / cfr + plot_annotation(tag_levels = "A") & 
   theme(text = element_text(size = 7), panel.grid.minor = element_blank())
 
-ggsave("combined.png", res, height = 6, width = 5, units = "in", dpi = 300)
+ggsave(tail(.args, 1), res, height = 6, width = 5, units = "in", dpi = 300)

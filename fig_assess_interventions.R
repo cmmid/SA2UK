@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/phylo.rds",
   .debug[2],
-  "%s/outputs/intervention_timing/%s.png"
+  "%s/outputs/figs/eras.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 tariso <- tail(.args, 2)[1]
@@ -17,6 +17,9 @@ tariso <- tail(.args, 2)[1]
 outcomes <- readRDS(.args[1])[iso3 == tariso]
 
 eras <- readRDS(.args[2])
+#' TODO update intervention timings
+eras[4, end := as.Date("2020-05-01") ]
+eras[5, start := as.Date("2020-05-02") ]
 
 phylo.frac <- readRDS(.args[3])
 
@@ -36,6 +39,8 @@ outcomes[order(date), rollcases := frollmean(cases, roll.window), by=iso3 ]
 outcomes[order(date), rolldeaths := frollmean(deaths, roll.window), by=iso3 ]
 outcomes[, rollvarcases := rollcases * var.frac ]
 outcomes[, rollvardeaths := rolldeaths * del.var.frac ]
+outcomes$cases <- as.numeric(outcomes$cases)
+outcomes$deaths <- as.numeric(outcomes$deaths)
 
 mlt <- melt(
   outcomes, id.vars = "date", measure.vars = c("cases", "deaths", "rollcases", "rolldeaths", "rollvarcases", "rollvardeaths")
@@ -45,7 +50,7 @@ mlt[, outcome := fifelse(grepl("case", variable), "cases", "deaths")]
 mlt[, measure := fifelse(grepl("roll", variable), "rolling", "raw")]
 mlt[, variant := fifelse(grepl("var", variable), "variant", "all")]
 
-p <- ggplot(mlt[measure == "raw" | (value > 0.1)]) +
+p <- force(ggplot(mlt[measure == "raw" | (value > 0.1)]) +
   aes(date, y= value, color = variant, alpha = measure, linetype = outcome) +
   geom_line() +
   geom_rect(
@@ -57,10 +62,10 @@ p <- ggplot(mlt[measure == "raw" | (value > 0.1)]) +
     alpha = 0.2
   ) +
   theme_minimal() +
-  scale_y_log10(sprintf("incidence (%i rolling mean)", roll.window), breaks = 10^(0:5), labels = scales::label_number_si()) +
+  scale_y_log10(sprintf("Incidence", roll.window), breaks = 10^(0:5), labels = scales::label_number_si()) +
   scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
   scale_color_manual(name = NULL, labels = c(all = "all", variant = "est. 501Y.V2"), values = c(all="black", variant = "red")) +
-  scale_linetype_manual(name = NULL, values = c(cases="0220", deaths = "22")) +
+  scale_linetype_manual(name = NULL, values = c(cases="solid", deaths = "longdash")) +
   scale_alpha_manual(name = NULL, values = c(raw=0.5, rolling = 1)) +
   scale_fill_manual(
     name = NULL,
@@ -68,6 +73,6 @@ p <- ggplot(mlt[measure == "raw" | (value > 0.1)]) +
     labels=c(pre="pre-intervention",post="post-intervention",relaxation="relaxation",variant="emergent variant"),
     values = c(pre="firebrick", post="dodgerblue",relaxation="goldenrod",variant="red")
   ) +
-  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-02-01", "2021-01-01")), expand = FALSE)
+  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", "2021-01-01")), expand = FALSE))
   
-ggsave(tail(.args, 1), p, height = 3, width = 6, units = "in", dpi = 300)
+saveRDS(p, tail(.args, 1))
