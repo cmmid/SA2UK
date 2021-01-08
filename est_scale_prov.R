@@ -6,20 +6,18 @@ suppressPackageStartupMessages({
 .debug <- c("~/Dropbox/SA2UK")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/prov_data.rds",
-  "%s/outputs/figs/ccfr_supplement.rds"
+  "%s/outputs/cfrs.rds"
 ), .debug) else commandArgs(trailingOnly = TRUE)
 
-# filtering for Western Cape data for main text figure
-#dt <- readRDS(.args[1])[province == "WC"]
-
-# unfiltered data for all provinces, for supplementary facet_wrap figure
 dt <- readRDS(.args[1])
+dt <- rbind(dt, dt[, .(province="all", cases = sum(cases), deaths = sum(deaths)), by=date])
 
 window <- 21
 
 dt[,
    c("cases.win","deaths.win") := 
-  .(frollsum(cases, window), frollsum(deaths, window))
+  .(frollsum(cases, window), frollsum(deaths, window)),
+  by=province
 ]
 
 delay_distro <- function(mu, sigma) return(
@@ -84,16 +82,16 @@ scale_cfr_rolling <- function(
   list(p_tt_series)
 }
 
-resbase <- dt[!is.na(cases.win)][order(date)][, .(date, cases.win, deaths.win) ]
+resbase <- dt[!is.na(cases.win)][order(date)][, .(cases.win, deaths.win), keyby=.(province, date) ]
 
 corrected <- bootstrap.dt[,{
   dd <- delay_distro(mu, sigma)
-  copy(resbase)[, cCFR := scale_cfr_rolling(cases.win, deaths.win, dd)]
-}, by=.(sample_id, province)][, {
+  copy(resbase)[, cCFR := scale_cfr_rolling(cases.win, deaths.win, dd), by=province ]
+}, by=.(sample_id) ][, {
   qs <- quantile(cCFR, probs = c(0.025, 0.5, 0.975), na.rm = TRUE)
   names(qs) <- c("lo","md","hi")
   as.list(qs)
-}, by=date][!is.na(md)]
+}, by=.(province, date) ][ !is.na(md) ]
 corrected[, ver := "cCFR" ]
 
 bino <- function(ci, pos, tot) as.data.table(t(mapply(
@@ -101,46 +99,17 @@ bino <- function(ci, pos, tot) as.data.table(t(mapply(
   x = pos, n = tot
 )))
 
-#naive <- copy(resbase)[cases.win > 0][, md := deaths.win / cases.win ][, ver := "nCFR" ]
-#naive[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
+naive <- copy(resbase)[cases.win > 0][, md := deaths.win / cases.win ][, ver := "nCFR" ]
+naive[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
 
-#deathdelay <- 21
+deathdelay <- 21
 
-#delayed <- copy(resbase)[which.max(cases.win > 0):.N][,
-  #.(date = head(date, -deathdelay), cases.win = head(cases.win, -deathdelay), deaths.win = tail(deaths.win, -deathdelay))
-#][, md := deaths.win / cases.win ][, ver := "dCFR" ]
-#delayed[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
+delayed <- copy(resbase)[which.max(cases.win > 0):.N][,
+  .(date = head(date, -deathdelay), cases.win = head(cases.win, -deathdelay), deaths.win = tail(deaths.win, -deathdelay)),
+  by=province
+][, md := deaths.win / cases.win ][, ver := "dCFR" ]
+delayed[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
 
-#plot.dt <- rbind(corrected, naive, delayed, fill = TRUE)
-plot.dt <- rbind(corrected, fill = TRUE)
-plot.dt[, ver := "dCFR"]
+cfrs.dt <- rbind(corrected, naive, delayed, fill = TRUE)
 
-
-# I turned off the naive and delayed CFRs and have added a 
-# facet_wrap at the end of the plot over the difference provinces.
-# At least, this is how I imagined it working
-cfr.p <- force(ggplot(plot.dt) + aes(date, md) +
-  geom_line(aes(color = ver)) +
-  geom_ribbon(aes(fill = ver, ymin = lo, ymax = hi), alpha = 0.2) +
-#  geom_ribbon(aes(fill = ver, ymin = lo50, ymax = hi50), alpha = 0.5) +
-  coord_cartesian(
-    ylim = c(0, .075),
-    xlim = as.Date(c("2020-04-01", "2021-01-01")),
-    expand = FALSE
-  ) + 
-  scale_y_continuous(
-    "Case Fatality Ratio (CFR)",
-    breaks = c(0,0.025,0.05,0.075),
-    labels = function(v) sprintf("%0.2g%%", v*100)
-  ) +
-  scale_x_date(name = NULL, date_breaks = "months", date_minor_breaks = "weeks", date_labels = "%b") +
-  scale_color_manual(
-    NULL,
-    breaks = c("dCFR"),
-    labels = c(dCFR = "delayed"),
-    values = c(dCFR="darkorchid4"),
-    aesthetics = c("color", "fill")
-  ) + theme_minimal()
-    + facet_wrap(~province)
-
-saveRDS(cfr.p, tail(.args, 1))
+saveRDS(cfrs.dt, tail(.args, 1))

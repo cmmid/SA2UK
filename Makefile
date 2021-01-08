@@ -50,7 +50,10 @@ ${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
 ${SOURCE}/prov_data.rds: get_prov_data.R | ${SOURCE}
 	${R}
 
-epi: ${SOURCE}/epi_data.rds ${SOURCE}/prov_data.rds
+${SINK}/cfrs.rds: est_scale_prov.R ${SOURCE}/prov_data.rds | ${SINK}
+	${R}
+
+epi: ${SOURCE}/epi_data.rds ${SOURCE}/prov_data.rds ${SINK}/cfrs.rds
 
 resetepi:
 	rm ${SOURCE}/epi_data.rds
@@ -114,7 +117,7 @@ ${SINK}/figs/timeseries.rds: fig_relax_proj.R ${SOURCE}/epi_data.rds ${SINK}/int
 ${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SINK}/phylo.rds | ${SINK}/figs
 	${R}
 
-${SINK}/figs/cfr.rds: fig_scaled_cfr.R ${SOURCE}/epi_data.rds | ${SINK}/figs
+${SINK}/figs/cfr.rds: fig_scaled_cfr.R ${SINK}/cfrs.rds | ${SINK}/figs
 	${R}
 
 ${SINK}/figs/AR.rds: fig_relax_AR.R ${SOURCE}/urbanization.rds ${SOURCE}/pops/ZAF.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs
