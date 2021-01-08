@@ -33,10 +33,12 @@ suppressPackageStartupMessages({
   source(file.path(cm_path, "R", "covidm.R"))
 })
 
+tarqs <- c("lo.lo"=0.025,"lo"=0.25,"med"=0.5,"hi"=0.75,"hi.hi"=0.975)
+
 params <- readRDS(.args[2])
 yuref <- readRDS(.args[3])[order(eqs)]
-qs.inds <- with(yuref, c(which.max(eqs >= 0.25),which.max(eqs >= 0.5),which.max(eqs >= 0.75)))
-yuuse <- yuref[qs.inds][, variable := c("lo","med","hi") ][,-c("trial","chain","lp","ll","mult","size")]
+qs.inds <- with(yuref, sapply(tarqs, function(v) which.max(eqs >= v)))
+yuuse <- yuref[qs.inds][, variable := names(tarqs) ][,-c("trial","chain","lp","ll","mult","size")]
 
 intros.dt <- readRDS(.args[5])[iso3 == tariso]
 day0 <- as.Date(intros.dt[, min(date)])
@@ -54,15 +56,15 @@ Rts <- readRDS(.args[4])[era != "transition"]
 run_options <- melt(
   Rts[era == "pre"],
   id.vars = "era",
-  measure.vars = c("lo", "med", "hi"),
+  measure.vars = names(tarqs),
   value.name = "r0"
 )[, model_seed := 1234L ][yuuse, on=.(variable) ][,
   umul := r0 / baseR
 ]
 
 timings <- readRDS(.args[7])
-#' TODO update timings?
-startrelax <- as.integer(as.Date("2020-05-01") - day0)
+
+startrelax <- as.integer(timings[era == "relaxation", start] - day0)
 endsim <- as.integer(timings[era == "relaxation", end] - day0) + 30
 
 startpost <- as.integer(timings[era == "transition", start[1]] - day0)
