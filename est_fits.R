@@ -18,8 +18,8 @@ pars <- readRDS(.args[2])
 load("NGM.rda")
 
 #' TODO remove magic numbers for quantile targets
-tarqs <- c("lo","med","hi")
-extractRt <- function(dt, cols = tarqs) melt(
+tarqs <- c("lo.lo"=0.025,"lo"=0.25,"med"=0.5,"hi"=0.75,"hi.hi"=0.975)
+extractRt <- function(dt, cols = names(tarqs)) melt(
   dt[,.SD, .SDcols = cols],
   measure.vars = cols, variable.name = "q"
 )
@@ -27,9 +27,11 @@ extractRt <- function(dt, cols = tarqs) melt(
 preR0 <- extractRt(R0ref[era == "pre"])
 postR0 <- extractRt(R0ref[era == "post"])
 yuref <- readRDS(.args[3])
-inds <- yuref[order(eqs)][with(yuref[order(eqs)], c(which.max(eqs >= .25), which.max(eqs >= .5), which.max(eqs >= .75)))]
 
-inds[, q := tarqs ]
+
+inds <- yuref[order(eqs)][with(yuref[order(eqs)], sapply(tarqs, function(v) which.max(eqs >= v)))]
+
+inds[, q := names(tarqs) ]
 inds[preR0, on = .(q), umul := value / baseR ]
 inds[postR0, on = .(q), tarR := value ]
 

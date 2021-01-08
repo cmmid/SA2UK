@@ -66,6 +66,8 @@ early_reported_cases[,
   breakpoint := era %in% c("censor", "transition", "tail")
 ]
 
+est.qs <- unique(c(pnorm(seq(-1,0,by=0.25)), pnorm(seq(0,1,by=0.25))))
+
 Rtcalc <- function(case.dt, keep.start, keep.end, era.labels) estimate_infections(
   reported_cases = case.dt,
   generation_time = generation_time,
@@ -78,7 +80,8 @@ Rtcalc <- function(case.dt, keep.start, keep.end, era.labels) estimate_infection
     control = list(adapt_delta = 0.9)
   ),
   gp = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  CrIs = est.qs
 )$samples[variable == "R", .(value), by=.(sample, date)][
   between(date, keep.start, keep.end)
 ][, {
