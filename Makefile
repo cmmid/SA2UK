@@ -47,8 +47,10 @@ ${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
-${SOURCE}/wc_data.rds: get_wc_data.R | ${SOURCE}
+${SOURCE}/prov_data.rds: get_prov_data.R | ${SOURCE}
 	${R}
+
+epi: ${SOURCE}/epi_data.rds ${SOURCE}/prov_data.rds
 
 resetepi:
 	rm ${SOURCE}/epi_data.rds
