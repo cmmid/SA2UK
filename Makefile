@@ -45,6 +45,15 @@ include support.makefile
 ${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
 	${R}
 
+# get + subset the JHU data
+# was ECDC data, but now that's only weekly
+${SOURCE}/wc_data.rds: get_wc_data.R | ${SOURCE}
+	${R}
+
+resetepi:
+	rm ${SOURCE}/epi_data.rds
+	make ${SOURCE}/epi_data.rds
+
 ${SINK}/phylo.rds: est_phylo_share.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv
 	${R}
 
