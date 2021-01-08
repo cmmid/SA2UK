@@ -11,9 +11,12 @@ suppressPackageStartupMessages({
 ), .debug) else commandArgs(trailingOnly = TRUE)
 
 dt <- readRDS(.args[1])
+
+# filtering for the two subplots
 plot1.dt <- dt[ver == "cCFR" & date >= "2020-09-01" & province != "all"]
 plot2.dt <- dt[ver == "cCFR" & date >= "2020-09-01" & province == "all"]
 
+# renaming the provinces
 levels(plot1.dt$province) <- list(
                      "Eastern Cape" = "EC",  
                      "Free State" = "FS",
@@ -27,7 +30,7 @@ levels(plot1.dt$province) <- list(
                      "South Africa" = "all")
 
 
-
+# province-level cCFR plot
 cfr.p1 <- ggplot(plot1.dt) + aes(date, md) +
     facet_wrap(~province, scale = "free", ncol = 3, nrow = 3) +  
     geom_line(aes(color = ver)) +
@@ -52,8 +55,7 @@ cfr.p1 <- ggplot(plot1.dt) + aes(date, md) +
           legend.position = "none")
     #labs(tag = "")
 
-cfr.p1
-
+# all of South Africa subplot
 cfr.p2 <- ggplot(plot2.dt) + aes(date, md) +
     geom_line(aes(color = ver)) +
     geom_ribbon(aes(fill = ver, ymin = lo, ymax = hi), alpha = 0.2) +
@@ -78,12 +80,13 @@ cfr.p2 <- ggplot(plot2.dt) + aes(date, md) +
           plot.title = element_text(hjust = 0.5)) + 
     labs(title = "South Africa")
  
-
+# putting the two panels together using the library patchwork
 layout <- "AAAAAA
            AAAAAA
            AAAAAA
            BBBBBB"
 
-cfr.p1 + cfr.p2 + plot_layout(design = layout) 
+cfr.p <- cfr.p1 + cfr.p2 + plot_layout(design = layout) 
 
+# saving the resulting whole plot
 saveRDS(cfr.p, tail(.args, 1))
