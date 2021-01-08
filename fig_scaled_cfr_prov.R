@@ -32,11 +32,11 @@ cfr.p1 <- ggplot(plot1.dt) + aes(date, md) +
     facet_wrap(~province, scale = "free", ncol = 3, nrow = 3) +  
     geom_line(aes(color = ver)) +
     geom_ribbon(aes(fill = ver, ymin = lo, ymax = hi), alpha = 0.2) +
-    coord_cartesian(ylim = c(0, .075),
-                    ##xlim = as.Date(c("2020-04-01", NA)),
+    coord_cartesian(ylim = c(0, .10),
+                    #xlim = as.Date(c("2020-04-01", NA)),
                     expand = FALSE) +
-    scale_y_continuous("Case Fatality Ratio (CFR)",
-                       breaks = c(0,0.025,0.05,0.075),
+    scale_y_continuous("corrected Case Fatality Ratio (cCFR)",
+                       #breaks = c(0,0.025,0.05,0.075,0.1),
                        labels = scales::percent) +
     scale_x_date(name = "", 
                  date_breaks = "months",
@@ -49,8 +49,10 @@ cfr.p1 <- ggplot(plot1.dt) + aes(date, md) +
                        aesthetics = c("color", "fill")) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90),
-          legend.position = "none") 
+          legend.position = "none")
     #labs(tag = "")
+
+cfr.p1
 
 cfr.p2 <- ggplot(plot2.dt) + aes(date, md) +
     geom_line(aes(color = ver)) +
@@ -58,7 +60,7 @@ cfr.p2 <- ggplot(plot2.dt) + aes(date, md) +
     coord_cartesian(ylim = c(0, .075),
                     ##xlim = as.Date(c("2020-04-01", NA)),
                     expand = FALSE) +
-    scale_y_continuous("Case Fatality Ratio (CFR)",
+    scale_y_continuous("",
                        breaks = c(0,0.025,0.05,0.075),
                        labels = scales::percent) +
     scale_x_date(name = "", 
@@ -82,6 +84,6 @@ layout <- "AAAAAA
            AAAAAA
            BBBBBB"
 
-(cfr.p1 + cfr.p2 + plot_layout(design = layout))
+cfr.p1 + cfr.p2 + plot_layout(design = layout) 
 
 saveRDS(cfr.p, tail(.args, 1))
