@@ -1,6 +1,7 @@
 suppressPackageStartupMessages({
   require(data.table)
   require(ggplot2)
+  require(patchwork)
 })
 
 .debug <- c("~/Dropbox/SA2UK")
@@ -76,7 +77,6 @@ cfr.p2 <- ggplot(plot2.dt) + aes(date, md) +
     labs(title = "South Africa")
  
 
-library(patchwork)
 layout <- "AAAAAA
            AAAAAA
            AAAAAA
