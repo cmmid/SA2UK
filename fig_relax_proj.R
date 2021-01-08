@@ -49,6 +49,7 @@ mlt[, measure := fifelse(grepl("roll", variable), "rolling", "raw")]
 mlt[, variant := fifelse(grepl("var", variable), "variant", "all")]
 
 proj.dt <- readRDS(.args[4])[compartment %in% c("cases","death_o")][, .(value = sum(value)), by=.(date, compartment, q)]
+proj.dt[q=="med", q:= "md" ]
 
 proj.wide <- dcast(proj.dt, date + compartment ~ q)
 proj.wide[, outcome := fifelse(compartment == "cases", "cases", "deaths")]
@@ -57,8 +58,20 @@ proj.wide[, variant := "projection" ]
 
 p <- force(ggplot() +
   aes(date, y = value, color = variant, alpha = measure, linetype = outcome) +
-  geom_ribbon(
-    aes(ymin=lo, ymax=hi, y=NULL, color = NULL, fill = variant, alpha = "raw"),
+  geom_line(
+    aes(y=lo), size = 0.3, alpha = 0.5,
+    data = proj.wide, show.legend = FALSE
+  ) +
+  geom_line(
+    aes(y=hi), size = 0.3, alpha = 0.5,
+    data = proj.wide, show.legend = FALSE
+  ) +
+  geom_line(
+    aes(y=lo.lo), size = 0.2, alpha = 0.2,
+    data = proj.wide, show.legend = FALSE
+  ) +
+  geom_line(
+    aes(y=hi.hi), size = 0.2, alpha = 0.2,
     data = proj.wide, show.legend = FALSE
   ) +
   geom_line(

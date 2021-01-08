@@ -99,7 +99,7 @@ sim <- data.table(); for(i in 1:nrow(run_options)){
   # relaxfact <- pmax(1-seq(0,by=relaxrate,length.out = length(relaxcons)),0)
   
   tier2 <- as.Date("2020-08-15")+7
-  relaxrate <- c(0.03, 0.035, 0.075)[i]
+  relaxrate <- c(0.02, 0.03, 0.035, 0.037, 0.04)[i]
   relaxfact <- 1-(1+exp(-relaxrate*as.numeric(relaxtms-tier2)))^-1
   relaxfact <- 0.5*(relaxfact-0.5)/(relaxfact[1]-0.5)+0.5
   #' @example 
@@ -152,7 +152,7 @@ sim <- data.table(); for(i in 1:nrow(run_options)){
   
 }
 
-res <- sim[, .(date = t + day0, group, compartment, value, q = c("lo","md","hi")[r_id])]
+res <- sim[, .(date = t + day0, group, compartment, value, q = names(tarqs)[r_id])]
 
 #' @examples 
 #' ggplot(sim[compartment == "cases", .(value = sum(value)), by=.(r_id, date = t+params_back$date0)]) +

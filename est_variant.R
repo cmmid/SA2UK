@@ -41,23 +41,25 @@ scens[, schoolr := school*relaxfact ][, workr := work*relaxfact ][, otherr := ot
 
 load("NGM.rda")
 
+tarqs <- c("lo.lo"=0.025,"lo"=0.25,"med"=0.5,"hi"=0.75,"hi.hi"=0.975)
+
 #' establish baseline pop
 yuref <- readRDS(.args[3])[order(eqs)]
-qs.inds <- with(yuref, c(which.max(eqs >= 0.25),which.max(eqs >= 0.5),which.max(eqs >= 0.75)))
-yuuse <- yuref[qs.inds][, variable := c("lo","med","hi") ][,-c("trial","chain","lp","ll","mult","size")]
+qs.inds <- with(yuref, sapply(tarqs, function(v) which.max(eqs >= v)))
+yuuse <- yuref[qs.inds][, variable := names(tarqs) ][,-c("trial","chain","lp","ll","mult","size")]
 
 run_options <- melt(
   Rts[era == "pre"],
   id.vars = "era",
-  measure.vars = c("lo", "med", "hi"),
+  measure.vars = names(tarqs),
   value.name = "r0"
-)[yuuse, on=.(variable) ][,
+)[, model_seed := 1234L ][yuuse, on=.(variable) ][,
   umul := r0 / baseR
 ][
   melt(
     Rts[era == "variant"],
     id.vars = "era",
-    measure.vars = c("lo", "med", "hi"),
+    measure.vars = names(tarqs),
     value.name = "varr0"
   ), on=.(variable)
 ]

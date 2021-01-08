@@ -19,24 +19,6 @@ dt[,
   .(frollsum(cases, window), frollsum(deaths, window))
 ]
 
-dd_mean_mid <- 13.0
-dd_median_mid <- 9.1
-
-dd_mu_mid <- log(dd_median_mid)
-dd_sigma_mid <- sqrt(2 * (log(dd_mean_mid) - dd_mu_mid))
-
-dd_mean_low <- 8.7
-dd_median_low <- 6.7
-
-dd_mu_low <- log(dd_median_low)
-dd_sigma_low <- sqrt(2 * (log(dd_mean_low) - dd_mu_low))
-
-dd_mean_high <- 20.9
-dd_median_high <- 13.7
-
-dd_mu_high <- log(dd_median_high)
-dd_sigma_high <- sqrt(2 * (log(dd_mean_high) - dd_mu_low))
-
 delay_distro <- function(mu, sigma) return(
   function(x) plnorm(x+1, mu, sigma) - plnorm(x, mu, sigma)
 )
@@ -123,12 +105,12 @@ plot.dt[, ver := factor(ver, c("dCFR","cCFR","nCFR"), ordered = TRUE)]
 cfr.p <- force(ggplot(plot.dt) + aes(date, md) +
   geom_line(aes(color = ver)) +
   geom_ribbon(aes(fill = ver, ymin = lo, ymax = hi), alpha = 0.2) +
-#  geom_ribbon(aes(fill = ver, ymin = lo50, ymax = hi50), alpha = 0.5) +
+  # geom_ribbon(aes(fill = ver, ymin = lo50, ymax = hi50), alpha = 0.5) +
   coord_cartesian(
     ylim = c(0, .075),
-    xlim = as.Date(c("2020-04-01", "2021-01-01")),
+    xlim = as.Date(c("2020-04-01", NA)),
     expand = FALSE
-  ) + 
+  ) +
   scale_y_continuous(
     "Case Fatality Ratio (CFR)",
     breaks = c(0,0.025,0.05,0.075),
