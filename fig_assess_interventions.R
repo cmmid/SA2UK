@@ -17,9 +17,6 @@ tariso <- tail(.args, 2)[1]
 outcomes <- readRDS(.args[1])[iso3 == tariso]
 
 eras <- readRDS(.args[2])
-#' TODO update intervention timings
-eras[4, end := as.Date("2020-05-01") ]
-eras[5, start := as.Date("2020-05-02") ]
 
 phylo.frac <- readRDS(.args[3])
 
