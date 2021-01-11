@@ -4,136 +4,65 @@ suppressPackageStartupMessages({
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/scenarios/%s.rds",
+  "%s/outputs/params/%s.rds",
   "%s/inputs/pops/%s.rds",
-  "%s/inputs/yuqs/%s.rds",
-  "%s/outputs/r0/%s.rds",
-  "%s/outputs/introductions/%s.rds",
   "%s/inputs/urbanization.rds",
   "%s/outputs/projections/%s.rds",
   .debug[2],
-  "../covidm",
   "%s/variant/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-#' targets
-Rts <- readRDS(.args[4])
+tariso <- tail(.args, 2)[1]
+
+#' targets included here in `variant` column
+fits <- readRDS(.args[1])
 
 #' get susceptible depletion
-proj.dt <- readRDS(.args[7])[compartment == "R" & date == "2020-10-15"]
+proj.dt <- readRDS(.args[4])[compartment == "R" & date == max(date) ]
+cmpdate <- proj.dt[1, date]
+
 params <- readRDS(.args[2])
-urbfrac <- readRDS(.args[6])[iso3 == tariso, value / 100]
+urbfrac <- readRDS(.args[3])[iso3 == tariso, value / 100]
 params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
 proj.dt[, AR := value / params$pop[[1]]$size[as.numeric(group)] ]
-proj.dt[q == "md", q := "med" ]
-
-#' get inventions at post, then relax
-day0 <- readRDS(.args[5])[, min(date)]
-scens <- readRDS(.args[1])[scen_id == 2]
-relaxend <- as.Date("2020-10-15")
-relaxstart <- as.Date("2020-05-01")
-relaxrate <- c(0.03, 0.035, 0.075)
-relaxinit <- 1-(1+exp(-relaxrate*as.numeric(relaxstart-tier2)))^-1
-relaxfact <- 1-(1+exp(-relaxrate*as.numeric(relaxend-tier2)))^-1
-relaxfact <- 0.5*(relaxfact-0.5)/(relaxinit-0.5)+0.5
-
-scens[, schoolr := school*relaxfact ][, workr := work*relaxfact ][, otherr := other*relaxfact ][, self_isor := self_iso*relaxfact ]
 
 load("NGM.rda")
 
-tarqs <- c("lo.lo"=0.025,"lo"=0.25,"med"=0.5,"hi"=0.75,"hi.hi"=0.975)
+tier2 <- as.Date("2020-08-15")
 
-#' establish baseline pop
-yuref <- readRDS(.args[3])[order(eqs)]
-qs.inds <- with(yuref, sapply(tarqs, function(v) which.max(eqs >= v)))
-yuuse <- yuref[qs.inds][, variable := names(tarqs) ][,-c("trial","chain","lp","ll","mult","size")]
-
-run_options <- melt(
-  Rts[era == "pre"],
-  id.vars = "era",
-  measure.vars = names(tarqs),
-  value.name = "r0"
-)[, model_seed := 1234L ][yuuse, on=.(variable) ][,
-  umul := r0 / baseR
-][
-  melt(
-    Rts[era == "variant"],
-    id.vars = "era",
-    measure.vars = names(tarqs),
-    value.name = "varr0"
-  ), on=.(variable)
-]
-
-withdepletion <- list()
-nodepletion <- list()
-
-for (qtar in run_options$variable) {
-  opts <- run_options[variable == qtar]
-  ar <- proj.dt[q == qtar]$AR
-  uf <- opts[, umul*rep(as.numeric(.SD), each = 2), .SDcols = grep("^u_", names(run_options))]
-  ys <- opts[, rep(as.numeric(.SD), each = 2), .SDcols = grep("^y_", names(run_options))]
-  scn <- scens[q==qtar, .(home = home, school = schoolr, work = workr, other = otherr, self_iso = self_isor)]
-  
-  withdepletion[[qtar]] <- with(scn,
-    opts$varr0/cm_ngm(
-      params,
-      uf*(1-ar),
-      contact_reductions = c(home,work,school,other),
-      fIs_reductions = self_iso, ymod = ys
-    )$R0
-  )
-  
-  nodepletion[[qtar]] <- with(
-    scn,
-    opts$varr0/cm_ngm(
-      params,
-      uf*(1-ar*.75),
-      contact_reductions = c(home,work,school,other),
-      fIs_reductions = self_iso,
-      ymod = ys
-    )$R0
-  )
-
+rfs <- function(k, shft) {
+  relaxref <- (1+exp(-k*as.numeric(as.Date("2020-05-01")-tier2-shft)))^-1
+  relaxref + 1 - (1+exp(-k*as.numeric(cmpdate-tier2-shft)))^-1
 }
+
+fits[, relaxfactor := rfs(k, shft) ]
+
+sims <- rbindlist(lapply(1:nrow(fits), function(i) with(as.list(fits[i,.(variantR=variant, large, small, sympt, relaxfactor)]), {
+  AR <- proj.dt[sample == i, AR]
+  us <- rep(fits[i, as.numeric(.SD)*umod, .SDcols = grep("^u_",names(fits))], each = 2)
+  ys <- rep(fits[i, as.numeric(.SD), .SDcols = grep("^y_",names(fits))], each = 2)
+  testpop <- params; testpop$pop[[1]]$y <- ys
+  testpop$pop[[1]]$u <- testpop$pop[[1]]$u*us
+  withdepl <- variantR/cm_ngm(
+    testpop,
+    1-AR,
+    contact_reductions = c(0, small, large, small)*relaxfactor,
+    fIs_reductions = sympt*relaxfactor
+  )$R0
+  fixeddepl <- variantR/cm_ngm(
+    testpop,
+    1-AR*.75,
+    contact_reductions = c(0, small, large, small)*relaxfactor,
+    fIs_reductions = sympt*relaxfactor
+  )$R0
+  eff <- optimize(function(eff) (variantR/cm_ngm(
+    testpop,
+    1-AR*eff,
+    contact_reductions = c(0, small, large, small)*relaxfactor,
+    fIs_reductions = sympt*relaxfactor
+  )$R0 - 1)^2, interval = c(0.01,0.99))$minimum
   
-#' now we have the fully depleted population
-#' + observed Reff
-#' 
-#' option 1: full cross protective - what multiple of uf would be required to observe
-#' this Reff, given depletion & modification era reductions?
-#' that multiple => increase of R0
+  list(sample=i, withdepl = withdepl, fixeddepl = fixeddepl, tarescape = 1-eff)
+})))
 
-ufs <- mapply(
-  function(br, sfrac) br/refR0 * sfrac,
-  br = baseRs,
-  sfrac = lapply(1:5, function(ri) 1 - allbind[r_id == ri, AR]),
-  SIMPLIFY = FALSE
-)
-
-iv_data <- scenario[scen_id != 1 & !is.na(self_iso)][order(start_day)][.N]
-
-varR <- melt(Rts[era == "variant"], id.vars = "era", measure.vars = 2:6)$value
-
-Rmultipliers_with_depletion <- mapply(function(uf, R) with(
-  iv_data,
-  R/cm_ngm(params_back, R0_multiplier = uf, contact_reductions = c(home,work,school,other), fIs_reductions = self_iso)$R0
-), uf = ufs, R = varR)
-
-ufs_non_depl <- mapply(
-  function(br, sfrac) br/refR0 * sfrac,
-  br = baseRs,
-  sfrac = 1,
-  SIMPLIFY = FALSE
-)
-
-Rmultipliers_non_depletion <- mapply(function(uf, R) with(
-  iv_data,
-  R/cm_ngm(params_back, R0_multiplier = uf, contact_reductions = c(home,work,school,other), fIs_reductions = self_iso)$R0
-), uf = ufs_non_depl, R = varR)
-
-res <- data.table(
-  model = c(rep("cross-protected", 5), rep("susceptible", 5)),
-  Rfactor = c(Rmultipliers_with_depletion, Rmultipliers_non_depletion)
-)
-
-saveRDS(res, tail(.args, 1))
+saveRDS(sims, tail(.args, 1))

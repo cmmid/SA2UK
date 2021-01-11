@@ -10,12 +10,13 @@ suppressPackageStartupMessages({
   "%s/outputs/figs/ccfr.rds"
 ), .debug) else commandArgs(trailingOnly = TRUE)
 
-plot.dt <- readRDS(.args[1])[province == "WC"]
+plot.dt <- readRDS(.args[1])[province == "WC" & date > "2020-05-15"]
 
 cfr.p <- force(ggplot(plot.dt) + aes(date, md) +
   geom_line(aes(color = ver)) +
-  geom_ribbon(aes(fill = ver, ymin = lo, ymax = hi), alpha = 0.2) +
-  # geom_ribbon(aes(fill = ver, ymin = lo50, ymax = hi50), alpha = 0.5) +
+  geom_ribbon(aes(fill = ver, ymin = lo.lo, ymax = hi.hi), alpha = 0.1) +
+  geom_ribbon(aes(fill = ver, ymin = lo, ymax = hi), alpha = 0.25) +
+  
   coord_cartesian(
     ylim = c(0, .075),
     xlim = as.Date(c("2020-04-01", NA)),

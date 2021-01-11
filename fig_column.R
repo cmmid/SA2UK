@@ -6,7 +6,7 @@ suppressPackageStartupMessages({
 })
 
 .args <- if (interactive()) sprintf(c(
-  "%s/cfr.rds", "%s/timeseries.rds", "%s/AR.rds",
+  "%s/ccfr.rds", "%s/timeseries.rds", "%s/AR.rds",
   "%s/combined.png"
 ), "~/Dropbox/SA2UK/outputs/figs") else commandArgs(trailingOnly = TRUE)
 
@@ -39,21 +39,18 @@ ts <- readRDS(.args[2]) + theme(
   legend.position = c(0.5, 0), legend.justification = c(0.5, 0),
   legend.margin = margin(t=-1, b=-.25, unit = "line")
 )
+enddate <- "2021-01-07"
+
 ar <- readRDS(.args[3]) + coord_cartesian(
-  xlim = as.Date(c("2020-04-01","2021-01-01")),
+  xlim = as.Date(c("2020-04-01",enddate)),
   ylim = c(0, 1),
   expand = FALSE
 ) + theme(
-  legend.position = c(0, 1), legend.justification = c(0, 1),
-  legend.key.height = unit(.75, "line")
+  legend.position = c(0.05, 0.95), legend.justification = c(0, 1),
+  legend.key.height = unit(.75, "line"),
+  legend.margin = margin(b=-.25, unit = "line"),
+  legend.title = element_text(size=rel(0.9))
 )
-
-playout <- "
-AAAA
-BBBB
-CCCC
-DDEE
-"
 
 res <- ts / ar / cfr + plot_annotation(tag_levels = "A") & 
   theme(text = element_text(size = 7), panel.grid.minor = element_blank())

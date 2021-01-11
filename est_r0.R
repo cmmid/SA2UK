@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/yuqs/%s.rds",
-  "2", "1e3", # cores, samples
+  "2", "4e3", # cores, samples
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -68,7 +68,7 @@ early_reported_cases[,
 
 est.qs <- unique(c(pnorm(seq(-1,0,by=0.25)), pnorm(seq(0,1,by=0.25))))
 
-Rtcalc <- function(case.dt, keep.start, keep.end, era.labels) estimate_infections(
+Rtcalc <- function(case.dt) estimate_infections(
   reported_cases = case.dt,
   generation_time = generation_time,
   delays = delay_opts(incubation_period),
@@ -82,16 +82,17 @@ Rtcalc <- function(case.dt, keep.start, keep.end, era.labels) estimate_infection
   gp = NULL,
   verbose = TRUE,
   CrIs = est.qs
-)$samples[variable == "R", .(value), by=.(sample, date)][
-  between(date, keep.start, keep.end)
-][, {
-  qs <- quantile(value, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
-  names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
-  as.list(qs)
-}, keyby = .(date)][, era := eval(era.labels) ]
+)
 
-results <- Rtcalc(
-  early_reported_cases,
+processRt <- function(
+  rt, keep.start, keep.end,
+  era.labels
+) rt$samples[variable == "R", .(value), by=.(sample, date)][
+  between(date, keep.start, keep.end)
+][, era := eval(era.labels), by= sample ]
+
+
+results <- processRt(Rtcalc(early_reported_cases),
   lims.dt[era == "pre", end], lims.dt[era == "post", start],
   expression(c("pre",rep("transition",.N-2),"post"))
 )
@@ -116,8 +117,24 @@ if (lims.dt[era == "variant", .N]) {
   with(lims.dt[era == "variant"], mod_reported_cases[between(date, start, end), breakpoint := FALSE ])
   results <- rbind(
     results,
-    Rtcalc(mod_reported_cases, lims.dt[era == "variant", start], lims.dt[era == "variant", start], "variant")
+    processRt(Rtcalc(mod_reported_cases), lims.dt[era == "variant", start], lims.dt[era == "variant", start], "variant")
   )
 }
 
-saveRDS(results, tail(.args, 1))
+ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
+
+#' @examples 
+#' require(ggplot2)
+#' ggplot(results[era != "variant"]) + aes(date, value, group = sample) +
+#'  geom_line(alpha = 0.05) + theme_minimal()
+#' ggplot(results[!(era %in% c("variant", "transition"))][sample %in% sample(.N/2, 100)]) + aes(era, value, group = sample) +
+#'  geom_line(alpha = 0.05) + theme_minimal()
+#' ggplot(ret[, .(preq=order(pre)/.N, postq=order(post)/.N)]) +
+#'  aes(preq, postq) + geom_point() + theme_minimal()
+#' ggplot(ret[, .(pre, post)]) +
+#'  aes(pre, post) + geom_point() + theme_minimal()
+#' ggplot(ret[, .(post, variant)]) +
+#'  aes(post, variant) + geom_point() + theme_minimal()
+
+saveRDS(ret, tail(.args, 1))
+

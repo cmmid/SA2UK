@@ -24,7 +24,7 @@ delay_distro <- function(mu, sigma) return(
   function(x) plnorm(x+1, mu, sigma) - plnorm(x, mu, sigma)
 )
 
-length_out_arg <- 100000
+length_out_arg <- 10000
 
 # hospital-to-death (Lognormal truncated) distribution parameter range
 # Linton et al. (2020) - lower limit, closest to SA data
@@ -88,8 +88,8 @@ corrected <- bootstrap.dt[,{
   dd <- delay_distro(mu, sigma)
   copy(resbase)[, cCFR := scale_cfr_rolling(cases.win, deaths.win, dd), by=province ]
 }, by=.(sample_id) ][, {
-  qs <- quantile(cCFR, probs = c(0.025, 0.5, 0.975), na.rm = TRUE)
-  names(qs) <- c("lo","md","hi")
+  qs <- quantile(cCFR, probs = c(0.025, 0.25, 0.5, 0.75, 0.975), na.rm = TRUE)
+  names(qs) <- c("lo.lo","lo","md","hi","hi.hi")
   as.list(qs)
 }, by=.(province, date) ][ !is.na(md) ]
 corrected[, ver := "cCFR" ]
@@ -100,7 +100,8 @@ bino <- function(ci, pos, tot) as.data.table(t(mapply(
 )))
 
 naive <- copy(resbase)[cases.win > 0][, md := deaths.win / cases.win ][, ver := "nCFR" ]
-naive[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
+naive[, c("lo.lo","hi.hi") := bino(0.95, deaths.win, cases.win) ]
+naive[, c("lo","hi") := bino(0.5, deaths.win, cases.win) ]
 
 deathdelay <- 21
 
@@ -108,7 +109,8 @@ delayed <- copy(resbase)[which.max(cases.win > 0):.N][,
   .(date = head(date, -deathdelay), cases.win = head(cases.win, -deathdelay), deaths.win = tail(deaths.win, -deathdelay)),
   by=province
 ][, md := deaths.win / cases.win ][, ver := "dCFR" ]
-delayed[, c("lo","hi") := bino(0.95, deaths.win, cases.win) ]
+delayed[, c("lo.lo","hi.hi") := bino(0.95, deaths.win, cases.win) ]
+delayed[, c("lo","hi") := bino(0.5, deaths.win, cases.win) ]
 
 cfrs.dt <- rbind(corrected, naive, delayed, fill = TRUE)
 

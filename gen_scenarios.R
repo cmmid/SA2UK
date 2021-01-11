@@ -4,9 +4,8 @@ suppressPackageStartupMessages({
 
 .debug <- c("~/Dropbox/SA2UK/outputs","ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/fits/%s.rds",
-  "%s/intervention_timing/%s.rds", #' TODO remove
-  "%s/introductions/%s.rds",
+  "%s/params/%s.rds",
+  "%s/r0/%s.rds",
   .debug[2],
   "%s/scenarios/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)

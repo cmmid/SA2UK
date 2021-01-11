@@ -28,7 +28,7 @@ ${COVIDM}:
 GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 fits introductions scenarios mod_scenarios projections figs relaxation) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
+MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions params projections figs) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
 # provides non-analysis support
 include support.makefile
@@ -99,7 +99,7 @@ int_r0: ${SINK}/r0/ZAF.rds
 ${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
-${SINK}/fits/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/yuqs/%.rds | ${SINK}/fits NGM.rda
+${SINK}/params/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/yuqs/%.rds | ${SINK}/params NGM.rda
 	${Rstar}
 
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
@@ -117,7 +117,7 @@ ${SINK}/figs/timeseries.rds: fig_relax_proj.R ${SOURCE}/epi_data.rds ${SINK}/int
 ${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SINK}/phylo.rds | ${SINK}/figs
 	${R}
 
-${SINK}/figs/cfr.rds: fig_scaled_cfr.R ${SINK}/cfrs.rds | ${SINK}/figs
+${SINK}/figs/ccfr.rds: fig_scaled_cfr.R ${SINK}/cfrs.rds | ${SINK}/figs
 	${R}
 
 ${SINK}/figs/AR.rds: fig_relax_AR.R ${SOURCE}/urbanization.rds ${SOURCE}/pops/ZAF.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs

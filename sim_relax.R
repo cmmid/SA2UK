@@ -1,14 +1,13 @@
 
 suppressPackageStartupMessages({
   require(data.table)
+  require(optimization)
 })
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/scenarios/%s.rds",
+  "%s/outputs/params/%s.rds",
   "%s/inputs/pops/%s.rds",
-  "%s/inputs/yuqs/%s.rds",
-  "%s/outputs/r0/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/inputs/urbanization.rds",
   "%s/outputs/intervention_timing/%s.rds",
@@ -17,8 +16,36 @@ suppressPackageStartupMessages({
   "%s/outputs/projections/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-scenario <- readRDS(.args[1])
 tariso <- tail(.args, 3)[1]
+
+fits <- readRDS(.args[1])
+params <- readRDS(.args[2])
+intros.dt <- readRDS(.args[3])[iso3 == tariso]
+urbfrac <- readRDS(.args[4])[iso3 == tariso, value / 100]
+timings <- readRDS(.args[5])
+
+day0 <- as.Date(intros.dt[, min(date)])
+intros <- intros.dt[,
+  intro.day := as.integer(date - date[1])
+][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
+
+params$date0 <- day0
+params$pop[[1]]$seed_times <- intros
+params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
+params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
+
+startrelax <- as.integer(timings[era == "relaxation", start] - day0)
+endrelax <- as.integer(timings[era == "relaxation", end] - day0)
+endsim <- as.integer(timings[era == "variant", start] - day0)
+
+startpost <- as.integer(timings[era == "transition", start[1]] - day0)
+
+params$time1 <- endsim
+
+tms <- day0 + startpost
+relaxtms <- day0 + startrelax:endrelax
+
+tier2 <- as.Date("2020-08-15")
 
 load("NGM.rda")
 
@@ -33,131 +60,58 @@ suppressPackageStartupMessages({
   source(file.path(cm_path, "R", "covidm.R"))
 })
 
-tarqs <- c("lo.lo"=0.025,"lo"=0.25,"med"=0.5,"hi"=0.75,"hi.hi"=0.975)
-
-params <- readRDS(.args[2])
-yuref <- readRDS(.args[3])[order(eqs)]
-qs.inds <- with(yuref, sapply(tarqs, function(v) which.max(eqs >= v)))
-yuuse <- yuref[qs.inds][, variable := names(tarqs) ][,-c("trial","chain","lp","ll","mult","size")]
-
-intros.dt <- readRDS(.args[5])[iso3 == tariso]
-day0 <- as.Date(intros.dt[, min(date)])
-intros <- intros.dt[, intro.day := as.integer(date - date[1]) ][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
-
-urbfrac <- readRDS(.args[6])[iso3 == tariso, value / 100]
-
-params$date0 <- day0
-params$pop[[1]]$seed_times <- intros
-params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
-params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
-
-Rts <- readRDS(.args[4])[era != "transition"]
-
-run_options <- melt(
-  Rts[era == "pre"],
-  id.vars = "era",
-  measure.vars = names(tarqs),
-  value.name = "r0"
-)[, model_seed := 1234L ][yuuse, on=.(variable) ][,
-  umul := r0 / baseR
-]
-
-timings <- readRDS(.args[7])
-
-startrelax <- as.integer(timings[era == "relaxation", start] - day0)
-endsim <- as.integer(timings[era == "relaxation", end] - day0) + 30
-
-startpost <- as.integer(timings[era == "transition", start[1]] - day0)
-
-params$time1 <- endsim
-
-# scenario[, waning_dur := NA_integer_ ]
-# scenario[!(scen_type == "unmitigated"), waning_dur := 90 ]
-
-iv_data <- scenario[scen_id != 1 & !is.na(self_iso)]
-tms <- as.Date(params$date0) + startpost:iv_data[order(start_day)]$start_day[1]
-relaxtms <- as.Date(params$date0) + startrelax:endsim
-redfrac <- 1:length(tms)/length(tms)
-
-params_back <- params
-
-sim <- data.table(); for(i in 1:nrow(run_options)){
-
-  params <- params_back
-
-  #' only one intervention
-  cons <- with(iv_data[i], mapply(
-    function(h,w,s,o) { lapply(redfrac, function(rf) c(1-c(h,w,s,o)))  },
-    h=home, w=work, s=school, o=other, SIMPLIFY = FALSE
-  ))[[1]]
+scheduler <- function(large, small, symp, k, shft) {
+  cons <- list(1-c(0, small, large, small))
+  si <- list(rep(1-symp, 16))
   
-  si <- lapply(iv_data[i]$self_iso, function(si) {
-    lapply(redfrac, function(rf) rep((1-si), 16))
-  })[[1]]
+  relaxfact <- 1-(1+exp(-k*as.numeric(relaxtms-tier2-shft)))^-1
+  relaxfact <- (1-relaxfact[1]) + relaxfact
+  relaxcons <- lapply(relaxfact, function(rf) 1-c(0, small, large, small)*rf)
+  relaxsi <- lapply(relaxfact, function(rf) 1-rep(symp, 16)*rf)
   
-  # relaxrate <- c(0.001,0.005,0.006)[i]
-  # relaxfact <- pmax(1-seq(0,by=relaxrate,length.out = length(relaxcons)),0)
-  
-  tier2 <- as.Date("2020-08-15")+7
-  relaxrate <- c(0.02, 0.03, 0.035, 0.037, 0.04)[i]
-  relaxfact <- 1-(1+exp(-relaxrate*as.numeric(relaxtms-tier2)))^-1
-  relaxfact <- 0.5*(relaxfact-0.5)/(relaxfact[1]-0.5)+0.5
-  #' @example 
-  #' plot(1:length(relaxfact), relaxfact)
-  
-  relaxcons <- lapply(
-    relaxfact, function(rf) 1-(1-cons[[length(cons)]])*rf
+  list(
+    list(
+      parameter = "contact",
+      pops = numeric(),
+      mode = "multiply",
+      values = c(cons, relaxcons),
+      times = c(tms, relaxtms)
+    ),
+    list(
+      parameter = "fIs",
+      pops = numeric(),
+      mode = "multiply",
+      values = c(si, relaxsi),
+      times = c(tms, relaxtms)
+    )
   )
-  
-  relaxsi <- lapply(
-    relaxfact, function(rf) 1-(1-si[[length(si)]])*rf
-  )
-  
-  params$schedule[[length(params$schedule)+1]] <- list(
-    parameter = "contact",
-    pops = numeric(),
-    mode = "multiply",
-    values = c(cons, relaxcons),
-    times = c(tms, relaxtms)
-  )
-  params$schedule[[length(params$schedule)+1]] <- list(
-    parameter = "fIs",
-    pops = numeric(),
-    mode = "multiply",
-    values = c(si, relaxsi),
-    times = c(tms, relaxtms)
-  )
-  
-  #' adjust r0 to that in current sample
-  uf <- run_options[i, umul*rep(as.numeric(.SD), each = 2), .SDcols = grep("^u_", names(run_options))]
-  ys <- run_options[i, rep(as.numeric(.SD), each = 2), .SDcols = grep("^y_", names(run_options))]
-  
-  params$pop <- lapply(
-    params$pop,
-    function(x){
-      x$u <- x$u * uf
-      x$y <- ys
-      return(x)
-    }
-  )
-  
-  #run the model
-  sim <- rbind(
-    cm_simulate(
-      params, 1,
-      model_seed = run_options[i, model_seed]
-    )$dynamics[compartment %in% c("R","cases","death_o")][, r_id := i],
-    sim, fill = TRUE
-  )
-  
 }
 
-res <- sim[, .(date = t + day0, group, compartment, value, q = names(tarqs)[r_id])]
+sims <- rbindlist(lapply(1:nrow(fits), function(i) with(as.list(fits[i,.(large, small, sympt, k, shft, asc)]), {
+  us <- rep(fits[i, as.numeric(.SD)*umod, .SDcols = grep("^u_",names(fits))], each = 2)
+  ys <- rep(fits[i, as.numeric(.SD), .SDcols = grep("^y_",names(fits))], each = 2)
+  testpop <- params; testpop$pop[[1]]$y <- ys
+  testpop$pop[[1]]$u <- testpop$pop[[1]]$u*us
+  testpop$schedule <- scheduler(large, small, sympt, k, shft)
+  res <- cm_simulate(
+    testpop, 1,
+    model_seed = 42L
+  )$dynamics[compartment %in% c("cases","death_o","R")][, sample := i ]
+})))
+
+res <- sims[,
+  .(
+    sample, date = t + day0,
+    group, compartment,
+    value
+  )
+]
 
 #' @examples 
-#' ggplot(sim[compartment == "cases", .(value = sum(value)), by=.(r_id, date = t+params_back$date0)]) +
-#'   aes(date, value, color = factor(r_id), group = r_id) +
-#'   geom_line() +
+#' ggplot(res[compartment == "cases"][fits[, .(sample, asc)], on=.(sample)][, .(asc.value = sum(value)*asc, value = sum(value)), by=.(sample, date)]) +
+#'   aes(date, asc.value, group = sample) +
+#'   geom_line(alpha = 0.1) +
+#'   geom_line(aes(y=value), alpha = 0.1, color = "red") +
 #'   geom_line(
 #'     aes(date, cases),
 #'     data = readRDS("~/Dropbox/SA2UK/inputs/epi_data.rds")[iso3 == "ZAF"],

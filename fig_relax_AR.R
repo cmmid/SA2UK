@@ -20,26 +20,30 @@ urbfrac <- readRDS(.args[1])[iso3 == tariso, value/100 ]
 pop <- round(readRDS(.args[2])$pop[[1]]$size*urbfrac)
 capita <- data.table(sentinel = c(TRUE, FALSE), pop = c(sum(pop[5:10]),sum(pop[-c(5:10)])))
 
-AR.dt <- dcast(proj.dt[,
+AR.dt <- proj.dt[,
   .(count = sum(value)),
-  keyby=.(q, sentinel = between(as.numeric(group), 5, 10), date)
-][capita, on=.(sentinel), rate:=count/pop ], sentinel + date ~ q, value.var = "rate")
+  keyby=.(sample, sentinel = between(as.numeric(group), 5, 10), date)
+][capita, on=.(sentinel), rate:=count/pop ][,{
+  qs <- quantile(rate, probs = c(0.025, 0.25,0.5,0.75,0.975))
+  names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
+  as.list(qs)
+}, by=.(date, sentinel)
+]
 
-#' TODO figure out how to force evaluation of this in ggplot
-seroposdelay <- 14
 serosurvey <- data.table(
-  sentinel = TRUE,
-  start = as.Date("2020-07-15")-seroposdelay,
-  mid = mean(as.Date(c("2020-07-15", "2020-08-07")))-seroposdelay,
-  end = as.Date("2020-08-07")-seroposdelay,
-  hi = .431,
-  md = .411,
-  lo = .391
+  sentinel = c(TRUE, FALSE),
+  start = as.Date("2020-07-15"),
+  mid = mean(as.Date(c("2020-07-15", "2020-08-07"))),
+  end = as.Date("2020-08-07"),
+  hi = c(.431, 0.402),
+  md = c(.411, .355),
+  lo = c(.391, 0.311)
 )
 
 AR.p <- force(ggplot(AR.dt) + aes(date, fill = sentinel) +
-  geom_ribbon(aes(ymin=lo, ymax=hi), alpha = 0.4) +
-  geom_line(aes(y=md, color = sentinel)) +
+  geom_ribbon(aes(ymin=lo.lo, ymax=hi.hi), alpha = 0.1) +
+  geom_ribbon(aes(ymin=lo, ymax=hi), alpha = 0.25) +
+  geom_line(aes(y=med, color = sentinel), alpha = 0.4) +
   geom_linerange(
     aes(
       y = md, x = NULL,
@@ -55,12 +59,17 @@ AR.p <- force(ggplot(AR.dt) + aes(date, fill = sentinel) +
     ), data = serosurvey
   ) +
   scale_color_manual(
-    name = "Age Groups",
+    name = "Serosurvey",
     breaks = c(TRUE, FALSE),
     labels = c("20-49", "<20 & 50+"),
     values = c(`TRUE`="goldenrod", `FALSE`="grey"),
-    aesthetics = c("color", "fill")
+    guide = guide_legend(override.aes = list(alpha = 1))
   ) +
+    scale_fill_manual(NULL,
+      breaks = c(TRUE, FALSE),
+      labels = c("20-49", "<20 & 50+"),
+      values = c(`TRUE`="goldenrod", `FALSE`="grey"), guide = "none"
+    ) +
   scale_y_continuous("Cumulative Attack Fraction", labels = function(b) sprintf("%2g%%",b*100)) +
   scale_x_date(name = NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
   theme_minimal())

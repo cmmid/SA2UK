@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/phylo.rds",
   "%s/outputs/projections/%s.rds",
+  "%s/outputs/params/%s.rds",
   .debug[2],
   "%s/outputs/figs/timeseries.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -48,36 +49,26 @@ mlt[, outcome := fifelse(grepl("case", variable), "cases", "deaths")]
 mlt[, measure := fifelse(grepl("roll", variable), "rolling", "raw")]
 mlt[, variant := fifelse(grepl("var", variable), "variant", "all")]
 
-proj.dt <- readRDS(.args[4])[compartment %in% c("cases","death_o")][, .(value = sum(value)), by=.(date, compartment, q)]
-proj.dt[q=="med", q:= "md" ]
+proj.dt <- readRDS(.args[4])[compartment %in% c("cases","death_o")][, .(value = sum(value)), by=.(date, compartment, sample)]
+proj.dt[,
+  outcome := fifelse(compartment == "cases", "cases", "deaths") 
+][, measure := "rolling" ][, variant := "projection" ]
 
-proj.wide <- dcast(proj.dt, date + compartment ~ q)
-proj.wide[, outcome := fifelse(compartment == "cases", "cases", "deaths")]
-proj.wide[, measure := "rolling" ]
-proj.wide[, variant := "projection" ]
+asc.dt <- readRDS(.args[5])[, .(sample, detectp = asc)]
+proj.dt[asc.dt, on=.(sample), asc := fifelse(outcome == "cases", value*detectp, value*.5)]
+
+plot.proj <- proj.dt[, {
+  qs <- quantile(asc, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
+  names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
+  as.list(qs)
+}, by=.(date, outcome, variant, measure)]
 
 p <- force(ggplot() +
   aes(date, y = value, color = variant, alpha = measure, linetype = outcome) +
-  geom_line(
-    aes(y=lo), size = 0.3, alpha = 0.5,
-    data = proj.wide, show.legend = FALSE
-  ) +
-  geom_line(
-    aes(y=hi), size = 0.3, alpha = 0.5,
-    data = proj.wide, show.legend = FALSE
-  ) +
-  geom_line(
-    aes(y=lo.lo), size = 0.2, alpha = 0.2,
-    data = proj.wide, show.legend = FALSE
-  ) +
-  geom_line(
-    aes(y=hi.hi), size = 0.2, alpha = 0.2,
-    data = proj.wide, show.legend = FALSE
-  ) +
-  geom_line(
-    aes(y=md), data = proj.wide
-  ) +
-  geom_line(data = mlt[measure == "raw" | (value > 0.1)]) +
+  geom_ribbon(aes(ymin=lo.lo, ymax=hi.hi,y=NULL,color=NULL,fill=variant), data = plot.proj, alpha = 0.1, show.legend = FALSE) +
+  geom_ribbon(aes(ymin=lo, ymax=hi,y=NULL,color=NULL,fill=variant), data = plot.proj, alpha = 0.25, show.legend = FALSE) +
+  geom_line(aes(y=med), data = plot.proj) +
+  geom_line(data = mlt[measure != "raw" & (value > 0.1)]) +
   scale_y_log10(
     sprintf("Incidence", roll.window),
     breaks = 10^(0:5), labels = scales::label_number_si(),
@@ -87,14 +78,14 @@ p <- force(ggplot() +
   scale_color_manual(
     name = NULL,
     labels = c(
-      all = "reported", variant = "est. 501Y.V2", projection = "model (no 501Y.V2)"
+      all = "reported (7 day mean)", variant = "estimated 501Y.V2", projection = "model (no 501Y.V2)"
     ),
     values = c(all="black", variant = "red", projection = "dodgerblue"),
     aesthetics = c("color", "fill")
   ) +
   scale_linetype_manual(name = NULL, values = c(cases="solid", deaths = "longdash")) +
   scale_alpha_manual(name = NULL, values = c(raw=0.4, rolling = 1), guide = "none") +
-  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-04-01", "2021-01-01")), expand = FALSE) +
+  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-04-01", NA)), expand = FALSE) +
   theme_minimal())
 
 saveRDS(p, tail(.args, 1))
