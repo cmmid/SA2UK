@@ -99,8 +99,12 @@ int_r0: ${SINK}/r0/ZAF.rds
 ${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
-${SINK}/params/%.rds: est_fits.R ${SINK}/r0/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/yuqs/%.rds | ${SINK}/params NGM.rda
-	${Rstar}
+STARTID ?= 001
+
+${SINK}/params/%.rds: est_fits.R ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds | ${SINK}/params NGM.rda ${COVIDM}
+	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
+
+testpars: ${SINK}/params/ZAF.rds
 
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}

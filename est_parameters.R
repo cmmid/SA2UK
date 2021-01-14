@@ -3,20 +3,24 @@ suppressPackageStartupMessages({
   require(optimization)
 })
 
+#' fixed stride of 20; adjust starting point
+.debug <- c("~/Dropbox/SA2UK","ZAF","0021")
 .args <- if (interactive()) sprintf(c(
-  "~/Dropbox/SA2UK/inputs/yuqs/ZAF.rds",
-  "~/Dropbox/SA2UK/inputs/pops/ZAF.rds",
-  "~/Dropbox/SA2UK/inputs/urbanization.rds",
-  "~/Dropbox/SA2UK/inputs/epi_data.rds",
-  "~/Dropbox/SA2UK/outputs/intervention_timing/ZAF.rds",
-  "~/Dropbox/SA2UK/outputs/r0/ZAF.rds",
-  "~/Dropbox/SA2UK/outputs/introductions/ZAF.rds",
-  "ZAF",
+  "%s/inputs/yuqs/%s.rds",
+  "%s/inputs/pops/%s.rds",
+  "%s/inputs/urbanization.rds",
+  "%s/inputs/epi_data.rds",
+  "%s/outputs/intervention_timing/%s.rds",
+  "%s/outputs/r0/%s.rds",
+  "%s/outputs/introductions/%s.rds",
+  .debug[2], # ZAF
+  .debug[3], # the id
   "../covidm",
-  "~/Dropbox/SA2UK/outputs/params/ZAF.rds"
-)) else commandArgs(trailingOnly = TRUE)
+  "%s/outputs/params/%s_%s.rds"
+), .debug[1], .debug[2], .debug) else commandArgs(trailingOnly = TRUE)
 
-tariso <- tail(.args, 3)[1]
+fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
+tariso <- tail(.args, 4)[1]
 
 yuqs <- readRDS(.args[1])
 params <- readRDS(.args[2])
@@ -107,7 +111,7 @@ scheduler <- function(large, small, symp, k, shft) {
 }
 
 #' TODO expand sampling
-fits.dt <- bootstrap.dt[1:20, {
+fits.dt <- bootstrap.dt[fitslc, {
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
   ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_",names(.SD))], each = 2)
   pop <- params # copy constructor
