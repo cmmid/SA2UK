@@ -106,7 +106,7 @@ ${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SIN
 
 tarsample: ${SINK}/sample/ZAF.rds
 
-${SINK}/params/%.rds: est_fits.R ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
+${SINK}/params/%.rds: est_parameters.R ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 testpars: ${SINK}/params/ZAF.rds
