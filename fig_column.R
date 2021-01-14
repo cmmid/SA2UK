@@ -39,6 +39,7 @@ ts <- readRDS(.args[2]) + theme(
   legend.position = c(0.5, 0), legend.justification = c(0.5, 0),
   legend.margin = margin(t=-1, b=-.25, unit = "line")
 )
+
 enddate <- "2021-01-07"
 
 ar <- readRDS(.args[3]) + coord_cartesian(
@@ -51,6 +52,10 @@ ar <- readRDS(.args[3]) + coord_cartesian(
   legend.margin = margin(b=-.25, unit = "line"),
   legend.title = element_text(size=rel(0.9))
 )
+
+#' @examples 
+#' ggsave("hires_A.png", ts+theme(text = element_text(size = 7)), width = 5, height = 2.5, units = "in", dpi = 1200)
+#' ggsave("hires_B.png", ar+theme(text = element_text(size = 7)), width = 5, height = 2.5, units = "in", dpi = 1200)
 
 res <- ts / ar / cfr + plot_annotation(tag_levels = "A") & 
   theme(text = element_text(size = 7), panel.grid.minor = element_blank())
