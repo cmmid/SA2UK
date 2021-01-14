@@ -28,7 +28,7 @@ ${COVIDM}:
 GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions params projections figs) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
+MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
 # provides non-analysis support
 include support.makefile
@@ -101,7 +101,12 @@ ${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/popu
 
 STARTID ?= 001
 
-${SINK}/params/%.rds: est_fits.R ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds | ${SINK}/params NGM.rda ${COVIDM}
+${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SINK}/sample
+	${R}
+
+tarsample: ${SINK}/sample/ZAF.rds
+
+${SINK}/params/%.rds: est_fits.R ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 testpars: ${SINK}/params/ZAF.rds

@@ -13,11 +13,12 @@ suppressPackageStartupMessages({
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/r0/%s.rds",
   "%s/outputs/introductions/%s.rds",
+  "%s/outputs/sample/%s.rds",
   .debug[2], # ZAF
   .debug[3], # the id
   "../covidm",
   "%s/outputs/params/%s_%s.rds"
-), .debug[1], .debug[2], .debug) else commandArgs(trailingOnly = TRUE)
+), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
 
 fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
 tariso <- tail(.args, 4)[1]
@@ -30,6 +31,7 @@ case.dt[, croll := frollmean(cases, align = "center", 7)]
 timings <- readRDS(.args[5])
 Rts <- readRDS(.args[6])
 intros.dt <- readRDS(.args[7])[iso3 == tariso]
+bootstrap.dt <- readRDS(.args[8])
 
 yusamp <- yuqs[
   sample(.N, max(Rts$sample))
@@ -78,9 +80,6 @@ suppressPackageStartupMessages({
 })
 
 load("NGM.rda")
-
-bootstrap.dt <- Rts[yusamp, on=.(sample)]
-bootstrap.dt[, umod := pre/baseR ]
 
 #' reference for all bootstrap evaluation
 scheduler <- function(large, small, symp, k, shft) {
