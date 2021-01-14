@@ -1,6 +1,5 @@
 suppressPackageStartupMessages({
   require(data.table)
-  require(optimization)
 })
 
 #' fixed stride of 20; adjust starting point
@@ -23,4 +22,4 @@ yusamp <- yuqs[
 bootstrap.dt <- Rts[yusamp, on=.(sample)]
 bootstrap.dt[, umod := pre/baseR ]
 
-saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))
+saveRDS(bootstrap.dt, tail(.args, 1))
