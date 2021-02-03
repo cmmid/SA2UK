@@ -29,6 +29,6 @@ qs.dt <- yu[, {
   .(baseR = ngm$R0, si = cm_generation_time(pop, ymod = ymod, ngm = ngm))
 }, by=.(trial, chain), .SDcols = c(uids, yids)]
 
-qs.dt[order(baseR), eqs := (1:.N)/.N ]
+ret <- qs.dt[order(baseR), eqs := (1:.N)/.N ][yu, on=.(trial, chain), nomatch = 0]
 
-saveRDS(qs.dt[yu, on=.(trial, chain)], tail(.args, 1))
+saveRDS(ret, tail(.args, 1))

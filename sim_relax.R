@@ -1,7 +1,6 @@
 
 suppressPackageStartupMessages({
   require(data.table)
-  require(optimization)
 })
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
@@ -87,17 +86,17 @@ scheduler <- function(large, small, symp, k, shft) {
   )
 }
 
-sims <- rbindlist(lapply(1:nrow(fits), function(i) with(as.list(fits[i,.(large, small, sympt, k, shft, asc)]), {
-  us <- rep(fits[i, as.numeric(.SD)*umod, .SDcols = grep("^u_",names(fits))], each = 2)
-  ys <- rep(fits[i, as.numeric(.SD), .SDcols = grep("^y_",names(fits))], each = 2)
+sims <- fits[,{
+  us <- rep(.SD[1, as.numeric(.SD)*umod, .SDcols = grep("^u_",names(fits))], each = 2)
+  ys <- rep(.SD[1, as.numeric(.SD), .SDcols = grep("^y_",names(fits))], each = 2)
   testpop <- params; testpop$pop[[1]]$y <- ys
   testpop$pop[[1]]$u <- testpop$pop[[1]]$u*us
   testpop$schedule <- scheduler(large, small, sympt, k, shft)
   res <- cm_simulate(
     testpop, 1,
     model_seed = 42L
-  )$dynamics[compartment %in% c("cases","death_o","R")][, sample := i ]
-})))
+  )$dynamics[compartment %in% c("cases","death_o","R")]
+}, by=sample]
 
 res <- sims[,
   .(

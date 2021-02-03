@@ -57,6 +57,14 @@ proj.dt[,
 asc.dt <- readRDS(.args[5])[, .(sample, detectp = asc)]
 proj.dt[asc.dt, on=.(sample), asc := fifelse(outcome == "cases", value*detectp, value*.5)]
 
+#' @examples 
+ggplot(proj.dt[sample %in% 1:20]) + aes(date, value, group = sample) +
+  facet_grid(outcome ~ ., scales = "free_y") +
+  geom_line(alpha = 0.05) +
+  geom_line(aes(group=NULL), data = mlt[variant == "all" & measure != "raw" & (value > 0.1)]) +
+  scale_y_log10() +
+  theme_minimal()
+
 plot.proj <- proj.dt[, {
   qs <- quantile(asc, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
   names(qs) <- c("lo.lo","lo","med","hi","hi.hi")
