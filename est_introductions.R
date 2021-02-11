@@ -18,7 +18,7 @@ suppressPackageStartupMessages({
 yuref <- readRDS(.args[1])[order(eqs)][which.max(eqs >= .5)]
 us <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
 ys <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
-Rl <- readRDS(.args[2])[era == "pre", med]
+Rl <- readRDS(.args[2])[, median(pre)]
 window_start <- readRDS(.args[7])[era == "pre", end]
 
 tariso <- tail(.args, 2)[1]

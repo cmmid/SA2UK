@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/yuqs/%s.rds",
-  "2", "4e3", # cores, samples
+  "2", "8e3", # cores, samples
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -97,7 +97,9 @@ results <- processRt(Rtcalc(early_reported_cases),
   expression(c("pre",rep("transition",.N-2),"post"))
 )
 
-if (results[era %in% c("pre","post"), sign(diff(med)) != -1]) warning(sprintf("did not observe post-intervention reduction for %s", tariso))
+chk <- results[era != "transition",.(med=median(value)), by=era]
+
+if (chk[, sign(diff(med)) != -1]) warning(sprintf("did not observe post-intervention reduction for %s", tariso))
 
 #' if we're considering a modification period as well
 #' N.B. a relaxation era is evaluated differently

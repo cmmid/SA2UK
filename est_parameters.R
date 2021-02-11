@@ -4,14 +4,12 @@ suppressPackageStartupMessages({
 })
 
 #' fixed stride of 20; adjust starting point
-.debug <- c("~/Dropbox/SA2UK","ZAF","0021")
+.debug <- c("~/Dropbox/SA2UK","ZAF","0001")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/yuqs/%s.rds",
   "%s/inputs/pops/%s.rds",
   "%s/inputs/urbanization.rds",
   "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
-  "%s/outputs/r0/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/outputs/sample/%s.rds",
   .debug[2], # ZAF
@@ -23,21 +21,13 @@ suppressPackageStartupMessages({
 fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
 tariso <- tail(.args, 4)[1]
 
-yuqs <- readRDS(.args[1])
-params <- readRDS(.args[2])
-urbfrac <- readRDS(.args[3])[iso3 == tariso, value / 100]
-case.dt <- readRDS(.args[4])[iso3 == tariso, .(date, cases)]
+params <- readRDS(.args[1])
+urbfrac <- readRDS(.args[2])[iso3 == tariso, value / 100]
+case.dt <- readRDS(.args[3])[iso3 == tariso, .(date, cases)]
 case.dt[, croll := frollmean(cases, align = "center", 7)]
-timings <- readRDS(.args[5])
-Rts <- readRDS(.args[6])
-intros.dt <- readRDS(.args[7])[iso3 == tariso]
-bootstrap.dt <- readRDS(.args[8])
-
-yusamp <- yuqs[
-  sample(.N, max(Rts$sample))
-][,
-  .SD, .SDcols = -c("trial","chain","eqs","lp", "ll", "mult", "size")
-][, sample := 1L:.N ]
+timings <- readRDS(.args[4])
+intros.dt <- readRDS(.args[5])[iso3 == tariso]
+bootstrap.dt <- readRDS(.args[6])[fitslc]
 
 day0 <- as.Date(intros.dt[, min(date)])
 intros <- intros.dt[,
@@ -110,7 +100,8 @@ scheduler <- function(large, small, symp, k, shft) {
 }
 
 #' TODO expand sampling
-fits.dt <- bootstrap.dt[fitslc, {
+fits.dt <- bootstrap.dt[, {
+  browser()
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
   ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_",names(.SD))], each = 2)
   pop <- params # copy constructor
