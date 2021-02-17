@@ -16,7 +16,7 @@ Rts <- readRDS(.args[2])
 yusamp <- yuqs[
   sample(.N, max(Rts$sample))
 ][,
-  .SD, .SDcols = -c("trial","chain","eqs","lp", "ll", "mult", "size")
+  .SD, .SDcols = -c("trial","chain", "lp", "ll", "mult", "size")
 ][, sample := 1L:.N ]
 
 bootstrap.dt <- Rts[yusamp, on=.(sample)]
