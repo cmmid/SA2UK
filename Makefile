@@ -1,13 +1,15 @@
 
 # if present, include local.makefile
+# a local.makefile should provide alternative definitions
+# of default variables, paths, etc
 -include local.makefile
 
 # default assumes subfolders of this repository;
-# example local.makefile overrides these to Dropbox folder
+# example local.makefile overrides this to point to Dropbox folder
 DATART ?= .
 
 SOURCE := ${DATART}/inputs
-SINK := ${DATART}/outputs
+SINK   := ${DATART}/outputs
 
 # for running EpiNow2; should override in local.makefile
 NCORES ?= 4
@@ -96,7 +98,7 @@ ${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.
 
 int_r0: ${SINK}/r0/ZAF.rds
 
-${SINK}/introductions/%.rds: est_introductions.R ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
+${SINK}/introductions/%.rds: est_introductions.R ${SINK}/yuqs/%.rds ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
 STARTID ?= 0001
