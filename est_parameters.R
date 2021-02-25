@@ -99,9 +99,10 @@ scheduler <- function(large, small, symp, k, shft) {
   )
 }
 
+pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1) 
+
 #' TODO expand sampling
 fits.dt <- bootstrap.dt[, {
-  browser()
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
   ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_",names(.SD))], each = 2)
   pop <- params # copy constructor
@@ -121,6 +122,8 @@ fits.dt <- bootstrap.dt[, {
     lower = c(0.1, 0.01, 0.01),
     upper = c(0.9, 0.9, 0.9)
   )$par
+  
+  setTxtProgressBar(pb, .GRP - 0.5)
   
   lrg <- pars_int[1]; sml <- pars_int[2]; symp <- pars_int[3]
   
@@ -147,6 +150,7 @@ fits.dt <- bootstrap.dt[, {
   )$par
   pars <- c(pars_int, pars_relax)
   names(pars) <- c("large", "small", "sympt", "k", "shft", "asc")
+  setTxtProgressBar(pb, .GRP)
   as.list(pars)
 }, by=sample]
 
