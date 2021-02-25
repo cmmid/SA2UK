@@ -8,6 +8,8 @@ ${MKDIRS}:
 
 alldirs: ${MKDIRS}
 
+alllibs: ${GITLIBS}
+
 # will copy example.makefile for a locally edited copy
 local.makefile: | example.makefile
 	cp $| $@
