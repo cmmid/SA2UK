@@ -39,7 +39,7 @@ include support.makefile
 # checks availability of packages (via require)
 # attempts to install any not available
 # writes .install if it succeeds otherwise errors uninformatively
-.install: get_install.R rpack.txt
+.install: get_install.R rpack.txt ${COVIDM}
 	${R}
 
 # get + subset the JHU data
