@@ -1,7 +1,6 @@
 suppressPackageStartupMessages({
   require(EpiNow2)
   require(data.table)
-  require(qs)
 })
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
@@ -9,7 +8,8 @@ suppressPackageStartupMessages({
   "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/yuqs/%s.rds",
-  "2", "8e3", # cores, samples
+  "%s/inputs/pops/%s.rds",
+  "2", "8e3", #' cores, samples
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -30,7 +30,11 @@ lims.dt <- readRDS(.args[2])
 
 mean_generation_interval <- readRDS(.args[3])[, mean(si)]
 
-# Set up example generation time
+simpar <- readRDS(.args[4])
+tstep <- simpar$time_step
+pop <- simpar$pop[[1]]
+
+#' Set up example generation time
 generation_time <- as.list(EpiNow2::generation_times[disease == "SARS-CoV-2",
   .(mean, mean_sd, sd, sd_sd, max=30)
 ])
@@ -44,15 +48,25 @@ generation_time$mean_sd <- generation_time$mean * tarmcv
 generation_time$sd <- generation_time$mean * tarcv
 generation_time$sd_sd <- generation_time$sd * tarscv
 
-# Set delays between infection and case report
-# (any number of delays can be specifed here)
-incubation_period <- as.list(EpiNow2::incubation_periods[disease == "SARS-CoV-2",
-  .(mean, mean_sd, sd, sd_sd, max=30)
-])
-# replace mean & sd here with what go into rlnorm meanlog, sdlog
-# which is not mean(data), sd(data)
+inc_fit <- as.data.table(
+  EpiNow2::dist_fit(sample(length(pop$dE), 10000, replace = T, prob = pop$dE)*tstep, dist = "lognormal")
+)
 
-# additional time to include for algorithm
+#' Set delays between infection and case report
+#' (any number of delays can be specifed here)
+incubation_period <- list(
+  mean = mean(inc_fit$mu), mean_sd = sd(inc_fit$mu),
+  sd = mean(inc_fit$sigma), sd_sd = sd(inc_fit$sigma),
+  max = as.integer((length(pop$dE)-1)*tstep)
+)
+
+#' as.list(EpiNow2::incubation_periods[disease == "SARS-CoV-2",
+#'   .(mean, mean_sd, sd, sd_sd, max=30)
+#' ])
+#' replace mean & sd here with what go into rlnorm meanlog, sdlog
+#' which is not mean(data), sd(data)
+
+#' additional time to include for algorithm
 est.window <- 30
 
 early_reported_cases <- fill.case[date <= (lims.dt[era == "post"]$end + est.window)]
@@ -61,7 +75,7 @@ for (e in c("post", "transition", "pre", "censor")) {
   early_reported_cases[date <= lims.dt[era == e]$end, era := e  ]
 }
 
-# Add breakpoints
+#' Add breakpoints
 early_reported_cases[,
   breakpoint := era %in% c("censor", "transition", "tail")
 ]
@@ -77,7 +91,7 @@ Rtcalc <- function(case.dt) estimate_infections(
     samples = smps*2,
     warmup = 200, 
     cores = crs,
-    control = list(adapt_delta = 0.9, max_treedepth = 20)
+    control = list(adapt_delta = 0.99, max_treedepth = 20)
   ),
   gp = NULL,
   verbose = TRUE,
@@ -127,7 +141,7 @@ ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
 
 #' @examples 
 #' require(ggplot2)
-#' ggplot(results[era != "variant"]) + aes(date, value, group = sample) +
+#' ggplot(results[era != "variant"][sample %in% sample(.N, 2000)]) + aes(date, value, group = sample) +
 #'  geom_line(alpha = 0.05) + theme_minimal()
 #' ggplot(results[!(era %in% c("variant", "transition"))][sample %in% sample(.N/2, 100)]) + aes(era, value, group = sample) +
 #'  geom_line(alpha = 0.05) + theme_minimal()
@@ -137,6 +151,27 @@ ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
 #'  aes(pre, post) + geom_point() + theme_minimal()
 #' ggplot(ret[, .(post, variant)]) +
 #'  aes(post, variant) + geom_point() + theme_minimal()
+
+#' smp <- sample(16000, 1000)
+#' ext <- 16
+#' tst <- results[(sample %in% smp) & (era != "variant")][,
+#'   .(
+#'     date = c(date[1] - c(ext:1), date, date[.N] + c(1:ext)),
+#'     v = (c(rep(value[1], ext), value, rep(value[.N], ext)))
+#'   ),
+#'   by=sample
+#' ][, .(date, v = cumsum((v-1)/generation_time$mean)), by=sample]
+#' dr <- tst[, range(date)]
+#' epi.dt <- readRDS(
+#'   "~/Dropbox/SA2UK/inputs/epi_data.rds")[
+#'     iso3 == "ZAF" & between(date, dr[1], dr[2]),
+#'     .(date, v = log(cases + exp(tst[date == min(date), mean(v)])), sample = 0)
+#' ]
+#' p <- ggplot(tst) + aes(date, group = sample) +
+#'   geom_line(aes(y=v-1.5), alpha = 0.05) +
+#'   geom_line(aes(y=v), data = epi.dt, color = "red") +
+#'   theme_minimal()
+
 
 saveRDS(ret, tail(.args, 1))
 
