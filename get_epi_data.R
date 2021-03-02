@@ -34,8 +34,9 @@ final <- res[order(date),
 ]
 
 #' @examples 
-#' ggplot(final) + aes(date) + facet_grid(. ~ iso3) +
-#'   geom_line(aes(y=cases)) + theme_minimal() + scale_y_log10()
+#' ggplot(final) + aes(date) + facet_grid(iso3 ~ .) +
+#'   geom_line(aes(y=cases)) + theme_minimal() + scale_y_log10() +
+#'   scale_x_date(name=NULL, date_breaks = "month", date_labels = "%b")
 
 #' TODO capture stderr in makefile?
 #' alert functions for next steps
