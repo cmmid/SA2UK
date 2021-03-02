@@ -111,12 +111,16 @@ tarsample: ${SINK}/sample/ZAF.rds
 ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
+${SINK}/params/%_consolidated.rds: gen_consolidate.R $(wildcard ${SINK}/params/%_*.rds)
+	Rscript $^ $(@D) $* $@
+
 testpars: ${SINK}/params/ZAF.rds
+conspars: ${SINK}/params/ZAF_consolidated.rds
 
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
 
-${SINK}/projections/%.rds: sim_relax.R ${SINK}/scenarios/%.rds ${SOURCE}/pops/%.rds ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds ${SINK}/intervention_timing/%.rds | ${SINK}/projections
+${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds ${SINK}/intervention_timing/%.rds | ${SINK}/projections
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
 int_scen: ${SINK}/scenarios/ZAF.rds

@@ -5,7 +5,7 @@ suppressPackageStartupMessages({
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/params/%s.rds",
+  "%s/outputs/params/%s_consolidated.rds",
   "%s/inputs/pops/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/inputs/urbanization.rds",
