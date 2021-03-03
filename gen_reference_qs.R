@@ -3,13 +3,14 @@ suppressPackageStartupMessages({
   require(data.table)
   require(qs)
 })
-
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
-.args <- if (interactive()) sprintf(c(
-  "%s/inputs/covidm_fit_yu.qs",
-  "%s/inputs/pops/%s.rds",
-  "%s/inputs/yuqs/%s.rds"
-), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+if (sys.nframe() == 0) {
+  .debug <- c("~/Dropbox/SA2UK", "ZAF")
+  .args <- if (interactive()) sprintf(c(
+    "%s/inputs/covidm_fit_yu.qs",
+    "%s/inputs/pops/%s.rds",
+    "%s/inputs/yuqs/%s.rds"
+  ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+}
 
 yu <- qread(.args[1])
 pop <- readRDS(.args[2])

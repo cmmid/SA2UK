@@ -1,11 +1,11 @@
 suppressPackageStartupMessages({
   require(data.table)
 })
-
-.args <- if (interactive()) c(
-  "NGM.rda"
-) else commandArgs(trailingOnly = TRUE)
-
+if (sys.nframe() == 0) {
+  .args <- if (interactive()) c(
+    "NGM.rda"
+  ) else commandArgs(trailingOnly = TRUE)
+}
 #' TODO remove boxcar stuff - recall that it has no
 #' impact on mean stay times in compartments
 #' (by design - nor would any other mean preserving transform),
