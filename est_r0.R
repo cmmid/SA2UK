@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/yuqs/%s.rds",
   "%s/inputs/pops/%s.rds",
-  "2", "8e3", #' cores, samples
+  getDTthreads(), "1e3", #' cores, samples
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -48,41 +48,15 @@ generation_time$mean_sd <- generation_time$mean * tarmcv
 generation_time$sd <- generation_time$mean * tarcv
 generation_time$sd_sd <- generation_time$sd * tarscv
 
-inc_fit <- as.data.table(
-  EpiNow2::dist_fit(sample(length(pop$dE), 10000, replace = T, prob = pop$dE)*tstep, dist = "lognormal")
+incubation_period <- estimate_delay(
+  sample(length(pop$dE), 100000, replace = T, prob = pop$dE)*tstep
 )
 
-#' Set delays between infection and case report
-#' (any number of delays can be specifed here)
-incubation_period <- list(
-  mean = mean(inc_fit$mu), mean_sd = sd(inc_fit$mu),
-  sd = mean(inc_fit$sigma), sd_sd = sd(inc_fit$sigma),
-  max = as.integer((length(pop$dE)-1)*tstep)
-)
-
-#' as.list(EpiNow2::incubation_periods[disease == "SARS-CoV-2",
-#'   .(mean, mean_sd, sd, sd_sd, max=30)
-#' ])
-#' replace mean & sd here with what go into rlnorm meanlog, sdlog
-#' which is not mean(data), sd(data)
-
-#' additional time to include for algorithm
 est.window <- 30
-
-early_reported_cases <- fill.case[date <= (lims.dt[era == "post"]$end + est.window)]
-early_reported_cases[, era := "tail"]
-for (e in c("post", "transition", "pre", "censor")) {
-  early_reported_cases[date <= lims.dt[era == e]$end, era := e  ]
-}
-
-#' Add breakpoints
-early_reported_cases[,
-  breakpoint := era %in% c("censor", "transition", "tail")
-]
 
 est.qs <- unique(c(pnorm(seq(-1,0,by=0.25)), pnorm(seq(0,1,by=0.25))))
 
-Rtcalc <- function(case.dt) estimate_infections(
+Rtcalc <- function(case.dt, gp = NULL) estimate_infections(
   reported_cases = case.dt,
   generation_time = generation_time,
   delays = delay_opts(incubation_period),
@@ -93,7 +67,7 @@ Rtcalc <- function(case.dt) estimate_infections(
     cores = crs,
     control = list(adapt_delta = 0.99, max_treedepth = 20)
   ),
-  gp = NULL,
+  gp = gp,
   verbose = TRUE,
   CrIs = est.qs
 )
@@ -105,39 +79,40 @@ processRt <- function(
   between(date, keep.start, keep.end)
 ][, era := eval(era.labels), by= sample ]
 
+results <- list()
 
-results <- processRt(Rtcalc(early_reported_cases),
-  lims.dt[era == "pre", end], lims.dt[era == "post", start],
-  expression(c("pre",rep("transition",.N-2),"post"))
-)
-
-chk <- results[era != "transition",.(med=median(value)), by=era]
-
-if (chk[, sign(diff(med)) != -1]) warning(sprintf("did not observe post-intervention reduction for %s", tariso))
-
-#' if we're considering a modification period as well
-#' N.B. a relaxation era is evaluated differently
-if (lims.dt[era == "modification", .N]) {
-  mod_reported_cases <- with(lims.dt[era == "modification"], fill.case[between(date, start - 14, end + est.window)])
-  mod_reported_cases[, breakpoint := TRUE ]
-  with(lims.dt[era == "modification"], mod_reported_cases[between(date, start, end), breakpoint := FALSE ])
-  results <- rbind(
-    results,
-    Rtcalc(mod_reported_cases, lims.dt[era == "modification", start], lims.dt[era == "modification", start], "modification")
-  )
+for (grpi in lims.dt[era != "censor", sort(unique(period))]) {
+  sublims <- lims.dt[period == grpi]
+  daterange <- sublims[, range(c(start, end))]
+  incslice <- fill.case[between(date, daterange[1]-est.window, daterange[2]+est.window)]
+  breakbased <- sublims[era == "transition", .N]
+  if (breakbased) {
+    incslice[, era := "tail" ]
+    for (e in c("post", "transition", "pre")) {
+      incslice[date <= sublims[era == e]$end, era := e  ]
+    }
+    incslice[date < sublims[era == e]$start, era := "censor" ]
+    incslice[, breakpoint := era %in% c("censor", "transition", "tail") ]
+    incslice[era == "post", breakpoint := c(TRUE, rep(FALSE, .N-1))]
+    results[[grpi]] <- processRt(
+      Rtcalc(incslice),
+      sublims[era == "pre", end], sublims[era == "post", start],
+      expression(c("pre",rep("transition",.N-2),"post"))
+    )[, period := grpi ]
+  } else {
+    results[[grpi]] <- processRt(
+      Rtcalc(incslice, gp = gp_opts()),
+      sublims[, min(start)], sublims[, max(end)],
+      "relaxation"
+    )[, period := grpi ]
+  }
 }
 
-if (lims.dt[era == "variant", .N]) {
-  mod_reported_cases <- with(lims.dt[era == "variant"], fill.case[date > start - 14])
-  mod_reported_cases[, breakpoint := TRUE ]
-  with(lims.dt[era == "variant"], mod_reported_cases[between(date, start, end), breakpoint := FALSE ])
-  results <- rbind(
-    results,
-    processRt(Rtcalc(mod_reported_cases), lims.dt[era == "variant", start], lims.dt[era == "variant", start], "variant")
-  )
-}
+ret <- rbindlist(results)
 
-ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
+saveRDS(ret, tail(.args, 1))
+
+# ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
 
 #' @examples 
 #' require(ggplot2)
@@ -171,7 +146,3 @@ ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
 #'   geom_line(aes(y=v-1.5), alpha = 0.05) +
 #'   geom_line(aes(y=v), data = epi.dt, color = "red") +
 #'   theme_minimal()
-
-
-saveRDS(ret, tail(.args, 1))
-

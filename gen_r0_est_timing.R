@@ -1,6 +1,5 @@
 suppressPackageStartupMessages({
   require(data.table)
-  require(lubridate)
 })
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
@@ -13,13 +12,16 @@ tariso <- tail(.args, 2)[1]
 
 transition_era <- function(
   dates, period, i3=tariso
-) data.table(
+) {
+  cast.dates <- as.Date(dates)
+data.table(
   iso3=i3,
-  start = as.Date(dates[1:3]),
-  end = as.Date(c(dates[2:3]-1, dates[4])),
+  start = cast.dates[1:3],
+  end = c(cast.dates[2:3]-1, cast.dates[4]),
   era = c("pre", "transition", "post"),
   period = period
 )
+}
 
 initial_intervention <- transition_era(
   sprintf("2020-%02i-%02i", c(3,3,4,4), c(6,22,5,30)),
@@ -34,22 +36,32 @@ censor_era <- function(from, first) {
   dt[, start := as.Date(from) ]
 }
 
+censor <- censor_era(sprintf("2020-%02i-%02i",2, 1), initial_intervention)
+
 variant_intervention <- transition_era(
   c(
-    sprintf("2020-%02i-%02i", c(11,12,12), c(22,16,29)),
+    sprintf("2020-%02i-%02i", c(11,12,12), c(22,17,29)),
     sprintf("2021-%02i-%02i", 1, 7)
   ),
   3
 )
 
-#' hand specifying eras from other analyses
-eras <- data.table(
-  iso3 = tariso,
-  start = as.Date(sprintf("2020-%02i-%02i",c(2,3,3,4,5,11), c(1,6,22,5,1,22))),
-  end = as.Date(sprintf("2020-%02i-%02i",c(3,3,4,4,10,12), c(5,21,4,30,15,16))),
-  era = c("censor", "pre", "transition", "post", "relaxation", "variant")
+relaxation_era <- function(first, second) {
+  ret <- copy(second)[1]
+  ret[, period := period - 1L ]
+  ret[, end := start - 1 ]
+  ret[, start := first[.N, end+1] ]
+  ret[, era := "relaxation" ]
+  ret
+}
+
+relax <- relaxation_era(initial_intervention, variant_intervention)
+
+eras <- rbind(
+  censor,
+  initial_intervention,
+  relax,
+  variant_intervention
 )
-
-
 
 saveRDS(eras, tail(.args, 1))

@@ -70,6 +70,6 @@ p <- force(ggplot(mlt[measure == "raw" | (value > 0.1)]) +
     labels=c(pre="pre-intervention",post="post-intervention",relaxation="relaxation",variant="emergent variant"),
     values = c(pre="firebrick", post="dodgerblue",relaxation="goldenrod",variant="red")
   ) +
-  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", "2021-01-01")), expand = FALSE))
+  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", "2021-03-01")), expand = FALSE))
   
 saveRDS(p, tail(.args, 1))

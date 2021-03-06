@@ -21,32 +21,35 @@ suppressPackageStartupMessages({
 fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
 tariso <- tail(.args, 4)[1]
 
-params <- readRDS(.args[1])
 urbfrac <- readRDS(.args[2])[iso3 == tariso, value / 100]
 case.dt <- readRDS(.args[3])[iso3 == tariso, .(date, cases)]
 case.dt[, croll := frollmean(cases, align = "center", 7)]
 timings <- readRDS(.args[4])
-intros.dt <- readRDS(.args[5])[iso3 == tariso]
-bootstrap.dt <- readRDS(.args[6])[fitslc]
+intros.dt <- readRDS(.args[5])[iso3 == tariso][sample %in% fitslc]
+bootstrap.dt <- readRDS(.args[6])[sample %in% fitslc][period == 1]
 
 day0 <- as.Date(intros.dt[, min(date)])
 intros <- intros.dt[,
   intro.day := as.integer(date - date[1])
-][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
+][, .(t=Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))), by=sample ]
 
-params$date0 <- day0
-params$pop[[1]]$seed_times <- intros
-params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
-params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
+popsetup <- function(basep, urbanfraction, day0) {
+  basep$date0 <- day0
+  basep$pop[[1]]$size <- round(basep$pop[[1]]$size*urbanfraction)
+  basep$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
+  basep
+}
+
+params <- popsetup(readRDS(.args[1]), urbfrac, day0)
 
 tarwindow <- as.Date(c("2020-09-01","2020-10-01"))
 tart <- as.numeric(tarwindow - day0)
-case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), cases]
+case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), round(croll)]
 
 startrelax <- as.integer(timings[era == "relaxation", start] - day0)
 endrelax <- as.integer(min(timings[era == "relaxation", end], tarwindow[2]) - day0)
 
-startpost <- as.integer(timings[era == "transition", start[1]] - day0)
+startpost <- as.integer(timings[era == "transition" & period == 1, start[1]] - day0)
 
 params$time1 <- endrelax
 
@@ -101,6 +104,8 @@ scheduler <- function(large, small, symp, k, shft) {
 
 pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1) 
 
+ascll <- function(asc, sim.cases) -sum(dbinom(case.slc, sim.cases, asc, log = TRUE))
+
 #' TODO expand sampling
 fits.dt <- bootstrap.dt[, {
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
@@ -108,6 +113,8 @@ fits.dt <- bootstrap.dt[, {
   pop <- params # copy constructor
   pop$pop[[1]]$y <- ys
   pop$pop[[1]]$u <- pop$pop[[1]]$u*us
+  sid <- sample
+  pop$pop[[1]]$seed_times <- intros[sample == sid, t]
   
   pars_int <- optim_sa(function(ps) {
     lrg <- ps[1]; sml <- ps[2]; symp <- ps[3];
@@ -126,29 +133,36 @@ fits.dt <- bootstrap.dt[, {
   setTxtProgressBar(pb, .GRP - 0.5)
   
   lrg <- pars_int[1]; sml <- pars_int[2]; symp <- pars_int[3]
-  
-  pars_relax <- optim_sa(function(ps) {
-    k <- ps[1]; shft <- as.integer(ps[2]); asc <- ps[3];
-     
+  safun <- function(ps, pop, lrg, sml, symp) {
+    k <- ps[1]; shft <- ps[2]
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
-    sim <- cm_simulate(
+    est <- cm_simulate(
       pop, 1,
       model_seed = 42L
     )$dynamics[
       compartment == "cases",
-      .(value = sum(value)*asc), by=t
-    ]
-    
-      est <- sim[between(t, tart[1], tart[2]), value]
-      casefact <- sum((1 - est/case.slc)^2)/length(est)
-      pfact <- (1-sim[which.max(value), t]/peakt)^2
-      casefact + pfact
-    },
-    start = c(0.1, 0, 0.10) ,
-    lower = c(0.001, -14, 0.01),
-    upper = c(0.2, 28, 0.5)
-  )$par
-  pars <- c(pars_int, pars_relax)
+      .(value = sum(value)), by=t
+    ][between(t, tart[1], tart[2]), value]
+    #' find the best possible ascertainment prob:
+    ret <- optimize(ascll, c(1e-6, .99), sim.cases = est)$objective
+    if (is.infinite(ret) | is.na(ret)) return(.Machine$integer.max)
+    ret
+  }
+  pars_relax <- optim(c(0.1, 0), safun, pop = pop, lrg = lrg, sml = sml, symp = symp, lower = c(1e-6, -28), upper = c(0.5, 28), method = "L-BFGS-B")
+  k <- pars_relax$par[1]; shft <- pars_relax$par[2]
+  pop$schedule <- scheduler(lrg, sml, symp, k, shft)
+  est <- cm_simulate(
+    pop, 1,
+    model_seed = 42L
+  )$dynamics[
+    compartment == "cases",
+    .(value = sum(value)), by=t
+  ][between(t, tart[1], tart[2]), value]
+  
+  #' find the best possible ascertainment prob:
+  asc <- optimize(ascll, c(1e-6, .99), sim.cases = est)$minimum
+  
+  pars <- c(pars_int, pars_relax$par, asc)
   names(pars) <- c("large", "small", "sympt", "k", "shft", "asc")
   setTxtProgressBar(pb, .GRP)
   as.list(pars)

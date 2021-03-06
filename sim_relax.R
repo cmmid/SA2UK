@@ -18,7 +18,6 @@ suppressPackageStartupMessages({
 tariso <- tail(.args, 3)[1]
 
 fits <- readRDS(.args[1])
-params <- readRDS(.args[2])
 intros.dt <- readRDS(.args[3])[iso3 == tariso]
 urbfrac <- readRDS(.args[4])[iso3 == tariso, value / 100]
 timings <- readRDS(.args[5])
@@ -26,20 +25,24 @@ timings <- readRDS(.args[5])
 day0 <- as.Date(intros.dt[, min(date)])
 intros <- intros.dt[,
   intro.day := as.integer(date - date[1])
-][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
+][, .(t=Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))), by=sample ]
 
-params$date0 <- day0
-params$pop[[1]]$seed_times <- intros
-params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
-params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
+popsetup <- function(basep, urbanfraction, day0) {
+  basep$date0 <- day0
+  basep$pop[[1]]$size <- round(basep$pop[[1]]$size*urbanfraction)
+  basep$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
+  basep
+}
+
+base <- popsetup(readRDS(.args[2]), urbfrac, day0)
 
 startrelax <- as.integer(timings[era == "relaxation", start] - day0)
 endrelax <- as.integer(timings[era == "relaxation", end] - day0)
-endsim <- as.integer(timings[era == "variant", start] - day0)
+endsim <- as.integer(timings[era == "pre" & period == 3, start] - day0)
 
 startpost <- as.integer(timings[era == "transition", start[1]] - day0)
 
-params$time1 <- endsim
+base$time1 <- endsim
 
 tms <- day0 + startpost
 relaxtms <- day0 + startrelax:endrelax
@@ -87,14 +90,16 @@ scheduler <- function(large, small, symp, k, shft) {
 }
 
 sims <- fits[,{
-  us <- rep(.SD[1, as.numeric(.SD)*umod, .SDcols = grep("^u_",names(fits))], each = 2)
-  ys <- rep(.SD[1, as.numeric(.SD), .SDcols = grep("^y_",names(fits))], each = 2)
-  testpop <- params; testpop$pop[[1]]$y <- ys
+  us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
+  ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_",names(.SD))], each = 2)
+  testpop <- base;
+  testpop$pop[[1]]$y <- ys
   testpop$pop[[1]]$u <- testpop$pop[[1]]$u*us
+  sid <- sample
+  testpop$pop[[1]]$seed_times <- intros[sample == sid, t]
   testpop$schedule <- scheduler(large, small, sympt, k, shft)
   res <- cm_simulate(
-    testpop, 1,
-    model_seed = 42L
+    testpop, 1, model_seed = 42L
   )$dynamics[compartment %in% c("cases","death_o","R")]
 }, by=sample]
 
@@ -107,6 +112,7 @@ res <- sims[,
 ]
 
 #' @examples 
+#' comparison <- res[compartment == "cases" & between(date, tarwindow[1], tarwindow[2]), .(value = sum(value)), by=.(sample, date)][sample == 1]
 #' ggplot(res[compartment == "cases"][fits[, .(sample, asc)], on=.(sample)][, .(asc.value = sum(value)*asc, value = sum(value)), by=.(sample, date)]) +
 #'   aes(date, asc.value, group = sample) +
 #'   geom_line(alpha = 0.1) +
@@ -116,6 +122,7 @@ res <- sims[,
 #'     data = readRDS("~/Dropbox/SA2UK/inputs/epi_data.rds")[iso3 == "ZAF"],
 #'     color = "black", inherit.aes = FALSE
 #'   ) +
+#'   annotate("rect", xmin=as.Date("2020-09-01"), xmax =as.Date("2020-10-01"), ymin = 0.01, ymax = Inf, alpha = 0.2, fill = "dodgerblue") +
 #'   scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
 #'   scale_y_log10() +
 #'   theme_minimal()

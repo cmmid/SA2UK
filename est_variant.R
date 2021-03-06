@@ -4,18 +4,21 @@ suppressPackageStartupMessages({
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/params/%s.rds",
+  "%s/outputs/params/%s_consolidated.rds",
   "%s/inputs/pops/%s.rds",
   "%s/inputs/urbanization.rds",
   "%s/outputs/projections/%s.rds",
+  "%s/outputs/sample/%s.rds",
   .debug[2],
-  "%s/variant/%s.rds"
+  "%s/outputs/variant/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 tariso <- tail(.args, 2)[1]
 
 #' targets included here in `variant` column
-fits <- readRDS(.args[1])
+ref <- readRDS(.args[5])[period == 3][, .(variant = pre), by=sample]
+fits <- readRDS(.args[1])[ref, on=.(sample), nomatch = 0]
+
 
 #' get susceptible depletion
 proj.dt <- readRDS(.args[4])[compartment == "R" & date == max(date) ]

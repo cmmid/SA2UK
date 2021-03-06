@@ -30,7 +30,7 @@ ${COVIDM}:
 GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
+MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
 # provides non-analysis support
 include support.makefile
@@ -111,8 +111,9 @@ tarsample: ${SINK}/sample/ZAF.rds
 ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
-${SINK}/params/%_consolidated.rds: gen_consolidate.R $(wildcard ${SINK}/params/%_*.rds)
-	Rscript $^ $(@D) $* $@
+.SECONDEXPANSION:
+${SINK}/params/%_consolidated.rds: gen_consolidate.R $$(wildcard ${SINK}/params/%_*.rds)
+	Rscript $< $(@D) $* $@
 
 testpars: ${SINK}/params/ZAF.rds
 conspars: ${SINK}/params/ZAF_consolidated.rds
@@ -120,11 +121,15 @@ conspars: ${SINK}/params/ZAF_consolidated.rds
 ${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
 
-${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds ${SINK}/intervention_timing/%.rds | ${SINK}/projections
+${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds ${SINK}/intervention_timing/%.rds | ${SINK}/projections
 	${RSCRIPT} $^ $* ${COVIDM} $@
+
+${SINK}/variant/%.rds: est_variant.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SINK}/projections/%.rds ${SINK}/sample/%.rds | ${SINK}/variant
+	${Rstar}
 
 int_scen: ${SINK}/scenarios/ZAF.rds
 int_proj: ${SINK}/projections/ZAF.rds
+int_var: ${SINK}/variant/ZAF.rds
 
 ${SINK}/figs/timeseries.rds: fig_relax_proj.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/ZAF.rds ${SINK}/phylo.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs
 	${Rstar}

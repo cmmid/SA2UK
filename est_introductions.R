@@ -15,11 +15,16 @@ suppressPackageStartupMessages({
   "%s/outputs/introductions/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
+#' given covidm assumptions,
+#' (namely, event time distributions insensitive to age
+#' and asymptomatic vs symptomatic paths leading to same generation time)
+#' yu distinctions are irrelevant. so can just pick one
 yuref <- readRDS(.args[1])[order(eqs)][which.max(eqs >= .5)]
 us <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
 ys <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
-Rl <- readRDS(.args[2])[, median(pre)]
-window_start <- readRDS(.args[7])[era == "pre", end]
+
+Rs <- readRDS(.args[2])[era == "pre" & period == 1]
+window_start <- readRDS(.args[7])[era == "pre" & period == 1, end]
 
 tariso <- tail(.args, 2)[1]
 pop <- readRDS(.args[3])[iso3 == tariso]
@@ -69,22 +74,22 @@ inf2death_dur <- 22
 
 slc <- ref[which.max(deaths > 0):.N][1:(gen_int/2)][deaths > 0]
 
+#' MAGIC NUMBER WARNING
+death_underreporting <- 1 #' assume initially no under-reporting vs later estimate of ~2.7 for SA
+
 if (slc[.N, date] - inf2death_dur < window_start) {
-  gens <- cumsum(Rl^(0:10))
-  ind <- which.max(gens > exp.infs)-1
-  missing <- exp.infs/sum(Rl^(0:(ind-1)))
-  infs <- missing*Rl^(ind-1)
+  expansion <- Rs[,{
+    gens <- cumsum(value^(0:10))
+    ind <- which.max(gens > exp.infs)-1
+    missing <- exp.infs/sum(value^(0:(ind-1)))
+    infs <- missing*value^(ind-1)
+    #' infections per OBSERVED death
+    .(tot.infs = infs*death_underreporting)
+  }, by=sample]
 } else stop("not implemented")
 
-#' MAGIC NUMBER WARNING
-death_underreporting <- 1 #' assume initially no under-reporting 2.7
-
-#' infections per OBSERVED death
-tot.infs <- infs*death_underreporting
-
-intros <- slc[,.(
+intros <- expansion[, slc[,.(
   infections = ceiling(tot.infs*deaths)
-), by=.(continent, iso3, date = date - inf2death_dur)]
-# }
+), by=.(continent, iso3, date = date - inf2death_dur)], by=sample]
 
 saveRDS(intros, tail(.args, 1))

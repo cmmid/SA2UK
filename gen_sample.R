@@ -11,10 +11,13 @@ suppressPackageStartupMessages({
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 yuqs <- readRDS(.args[1])
-Rts <- readRDS(.args[2])
+Rts <- dcast(
+  readRDS(.args[2])[era %in% c("pre", "post")],
+  sample + period ~ era, value.var = "value"
+)
 
 yusamp <- yuqs[
-  sample(.N, max(Rts$sample))
+  sample(.N, min(max(Rts$sample), .N))
 ][,
   .SD, .SDcols = -c("trial","chain", "lp", "ll", "mult", "size")
 ][, sample := 1L:.N ]

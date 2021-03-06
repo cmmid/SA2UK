@@ -1,24 +1,53 @@
 
 suppressPackageStartupMessages({
   require(data.table)
-  require(qs)
 })
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/scenarios/%s.rds",
+  "%s/outputs/params/%s_consolidated.rds",
   "%s/inputs/pops/%s.rds",
-  "%s/inputs/covidm_fit_yu.qs",
-  "%s/outputs/r0/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/inputs/urbanization.rds",
+  "%s/outputs/intervention_timing/%s.rds",
+  "%s/outputs/variant/%s.rds",
   .debug[2],
   "../covidm",
-  "%s/outputs/projections/%s.qs"
+  "%s/outputs/vax/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-scenario <- readRDS(.args[1])
 tariso <- tail(.args, 3)[1]
+
+fits <- readRDS(.args[1])
+varinfo <- readRDS(.args[6])
+intros.dt <- readRDS(.args[3])[iso3 == tariso]
+urbfrac <- readRDS(.args[4])[iso3 == tariso, value / 100]
+timings <- readRDS(.args[5])
+
+day0 <- as.Date(intros.dt[, min(date)])
+intros <- intros.dt[,
+   intro.day := as.integer(date - date[1])
+][, .(t=Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))), by=sample ]
+
+popsetup <- function(basep, urbanfraction, day0) {
+  basep$date0 <- day0
+  basep$pop[[1]]$size <- round(basep$pop[[1]]$size*urbanfraction)
+  basep$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
+  basep
+}
+
+base <- popsetup(readRDS(.args[2]), urbfrac, day0)
+
+startrelax <- as.integer(timings[era == "relaxation", start] - day0)
+endrelax <- as.integer(timings[era == "relaxation", end] - day0)
+startvar <- timings[era == "pre" & period == 3, start]
+
+startpost <- as.integer(timings[era == "transition", start[1]] - day0)
+
+tms <- day0 + startpost
+relaxtms <- day0 + startrelax:endrelax
+
+tier2 <- as.Date("2020-08-15")
 
 load("NGM.rda")
 
@@ -30,237 +59,177 @@ cm_force_shared = T
 cm_version = 2
 
 suppressPackageStartupMessages({
-  source(file.path(cm_path,"R","covidm.R"))
+  source(file.path(cm_path, "R", "covidm.R"))
 })
 
-yu_fits <- qread(.args[3])[order(ll)]
-yu_fits[, eqs := (1:.N)/.N ]
-#' using the median yu fits
-medyu <- yu_fits[which.max(eqs > 0.5)]
-yref <- unname(as.matrix(medyu[, .SD, .SDcols = grep("y_",colnames(medyu))]))
-uref <- unname(as.matrix(medyu[, .SD, .SDcols = grep("u_",colnames(medyu))]))
-ys <- rep(yref[1, ], each = 2)
-us <- rep(uref[1, ], each = 2)
+vax_delay <- as.Date("2021-04-01")
+t_vax <- as.numeric(vax_delay - day0)
+vax_eff <- 0.9
+vax_imm_dur_days <- 0
+doses_per_day <- 4000
+from_age <- 4
+to_age <- 16
+strategy_str <- 365
+t_end <- t_vax + strategy_str
+horizon <- 5
+base$time1 <- t_vax + horizon*365
+strategy <- "campaign"
 
-params <- readRDS(.args[2])
+mk_waning <- function(baseline_dur_days, ages = 16, age_dur_mods = rep(1, ages) ) {
+  rep(
+    ifelse(baseline_dur_days == 0, 0, 1/baseline_dur_days),
+    ages
+  ) / age_dur_mods
+}
 
-intros <- readRDS(.args[5])[iso3 == tariso][, intro.day := as.integer(date - date[1]) ][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
-urbfrac <- readRDS(.args[6])[iso3 == tariso, value / 100]
-
-params$pop[[1]]$seed_times <- intros
-params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
-# params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
-
-params$pop <- lapply(
-  params$pop,
-  function(x){
-    x$y <- ys
-    x$u <- us
-    return(x)
+calc_dose_per_by_age <- function(f, t, sizes, total_dpd) {
+  doses_per_day <- rep(0, 16)
+  tar_ages <- from_age:to_age
+  vp <- sizes[tar_ages]; vp <- vp/sum(vp)
+  #' TODO potentially make demographic sensitive?
+  doses_per_day[tar_ages] <- floor(vp*total_dpd)
+  del <- total_dpd - sum(doses_per_day)
+  if (del) {
+    del_tar <- from_age:(from_age+del-1)
+    doses_per_day[del_tar] <- doses_per_day[del_tar] + 1
   }
-)
+  doses_per_day
+}
 
-Rts <- readRDS(.args[4])[era != "transition"]
-
-run_options <- melt(
-  Rts[era == "pre"],
-  measure.vars = c("lo.lo","lo","med","hi","hi.hi"),
-  value.name = "r0"
-)[, model_seed := 1234L ]
-
-refR0 <- cm_ngm(params)$R0
-
-params_back <- params
-
-# scenario[, waning_dur := NA_integer_ ]
-# scenario[!(scen_type == "unmitigated"), waning_dur := 90 ]
-
-allbind <- data.table(
-  run=integer(0),
-  group = factor(),
-  value = integer(),
-  AR = numeric(),
-  r_id = integer()
-)
-
-iv_data <- scenario[scen_id != 1 & !is.na(self_iso)][order(trigger_type)]
-for(i in 1:nrow(run_options)){
-  params <- params_back
-  # only run until recalc point
-  params$time1 <- iv_data[, max(end_day, na.rm = TRUE)]
+vaxschedule <- {if (strategy == "campaign") {
+  # set parameters for this set of scenario runs
+  base$pop[[1]]$ev = rep(vax_eff, 16) #' TODO mods by age?
+  base$pop[[1]]$wv = mk_waning(vax_imm_dur_days)
   
-  #' adjust r0 to that in current sample
-  #' TODO use sample y / u?
-  target_R0 <- run_options[i, r0]
-  uf <- target_R0 / refR0
-  params$pop <- lapply(
-    params$pop,
-    function(x){
-      x$u <- x$u * uf
-      return(x)
-    }
+  doses_per_day_base <- calc_dose_per_by_age(from_age, to_age, base$pop[[1]]$size, doses_per_day)
+  doses_per_day_later <- calc_dose_per_by_age(4, to_age, base$pop[[1]]$size, doses_per_day)
+  
+  covaxIncreaseMult <- c(4, 6, 8)
+  covaxIncreaseDays <- t_vax + seq(91, by=91, length.out = length(covaxIncreaseMult))
+  
+  dpd <- lapply(
+    1:(length(covaxIncreaseMult)+2),
+    function (i) c(1, covaxIncreaseMult, 0)[i]*(if (i==1) doses_per_day_base else doses_per_day_later)
   )
   
-  # generic interventions
-  for (j in 1:nrow(iv_data[population == -1])) {
-    #pars <- as.list(iv_data[population == -1][j])
-    cons <- with(as.list(iv_data[population == -1][j]), {
-      list(1-c(home, work, school, other), c(1,1,1,1))
-    })
-    tms <- with(as.list(iv_data[population == -1][j]), {
-      as.Date(params$date0)+c(start_day, ifelse(is.finite(end_day),end_day,params$time1))
-    })
-    si <- with(as.list(iv_data[population == -1][j]), {
-      list(rep(1-self_iso, 16), rep(1, 16))
-    })
-    params$schedule[[length(params$schedule)+1]] <- list(
+  ### NEW BIT IS HERE
+  list(list(   # care when adding to schedule
+    parameter = 'v',             # impact parameter 'v' (vaccines administered per day for each age group)
+    pops = 0,                    # 0th population
+    mode = 'assign',             # assign values to v
+    times =     c(t_vax, covaxIncreaseDays, t_end) + day0,    # do changes on vax day, vax day + 90
+    values = dpd
+    # however many doses a day for strategy_str days, then stop
+  ))
+  
+} else {
+  list()
+}}
+
+vartimes <- seq(as.Date("2020-10-15")-1, startvar+20, by="day")
+#' interpolate between 1 and variant_mod over phylo period
+#' TODO alternative functional shape?
+varmul <- function(vm) lapply(seq(1, vm, along.with = vartimes), function(vm) rep(vm, 16))
+
+stretch <- function(end, along) lapply(along, function(...) end[[1]])
+
+varlater <- seq(tail(vartimes, 1)+1, base$time1 + day0, by=1)
+relaxlater <- seq(tail(relaxtms, 1)+1, base$time1 + day0, by=1)
+
+scheduler <- function(large, small, symp, k, shft, variant_mod, vax) {
+  cons <- list(1-c(0, small, large, small))
+  si <- list(rep(1-symp, 16))
+  relaxfact <- 1-(1+exp(-k*as.numeric(relaxtms-tier2-shft)))^-1
+  relaxfact <- (1-relaxfact[1]) + relaxfact
+  relaxcons <- lapply(relaxfact, function(rf) 1-c(0, small, large, small)*rf)
+  relaxsi <- lapply(relaxfact, function(rf) 1-rep(symp, 16)*rf)
+  reffact <- rep(1, 16)
+  
+  vm <- varmul(variant_mod)
+  
+  ret <- list(
+    list(
       parameter = "contact",
       pops = numeric(),
       mode = "multiply",
-      values = cons,
-      times = tms
-    )
-    params$schedule[[length(params$schedule)+1]] <- list(
+      values = c(cons, relaxcons, stretch(tail(relaxcons,1), relaxlater)),
+      times = c(tms, relaxtms, relaxlater)
+    ),
+    list(
       parameter = "fIs",
       pops = numeric(),
       mode = "multiply",
-      values = si,
-      times = tms
+      values = c(si, relaxsi, stretch(tail(relaxsi,1), relaxlater)),
+      times = c(tms, relaxtms, relaxlater)
+    ),
+    list(
+      parameter = "u",
+      pops = numeric(),
+      mode = "multiply",
+      values = c(vm, stretch(tail(vm, 1), varlater)),
+      times = c(vartimes, varlater)
     )
-    
-    
-  }
-  
-  #' run the model
-  sim <- cm_simulate(
-    params, 1,
-    model_seed = run_options[i, model_seed]
-  )$dynamics[compartment == "R"][
-    order(t), .(value = value[.N]), keyby=.(run, group)
-  ]
-  
-  sim[order(run, group), AR := value / params$pop[[1]]$size ]
-  
-  sim[, r_id := i ]
-  
-  allbind <- rbind(allbind, sim)
-  
+  )
+  if (length(vax)) {
+    return(c(ret, vax)) 
+  } else return(ret)
 }
 
-modR <- melt(Rts[era == "modification"], id.vars = "era", measure.vars = 2:6)
-tarRs <- modR[, value]
-baseRs <- run_options[, r0]
-
-#' these are the age specific reductions in susceptibility,
-#' due to baseline adjustment to R0 & associated AR
-ufs <- mapply(
-  function(br, sfrac) br/refR0 * sfrac,
-  br = baseRs,
-  sfrac = lapply(1:5, function(ri) 1 - allbind[r_id == ri, AR]),
-  SIMPLIFY = FALSE
+keepoutcomes <- c(
+  "cases", "death_o",
+  "non_icu_severe_i", "non_icu_critical_i", "icu_critical_i",
+  "non_icu_severe_p", "non_icu_critical_p", "icu_critical_p"
 )
 
-#' these are the baseline reductions  
-vs <- scenario[!is.na(self_iso) & scen_id != 1][,c(home, work, school, other, self_iso)]
+sims <- fits[, {
+  # browser()
+  us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
+  ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_",names(.SD))], each = 2)
+  testpop <- base;
+  testpop$pop[[1]]$y <- ys
+  testpop$pop[[1]]$u <- testpop$pop[[1]]$u*us
+  sid <- sample
+  var_mod <- varinfo[sample == sid, withdepl]
+  testpop$pop[[1]]$seed_times <- intros[sample == sid, t]
+  testpop$schedule <- scheduler(large, small, sympt, k, shft, var_mod, vaxschedule)
+  res <- cm_simulate(
+    testpop, 1, model_seed = 42L
+  )$dynamics[compartment %in% keepoutcomes]
+}, by=sample]
 
-#' fitting space to model space
-#' del is a single factor for changes to all parameters
-#' del can range from -inf to +inf
-#' del < 0 => decreasing the reduction toward 0%
-#' del > 0 => increasing the reduction toward 100%
-#' del == 0 => no change
-mvs <- function(del) {
-  fac <- ifelse(del >= 0, 1, 0) - sign(del)*exp(-abs(del))
-  return(if (del > 0) {
-    vs*(1-fac) + fac
-  } else {
-    vs*fac
-  })
-}
+res <- sims[, .(
+  sample, t,
+  group, compartment,
+  value
+)]
 
-fn <- function(del) {
-  rs <- mvs(del)
-  sum((sapply(ufs, function(uf)
-    cm_ngm(
-      params_back,
-      uf,
-      contact_reductions = rs[-5],
-      fIs_reductions = rs[5]
-    )$R0
-  ) - rev(tarRs))^2)
-}
+res[order(t), cvalue := cumsum(value), by=.(sample, group, compartment)]
 
-#' determine fitting space optimal del    
-odel <- optimize(fn, c(-20, 20))$minimum
+evalts <- t_vax + 0:5*365
 
-#' update scenarios
-scenario[
-  is.na(self_iso) & scen_id != 1 & !is.infinite(end_day),
-  c("home","work","school","other", "self_iso") := as.list(mvs(odel))
-]
+int_id <- 2
+ret <- res[t %in% evalts][, anni_year := (t - t_vax)/365 ][, date := t + day0 ][, epi_id := 0 ][, intervention_id := int_id ]
 
-allbind <- data.table(
-  run = integer(), t = integer(),
-  group = factor(), compartment = factor(),
-  value = numeric(), r_id = integer()
-)
-
-iv_data <- scenario[scen_id != 1 & !is.na(self_iso)][order(trigger_type)]
-for(i in 1:nrow(run_options)){
-  
-  params <- params_back
-  # only run until recalc point
-  params$time1 <- iv_data[, max(end_day, na.rm = TRUE)+60]
-  
-  #adjust r0 to that in current sample
-  target_R0 <- run_options[i, r0]
-  uf <- target_R0 / refR0
-  params$pop <- lapply(
-    params$pop,
-    function(x){
-      x$u <- x$u * uf
-      return(x)
-    }
-  )
-  
-  cons <- with(iv_data[order(start_day)], mapply(
-    function(h,w,s,o) list(1-c(h,w,s,o)),
-    h=home, w=work, s=school, o=other
-  ))
-  si <- lapply(iv_data[order(start_day)]$self_iso, function(si) {
-    rep(1-si, 16)
-  })
-  tms <- as.Date(params$date0) + iv_data[order(start_day)]$start_day
-  params$schedule[[length(params$schedule)+1]] <- list(
-    parameter = "contact",
-    pops = numeric(),
-    mode = "multiply",
-    values = cons,
-    times = tms
-  )
-  params$schedule[[length(params$schedule)+1]] <- list(
-    parameter = "fIs",
-    pops = numeric(),
-    mode = "multiply",
-    values = si,
-    times = tms
-  )
-  #run the model
-  sim <- cm_simulate(
-    params, 1,
-    model_seed = run_options[i, model_seed]
-  )$dynamics
-  
-  allbind <- rbind(sim[
-    compartment %in% c("cases", "subclinical", "R"),
-    .(value),
-    keyby=.(run, t, group, compartment)
-  ][, r_id := i ], allbind)
-  
-}
+saveRDS(ret, sprintf("example_%04i.rds", int_id))
 
 #' @examples 
-#' require(ggplot2)
-#' ggplot(allbind[compartment == "cases"]) + aes(t, value) + facet_grid(group ~ ., scales = "free_y") + geom_line()
+#' comparison <- res[compartment == "cases" & between(date, tarwindow[1], tarwindow[2]), .(value = sum(value)), by=.(sample, date)][sample == 1]
+#' plot.dt <- res[compartment == "cases"][fits[, .(sample, asc)], on=.(sample)][, .(asc.value = sum(value*asc), value = sum(value)), by=.(sample, date)]
+#' ggplot(plot.dt) +
+#'   aes(date, asc.value, group = sample) +
+#'   geom_line(alpha = 0.1) +
+#'   geom_line(aes(y=value), alpha = 0.1, color = "red") +
+#'   geom_line(
+#'     aes(date, cases),
+#'     data = readRDS("~/Dropbox/SA2UK/inputs/epi_data.rds")[iso3 == "ZAF"],
+#'     color = "black", inherit.aes = FALSE
+#'   ) +
+#'   annotate("rect", xmin=as.Date("2020-09-01"), xmax =as.Date("2020-10-01"), ymin = 0.01, ymax = Inf, alpha = 0.2, fill = "dodgerblue") +
+#'   geom_vline(xintercept = as.Date("2020-11-22"), color = "dodgerblue") +
+#'   scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
+#'   scale_y_log10() +
+#'   theme_minimal() +
+#'   coord_cartesian(xlim = as.Date(c(NA, "2021-03-01")))
 
-qsave(allbind, tail(.args, 1))
+saveRDS(res, tail(.args, 1))
+
