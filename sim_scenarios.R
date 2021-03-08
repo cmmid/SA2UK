@@ -3,7 +3,7 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/SA2UK", "ZAF", "0001")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/params/%s_consolidated.rds",
   "%s/inputs/pops/%s.rds",
@@ -11,11 +11,14 @@ suppressPackageStartupMessages({
   "%s/inputs/urbanization.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/variant/%s.rds",
+  "%s/inputs/scenario.rds",
   .debug[2],
+  .debug[3],
   "../covidm",
-  "%s/outputs/vax/%s.rds"
-), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+  "%s/outputs/vax/%s/%s.rds"
+), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
 
+tarscenario <- as.integer(tail(.args, 4)[1])
 tariso <- tail(.args, 3)[1]
 
 fits <- readRDS(.args[1])
@@ -58,9 +61,9 @@ cm_build_verbose = F;
 cm_force_shared = T
 cm_version = 2
 
-suppressPackageStartupMessages({
+#suppressPackageStartupMessages({
   source(file.path(cm_path, "R", "covidm.R"))
-})
+#})
 
 vax_delay <- as.Date("2021-04-01")
 t_vax <- as.numeric(vax_delay - day0)
@@ -73,7 +76,7 @@ strategy_str <- 365
 t_end <- t_vax + strategy_str
 horizon <- 5
 base$time1 <- t_vax + horizon*365
-strategy <- "campaign"
+strategy <- "none"
 
 mk_waning <- function(baseline_dur_days, ages = 16, age_dur_mods = rep(1, ages) ) {
   rep(
@@ -152,22 +155,22 @@ scheduler <- function(large, small, symp, k, shft, variant_mod, vax) {
       parameter = "contact",
       pops = numeric(),
       mode = "multiply",
-      values = c(cons, relaxcons, stretch(tail(relaxcons,1), relaxlater)),
-      times = c(tms, relaxtms, relaxlater)
+      values = c(cons, relaxcons),#, stretch(tail(relaxcons,1), relaxlater)),#
+      times = c(tms, relaxtms)#, relaxlater)#
     ),
     list(
       parameter = "fIs",
       pops = numeric(),
       mode = "multiply",
-      values = c(si, relaxsi, stretch(tail(relaxsi,1), relaxlater)),
-      times = c(tms, relaxtms, relaxlater)
+      values = c(si, relaxsi),#, stretch(tail(relaxsi,1), relaxlater)),#
+      times = c(tms, relaxtms)#, relaxlater)#
     ),
     list(
       parameter = "u",
       pops = numeric(),
       mode = "multiply",
-      values = c(vm, stretch(tail(vm, 1), varlater)),
-      times = c(vartimes, varlater)
+      values = c(vm),#, stretch(tail(vm, 1), varlater)),
+      times = c(vartimes)#, varlater)
     )
   )
   if (length(vax)) {
@@ -204,11 +207,11 @@ res <- sims[, .(
 )]
 
 res[order(t), cvalue := cumsum(value), by=.(sample, group, compartment)]
-
+res[, date := t + day0 ]
 evalts <- t_vax + 0:5*365
 
 int_id <- 2
-ret <- res[t %in% evalts][, anni_year := (t - t_vax)/365 ][, date := t + day0 ][, epi_id := 0 ][, intervention_id := int_id ]
+ret <- res[t %in% evalts][, anni_year := (t - t_vax)/365 ][, epi_id := 0 ][, intervention_id := int_id ]
 
 saveRDS(ret, sprintf("example_%04i.rds", int_id))
 
