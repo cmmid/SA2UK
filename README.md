@@ -6,13 +6,13 @@ This repository provides an analytical pipeline for calibrated projections of SA
 
 This analysis is designed to be run from the command line, specifically in an high performance computing setup.
 
-The core model is [covidm](https://github.com/nicholasdavies/covidm). This repository does not manage installation of that library and it's dependencies.
+The core model is [covidm](https://github.com/nicholasdavies/covidm). There is a convenience target for cloning that repository, but this does not manage installation of covidm dependencies. The `.install` target will attempt to compile covidm; subsequent uses of covidm will *not* recompile that library.
 
-This repository does define all other dependencies (*i.e.*, R packages) and inputs (*e.g.* case and death data), and provides targets for their download and cleaning.
+This repository does define other dependencies (*i.e.*, R packages) and inputs (*e.g.* case and death data), and provides targets for their download and cleaning.
 
-The analyses defined herein are written in an embarassingly parallel fashion. Inputs and outputs are segregated by file paths; within each source (inputs) and sink (outputs) subfolder, there are identical files. Generic inputs and outputs are defined at the source and sink folder level, while locale-specific ones are defined in subfolders.
+This analyses is written in "map-reduce" paradigm, with the parallel steps defined by different ISO country codes. Inputs and outputs are segregated by file paths; within each source (inputs) and sink (outputs) subfolder, there are identical files. Generic inputs and outputs are defined at the source and sink folder level, while locale-specific ones are defined in subfolders or files named by ISO code.
 
-The `Makefile` defines the relationships between inputs and outputs, in terms of various scripts in the `analysis` folder. Assorted top level variables, *e.g.* path to the source and sink folders, can be defined in a `local.makefile`; these variables are distinguishable by the `?=` assignment in the `Makefile`. The `example.makefile` shows the structure for a `local.makefile`, and `make local.makefile` will create a copy for you to edit.
+The `Makefile` defines the relationships between inputs and outputs, in terms of various scripts. Assorted top level variables, *e.g.* path to the source and sink folders, can be defined in a `local.makefile`; these variables are distinguishable by the `?=` assignment in the `Makefile`. The `example.makefile` shows the structure for a `local.makefile`, and `make local.makefile` will create a copy for you to edit.
 
 In general, each target represents a step in the analysis, typically accomplished by executing a single script with dependencies and the target as arguments, *i.e.*:
 
@@ -46,18 +46,17 @@ Scripts follow these naming conventions:
  - `gen_...`: synthesizes local data into new local data; only re-organization, no analysis
  - `est_...`: imputes some result from local data; maybe either deterministic or stochastic
  - `sim_...`: simulates (projects) some process using assumptions in local data
- - `dig_...`: digests simulation products into summaries
  - `fig_...`: visualizes some element of the analysis
 
 # Setup
 
-`make setup` will attempt to install dependencies and gather inputs.
+`make .install` will attempt to install dependencies. `make allinputs` will attempt to get raw inputs.
 
 # Data Sources
 
 ## Reported Cases and Deaths
 
-We use the European Centre for Disease Prevention and Control (ECDC) [time series for cases and deaths](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv). Aside from superficial organizational changes, we perform one cleaning step to address negative case counts. We assume negative reports represent a correction to earlier data. We distribute the negative cases proportionally into all previous daily case counts.
+We use the JHU Center for Systems Science and Engineering (CSSE) time series for cases and deaths [(repository link)](https://github.com/CSSEGISandData/COVID-19). Aside from superficial organizational changes, we perform one cleaning step to address negative case counts (if necessary; the process emits a warning message when this occurs). We assume negative reports represent a correction to earlier data, thus we distribute negative incidence into previous daily counts. See `get_epi_data.R` for specifics.
 
 # Analysis Steps
 

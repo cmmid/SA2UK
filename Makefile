@@ -55,7 +55,21 @@ ${SOURCE}/prov_data.rds: get_prov_data.R | ${SOURCE}
 ${SINK}/cfrs.rds: est_scale_prov.R ${SOURCE}/prov_data.rds | ${SINK}
 	${R}
 
-epi: ${SOURCE}/epi_data.rds ${SOURCE}/prov_data.rds ${SINK}/cfrs.rds
+WBURL := http://api.worldbank.org/v2/en/indicator/SP.URB.TOTL.IN.ZS?downloadformat=csv
+
+${SOURCE}/urbanization.rds: gen_urbanization.R | ${SOURCE}
+	curl ${WBURL} --output tmp.urban.zip
+	unzip tmp.urban.zip API_SP.URB.TOTL.IN.ZS_DS2_*.csv
+	mv API_SP.URB.TOTL.IN.ZS_DS2_*.csv tmp.urban.csv
+	Rscript $^ tmp.urban.csv $@
+
+${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
+	${R}
+
+${SOURCE}/ox_timings.rds: gen_ox_si_timing.R | ${SOURCE}
+	${R}
+
+allinputs: ${SOURCE}/epi_data.rds ${SOURCE}/urbanization.rds ${SOURCE}/populations.rds
 
 resetepi:
 	rm ${SOURCE}/epi_data.rds
@@ -71,17 +85,6 @@ ${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_ti
 #${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SINK}/interventions.rds ${SOURCE}/ecdc_data.rds ${SINK}/introductions/%.rds | ${SINK}/intervention_timing
 ${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/phylo.rds | ${SINK}/intervention_timing
 	${Rstar}
-
-${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
-	${R}
-
-WBURL := http://api.worldbank.org/v2/en/indicator/SP.URB.TOTL.IN.ZS?downloadformat=csv
-
-${SOURCE}/urbanization.rds: gen_urbanization.R | ${SOURCE}
-	curl ${WBURL} --output tmp.urban.zip
-	unzip tmp.urban.zip API_SP.URB.TOTL.IN.ZS_DS2_*.csv
-	mv API_SP.URB.TOTL.IN.ZS_DS2_*.csv tmp.urban.csv
-	Rscript $^ tmp.urban.csv $@
 
 ${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
