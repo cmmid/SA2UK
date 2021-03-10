@@ -71,5 +71,5 @@ p <- force(ggplot(mlt[measure == "raw" | (value > 0.1)]) +
     values = c(pre="firebrick", post="dodgerblue",relaxation="goldenrod",variant="red")
   ) +
   coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", "2021-03-01")), expand = FALSE))
-  
-saveRDS(p, tail(.args, 1))
+
+ggsave(tail(.args, 1), p, height = 3, width = 6, units = "in", dpi = 900)

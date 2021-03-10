@@ -9,7 +9,8 @@ suppressPackageStartupMessages({
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/yuqs/%s.rds",
   "%s/inputs/pops/%s.rds",
-  getDTthreads(), "1e3", #' cores, samples
+  getDTthreads(),
+  "1e3", #' cores, samples
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)

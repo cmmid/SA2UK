@@ -1,8 +1,9 @@
 suppressPackageStartupMessages({
   require(data.table)
+  require(countrycode)
 })
 
-.debug <- "~/Dropbox/SA2UK"
+.debug <- "~/Dropbox/Covid_LMIC/All_Africa_paper"
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/epi_data.rds"
 ), .debug) else commandArgs(trailingOnly = TRUE)
@@ -13,7 +14,8 @@ casesurl <- sprintf("%s/time_series_covid19_confirmed_global.csv", jhurl)
 deathsurl <- sprintf("%s/time_series_covid19_deaths_global.csv", jhurl)
 
 fetch <- function(url, vn) melt(fread(url)[
-  `Country/Region` %in% c("South Africa", "United Kingdom") &
+  !(`Country/Region` %in% c("Diamond Princess", "Kosovo", "Micronesia", "MS Zaandam")) &
+#  `Country/Region` %in% c("South Africa", "United Kingdom") &
     `Province/State` == ""
 ][, -c(1,3,4) ], id.vars = "Country/Region", variable.name = "date", value.name = vn)
 
@@ -23,18 +25,18 @@ deaths.dt <- fetch(deathsurl, "deaths")
 
 res <- cases.dt[deaths.dt, on=.(`Country/Region`, date)]
 res[, date := as.Date(date, format = "%m/%d/%y") ]
-
+res[, iso3 := countrycode(`Country/Region`, "country.name", "iso3c") ]
+res[, continent := countrycode(iso3, "iso3c", "continent") ]
 #' select the columns of interest; order by key columns
 final <- res[order(date),
   .(date, cases = c(cases[1], diff(cases)), deaths = c(deaths[1], diff(deaths))),
-  keyby=.(
-    continent = fifelse(`Country/Region`=="South Africa","Africa","Europe"),
-    iso3 = fifelse(`Country/Region`=="South Africa","ZAF","GBR")
-  )
+  keyby=.(continent, iso3)
 ]
+setkey(final, continent, iso3, date)
 
-#' @examples 
-#' ggplot(final) + aes(date) + facet_grid(iso3 ~ .) +
+#' @examples
+#' require(ggplot2)
+#' ggplot(final[iso3 %in% c("ZAF","GHA")]) + aes(date) + facet_grid(iso3 ~ .) +
 #'   geom_line(aes(y=cases)) + theme_minimal() + scale_y_log10() +
 #'   scale_x_date(name=NULL, date_breaks = "month", date_labels = "%b")
 

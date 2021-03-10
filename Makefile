@@ -13,7 +13,7 @@ SINK   := ${DATART}/outputs
 
 # for running EpiNow2; should override in local.makefile
 NCORES ?= 4
-NSAMPS ?= 8e3
+NSAMPS ?= 2e3
 
 # TODO define parallel path, url lists; feed to something in support.makefile
 # TODO that support.makefile should also do existence checks, and pull if repo
@@ -31,6 +31,8 @@ GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
 MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
+
+ISOS := ZAF GHA
 
 # provides non-analysis support
 include support.makefile
@@ -86,6 +88,8 @@ ${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_ti
 ${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/phylo.rds | ${SINK}/intervention_timing
 	${Rstar}
 
+timing: $(patsubst %,${SINK}/intervention_timing/%.png,${ISOS})
+
 ${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
@@ -95,11 +99,13 @@ NGM.rda: NGM.R
 ${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/pops/%.rds | ${SOURCE}/yuqs NGM.rda
 	${R}
 
+.PRECIOUS: ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds
+
 #' TODO strip relaxation calculation
-${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds | ${SINK}/r0
+${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds | ${SINK}/r0
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
-int_r0: ${SINK}/r0/ZAF.rds
+int_r0: $(patsubst %,${SINK}/r0/%.rds,${ISOS})
 
 ${SINK}/introductions/%.rds: est_introductions.R ${SINK}/yuqs/%.rds ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
@@ -121,7 +127,7 @@ ${SINK}/params/%_consolidated.rds: gen_consolidate.R $$(wildcard ${SINK}/params/
 testpars: ${SINK}/params/ZAF.rds
 conspars: ${SINK}/params/ZAF_consolidated.rds
 
-${SINK}/scenarios/%.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
+${SINK}/scenarios.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
 
 ${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds ${SINK}/intervention_timing/%.rds | ${SINK}/projections

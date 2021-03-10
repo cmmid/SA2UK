@@ -11,7 +11,10 @@ suppressPackageStartupMessages({
   "%s/inputs/yuqs/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-yu <- qread(.args[1])
+SAMPLESIZE <- 2000
+
+yu <- qread(.args[1])[sample(.N, SAMPLESIZE, replace = T)]
+yu[, sample_id := 1:.N ]
 pop <- readRDS(.args[2])
 
 load("NGM.rda")
@@ -27,8 +30,8 @@ qs.dt <- yu[, {
     R0_multiplier = umod, ymod = ymod
   )
   .(baseR = ngm$R0, si = cm_generation_time(pop, ymod = ymod, ngm = ngm))
-}, by=.(trial, chain), .SDcols = c(uids, yids)]
+}, by=sample_id, .SDcols = c(uids, yids)]
 
-ret <- qs.dt[order(baseR), eqs := (1:.N)/.N ][yu, on=.(trial, chain), nomatch = 0]
+ret <- qs.dt[order(baseR), eqs := (1:.N)/.N ][yu, on=.(sample_id), nomatch = 0]
 
 saveRDS(ret, tail(.args, 1))
