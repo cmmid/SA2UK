@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
 })
 
 #' fixed stride of 20; adjust starting point
-.debug <- c("~/Dropbox/SA2UK","ZAF","0001")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","GHA","0001")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/pops/%s.rds",
   "%s/inputs/urbanization.rds",
