@@ -3,9 +3,9 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/params/%s_consolidated.rds",
+  "%s/outputs/params/%s_0001.rds",
   "%s/inputs/pops/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/inputs/urbanization.rds",
@@ -119,7 +119,7 @@ res <- sims[,
 #'   geom_line(aes(y=value), alpha = 0.1, color = "red") +
 #'   geom_line(
 #'     aes(date, cases),
-#'     data = readRDS("~/Dropbox/SA2UK/inputs/epi_data.rds")[iso3 == "ZAF"],
+#'     data = readRDS("~/Dropbox/Covid_LMIC/All_Africa_paper/inputs/epi_data.rds")[iso3 == .debug[2]],
 #'     color = "black", inherit.aes = FALSE
 #'   ) +
 #'   annotate("rect", xmin=as.Date("2020-09-01"), xmax =as.Date("2020-10-01"), ymin = 0.01, ymax = Inf, alpha = 0.2, fill = "dodgerblue") +
