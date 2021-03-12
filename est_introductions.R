@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/yuqs/%s.rds", #' estimated
   "%s/outputs/r0/%s.rds", #' estimated
@@ -41,7 +41,9 @@ agedist <- cm_ss_age_distro(refngm$ss)
 #' generation interval depends on age distro + model infectious period durations
 gen_int <- cm_generation_time(pars, ymod = ys, ngm = refngm)
 
-ref <- readRDS(.args[5])[iso3 == tariso, .SD][date >= window_start][1:(which.max(deaths > 0)+round(gen_int))]
+ref <- readRDS(.args[5])[
+  iso3 == tariso, .SD
+][1:(which.max(deaths > 0)+round(gen_int))]
 
 ifr <- fread(.args[6])$ifr/100
 # MAGIC NUMBER WARNING
