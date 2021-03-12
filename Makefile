@@ -32,7 +32,7 @@ GITLIBS := ${COVIDM}
 # support.makefile will provide a directory target for all of these
 MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
-ISOS := ZAF GHA
+ISOS ?= ZAF GHA
 
 # provides non-analysis support
 include support.makefile
@@ -99,7 +99,7 @@ NGM.rda: NGM.R
 ${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/pops/%.rds | ${SOURCE}/yuqs NGM.rda
 	${R}
 
-.PRECIOUS: ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds
+.PRECIOUS: ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds
 
 #' TODO strip relaxation calculation
 ${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds | ${SINK}/r0
@@ -107,18 +107,22 @@ ${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.
 
 int_r0: $(patsubst %,${SINK}/r0/%.rds,${ISOS})
 
-${SINK}/introductions/%.rds: est_introductions.R ${SINK}/yuqs/%.rds ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
+${SINK}/introductions/%.rds: est_introductions.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
+
+intros: $(patsubst %,${SINK}/introductions/%.rds,${ISOS})
 
 STARTID ?= 0001
 
 ${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SINK}/sample
 	${R}
 
-tarsample: ${SINK}/sample/ZAF.rds
+samples: $(patsubst %,${SINK}/sample/%.rds,${ISOS})
 
 ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
+
+pars: $(patsubst %,${SINK}/params/%.rds,${ISOS})
 
 .SECONDEXPANSION:
 ${SINK}/params/%_consolidated.rds: gen_consolidate.R $$(wildcard ${SINK}/params/%_*.rds)
