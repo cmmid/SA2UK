@@ -3,7 +3,7 @@ suppressPackageStartupMessages({
 })
 
 #' fixed stride of 20; adjust starting point
-.debug <- c("~/Dropbox/SA2UK","ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","GHA")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/yuqs/%s.rds",
   "%s/outputs/r0/%s.rds",
@@ -16,13 +16,11 @@ Rts <- dcast(
   sample + period ~ era, value.var = "value"
 )
 
-yusamp <- yuqs[
-  sample(.N, min(max(Rts$sample), .N))
-][,
+yusamp <- yuqs[sample_id <= max(Rts$sample)][,
   .SD, .SDcols = -c("trial","chain", "lp", "ll", "mult", "size")
-][, sample := 1L:.N ]
+]
 
-bootstrap.dt <- Rts[yusamp, on=.(sample)]
+bootstrap.dt <- Rts[yusamp, on=.(sample = sample_id), nomatch = 0]
 bootstrap.dt[, umod := pre/baseR ]
 
 saveRDS(bootstrap.dt, tail(.args, 1))
