@@ -1,9 +1,9 @@
 suppressPackageStartupMessages({
-  require(EpiNow2)
   require(data.table)
+  require(EpiNow2)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
@@ -36,6 +36,9 @@ tstep <- simpar$time_step
 pop <- simpar$pop[[1]]
 
 #' Set up example generation time
+#' TODO: approach this similarly to incubation period?
+#' right now allows variation by age distro etc,
+#' but the model assumptions mean that's not practically relevant
 generation_time <- as.list(EpiNow2::generation_times[disease == "SARS-CoV-2",
   .(mean, mean_sd, sd, sd_sd, max=30)
 ])
@@ -57,11 +60,11 @@ est.window <- 30
 
 est.qs <- unique(c(pnorm(seq(-1,0,by=0.25)), pnorm(seq(0,1,by=0.25))))
 
-Rtcalc <- function(case.dt, gp = NULL) estimate_infections(
+Rtcalc <- function(case.dt, gp = NULL, rt = rt_opts()) estimate_infections(
   reported_cases = case.dt,
   generation_time = generation_time,
   delays = delay_opts(incubation_period),
-  #rt = NULL, backcalc = backcalc_opts(),
+  rt = rt,
   stan = stan_opts(
     samples = smps*2,
     warmup = 200, 
@@ -75,8 +78,8 @@ Rtcalc <- function(case.dt, gp = NULL) estimate_infections(
 
 processRt <- function(
   rt, keep.start, keep.end,
-  era.labels
-) rt$samples[variable == "R", .(value), by=.(sample, date)][
+  era.labels, tarvar = "R"
+) rt$samples[variable == tarvar, .(value, variable), by=.(sample, date)][
   between(date, keep.start, keep.end)
 ][, era := eval(era.labels), by= sample ]
 
@@ -102,9 +105,9 @@ for (grpi in lims.dt[era != "censor", sort(unique(period))]) {
     )[, period := grpi ]
   } else {
     results[[grpi]] <- processRt(
-      Rtcalc(incslice, gp = gp_opts()),
+      Rtcalc(incslice, rt = NULL),
       sublims[, min(start)], sublims[, max(end)],
-      "relaxation"
+      era.labels = "relaxation", tarvar = "growth_rate"
     )[, period := grpi ]
   }
 }

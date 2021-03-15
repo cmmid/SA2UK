@@ -8,7 +8,7 @@ suppressPackageStartupMessages({
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/pops/%s.rds",
   "%s/inputs/urbanization.rds",
-  "%s/inputs/epi_data.rds",
+  "%s/outputs/r0/%s.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/outputs/sample/%s.rds",
@@ -22,8 +22,9 @@ fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
 tariso <- tail(.args, 4)[1]
 
 urbfrac <- readRDS(.args[2])[iso3 == tariso, value / 100]
-case.dt <- readRDS(.args[3])[iso3 == tariso, .(date, cases)]
-case.dt[, croll := frollmean(cases, align = "center", 7)]
+#' target hitting this growth rate on these dates
+relax.dt <- readRDS(.args[3])[era == "relaxation"]
+
 timings <- readRDS(.args[4])
 intros.dt <- readRDS(.args[5])[iso3 == tariso][sample %in% fitslc]
 bootstrap.dt <- readRDS(.args[6])[sample %in% fitslc][period == 1]

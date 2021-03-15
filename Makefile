@@ -13,7 +13,7 @@ SINK   := ${DATART}/outputs
 
 # for running EpiNow2; should override in local.makefile
 NCORES ?= 4
-NSAMPS ?= 2e3
+NSAMPS ?= 4e3
 
 # TODO define parallel path, url lists; feed to something in support.makefile
 # TODO that support.makefile should also do existence checks, and pull if repo
@@ -119,7 +119,7 @@ ${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SIN
 
 samples: $(patsubst %,${SINK}/sample/%.rds,${ISOS})
 
-${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
+${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SOURCE}/r0/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 pars: $(patsubst %,${SINK}/params/%.rds,${ISOS})
