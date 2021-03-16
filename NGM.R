@@ -5,6 +5,7 @@ if (sys.nframe() == 0) {
   .args <- if (interactive()) c(
     "NGM.rda"
   ) else commandArgs(trailingOnly = TRUE)
+  target <- tail(.args, 1)
 }
 #' TODO remove boxcar stuff - recall that it has no
 #' impact on mean stay times in compartments
@@ -194,4 +195,4 @@ cm_generation_time <- function(
   ave_gen
 }
 
-save(list=ls(), file = tail(.args, 1))
+save(list=ls(), file = target)

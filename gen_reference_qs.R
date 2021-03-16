@@ -10,12 +10,12 @@ if (sys.nframe() == 0) {
     "%s/inputs/pops/%s.rds",
     "%s/inputs/yuqs/%s.rds"
   ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+  load("NGM.rda")
 }
 
 yu <- qread(.args[1])
 pop <- readRDS(.args[2])
 
-load("NGM.rda")
 
 uids <- rep(grep("^u_", colnames(yu)), each = 2)
 yids <- rep(grep("^y_", colnames(yu)), each = 2)
