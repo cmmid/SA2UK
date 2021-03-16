@@ -73,7 +73,8 @@ Rtcalc <- function(case.dt, gp = NULL, rt = rt_opts()) estimate_infections(
   ),
   gp = gp,
   verbose = TRUE,
-  CrIs = est.qs
+  CrIs = est.qs,
+  horizon = 0
 )
 
 processRt <- function(
@@ -105,9 +106,9 @@ for (grpi in lims.dt[era != "censor", sort(unique(period))]) {
     )[, period := grpi ]
   } else {
     results[[grpi]] <- processRt(
-      Rtcalc(incslice, rt = NULL),
+      Rtcalc(incslice, rt = NULL, gp = gp_opts()),
       sublims[, min(start)], sublims[, max(end)],
-      era.labels = "relaxation", tarvar = "growth_rate"
+      era.labels = "relaxation", tarvar = "infections"
     )[, period := grpi ]
   }
 }
