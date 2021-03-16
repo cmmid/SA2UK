@@ -2,12 +2,14 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- "~/Dropbox/SA2UK"
-.args <- if (interactive()) sprintf(c(
-  "%s/inputs/epi_data.rds"
-), .debug) else commandArgs(trailingOnly = TRUE)
+if (sys.nframe() == 0) {
+  .debug <- "~/Dropbox/SA2UK" #debug is not used - presume old copy/paste code
+  .args <- if (interactive()) sprintf(c(
+    "%s/inputs/epi_data.rds"
+  ), .debug) else commandArgs(trailingOnly = TRUE)
 
-target <- tail(.args, 1)
+  target <- tail(.args, 1)
+}
 jhurl <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"
 casesurl <- sprintf("%s/time_series_covid19_confirmed_global.csv", jhurl)
 deathsurl <- sprintf("%s/time_series_covid19_deaths_global.csv", jhurl)

@@ -2,15 +2,16 @@ suppressPackageStartupMessages({
   require(data.table)
   require(lubridate)
 })
+if (sys.nframe() == 0) {
+  .debug <- c("~/Dropbox/SA2UK", "ZAF")
+  .args <- if (interactive()) sprintf(c(
+    .debug[2],
+    "%s/outputs/intervention_timing/%s.rds"
+  ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
-.args <- if (interactive()) sprintf(c(
-  .debug[2],
-  "%s/outputs/intervention_timing/%s.rds"
-), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
-
-tariso <- tail(.args, 2)[1]
-
+  tariso <- tail(.args, 2)[1]
+  target <- tail(.args, 1)
+}
 #' hand specifying eras from other analyses
 eras <- data.table(
   iso3 = tariso,
@@ -19,4 +20,4 @@ eras <- data.table(
   era = c("censor", "pre", "transition", "post", "relaxation", "variant")
 )
 
-saveRDS(eras, tail(.args, 1))
+saveRDS(eras, target)

@@ -4,31 +4,33 @@ suppressPackageStartupMessages({
   require(qs)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
-.args <- if (interactive()) sprintf(c(
-  "%s/inputs/epi_data.rds",
-  "%s/outputs/intervention_timing/%s.rds",
-  "%s/inputs/yuqs/%s.rds",
-  "2", "8e3", # cores, samples
-  .debug[2],
-  "%s/outputs/r0/%s.rds"
-), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+if (sys.nframe() == 0) {
+  .debug <- c("~/Dropbox/SA2UK", "ZAF")
+  .args <- if (interactive()) sprintf(c(
+    "%s/inputs/epi_data.rds",
+    "%s/outputs/intervention_timing/%s.rds",
+    "%s/inputs/yuqs/%s.rds",
+    "2", "8e3", # cores, samples
+    .debug[2],
+    "%s/outputs/r0/%s.rds"
+  ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-smps <- as.integer(tail(.args, 3)[1])
-crs <- as.integer(tail(.args, 4)[1])
+  smps <- as.integer(tail(.args, 3)[1])
+  crs <- as.integer(tail(.args, 4)[1])
 
-tariso <- tail(.args, 2)[1]
-
-case.dt <- readRDS(.args[1])[iso3 == tariso][, .(date, confirm = cases )]
+  tariso <- tail(.args, 2)[1]
+  epi_data <- .args[1]
+  lims.dt <- readRDS(.args[2])
+  mean_generation_interval <- readRDS(.args[3])[, mean(si)]
+  target <- tail(.args, 1)
+}
+case.dt <- readRDS(epi_data)[iso3 == tariso][, .(date, confirm = cases )]
 fill.case <- case.dt[
   case.dt[, .(date = seq(min(date),max(date),by="day"))],
   on=.(date),
   .(date, confirm = fifelse(is.na(confirm), 0, confirm))
 ]
 
-lims.dt <- readRDS(.args[2])
-
-mean_generation_interval <- readRDS(.args[3])[, mean(si)]
 
 # Set up example generation time
 generation_time <- as.list(EpiNow2::generation_times[disease == "SARS-CoV-2",
@@ -138,5 +140,5 @@ ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
 #' ggplot(ret[, .(post, variant)]) +
 #'  aes(post, variant) + geom_point() + theme_minimal()
 
-saveRDS(ret, tail(.args, 1))
+saveRDS(ret, target)
 
