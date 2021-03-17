@@ -8,7 +8,7 @@ suppressPackageStartupMessages({
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/pops/%s.rds",
   "%s/inputs/urbanization.rds",
-  "%s/outputs/r0/%s.rds",
+  "%s/inputs/epi_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/outputs/sample/%s.rds",
@@ -23,9 +23,16 @@ tariso <- tail(.args, 4)[1]
 
 urbfrac <- readRDS(.args[2])[iso3 == tariso, value / 100]
 #' target hitting this growth rate on these dates
-relax.dt <- readRDS(.args[3])[era == "relaxation"]
+#[era == "relaxation"]
 
 timings <- readRDS(.args[4])
+tarwindow <- timings[era == "relaxation", c(start, end)]
+
+case.dt <- readRDS(.args[3])[
+  iso3 == tariso & between(date, tarwindow[1]-6, tarwindow[2]),
+  .(date, croll = frollmean(cases, 7))
+][!is.na(croll)]
+
 intros.dt <- readRDS(.args[5])[iso3 == tariso][sample %in% fitslc]
 bootstrap.dt <- readRDS(.args[6])[sample %in% fitslc][period == 1]
 
@@ -43,7 +50,6 @@ popsetup <- function(basep, urbanfraction, day0) {
 
 params <- popsetup(readRDS(.args[1]), urbfrac, day0)
 
-tarwindow <- as.Date(c("2020-09-01","2020-10-01"))
 tart <- as.numeric(tarwindow - day0)
 case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), round(croll)]
 
@@ -59,8 +65,8 @@ relaxtms <- day0 + startrelax:endrelax
 
 tier2 <- as.Date("2020-08-15")
 
-peakday <- case.dt[date <= "2020-10-01"][which.max(croll), date]
-peakt <- as.numeric(peakday - day0)
+# peakday <- case.dt[date <= "2020-10-01"][which.max(croll), date]
+# peakt <- as.numeric(peakday - day0)
 
 # load covidm
 cm_path = tail(.args, 2)[1]
