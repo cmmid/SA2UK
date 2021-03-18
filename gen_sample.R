@@ -2,16 +2,18 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-#' fixed stride of 20; adjust starting point
-.debug <- c("~/Dropbox/SA2UK","ZAF")
-.args <- if (interactive()) sprintf(c(
-  "%s/inputs/yuqs/%s.rds",
-  "%s/outputs/r0/%s.rds",
-  "%s/outputs/sample/%s.rds"
-), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
-
-yuqs <- readRDS(.args[1])
-Rts <- readRDS(.args[2])
+if (sys.nframe() == 0) {
+  #' fixed stride of 20; adjust starting point
+  .debug <- c("~/Dropbox/SA2UK","ZAF")
+  .args <- if (interactive()) sprintf(c(
+    "%s/inputs/yuqs/%s.rds",
+    "%s/outputs/r0/%s.rds",
+    "%s/outputs/sample/%s.rds"
+  ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+  yuqs <- readRDS(.args[1])
+  Rts <- readRDS(.args[2])
+  outfile <- tail(.args, 1)
+}
 
 yusamp <- yuqs[
   sample(.N, max(Rts$sample))
@@ -22,4 +24,4 @@ yusamp <- yuqs[
 bootstrap.dt <- Rts[yusamp, on=.(sample)]
 bootstrap.dt[, umod := pre/baseR ]
 
-saveRDS(bootstrap.dt, tail(.args, 1))
+saveRDS(bootstrap.dt, outfile)

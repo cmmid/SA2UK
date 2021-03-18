@@ -3,21 +3,21 @@ suppressPackageStartupMessages({
   require(data.table)
   require(countrycode)
 })
+if (sys.nframe() == 0) {
+  .debug <- c("~/Dropbox/SA2UK", "ZAF")
+  .args <- if (interactive()) sprintf(c(
+    .debug[2],
+    "../covidm",
+    "%s/inputs/pops/%s.rds"
+  ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+  #' @examples
+  #' .args <- gsub("ZWE","guineabissau",.args)
+  #' .args <- gsub("ZWE","palestine",.args)
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
-.args <- if (interactive()) sprintf(c(
-  .debug[2],
-  "../covidm",
-  "%s/inputs/pops/%s.rds"
-), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
-#' @examples 
-#' .args <- gsub("ZWE","guineabissau",.args)
-#' .args <- gsub("ZWE","palestine",.args)
-
-cm_path = tail(.args, 2)[1]
-target = tail(.args, 3)[1]
-outfile = tail(.args, 1)
-
+  cm_path = tail(.args, 2)[1]
+  target = tail(.args, 3)[1]
+  outfile = tail(.args, 1)
+}
 cm_force_rebuild = F;
 cm_build_verbose = F;
 cm_force_shared = T;

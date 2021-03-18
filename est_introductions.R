@@ -2,28 +2,32 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
-.args <- if (interactive()) sprintf(c(
-  "%s/inputs/yuqs/%s.rds", #' estimated
-  "%s/outputs/r0/%s.rds", #' estimated
-  "%s/inputs/populations.rds", #' assembled from other inputs, no estimation
-  "%s/inputs/pops/%s.rds", #' assembled from other inputs, no estimation
-  "%s/inputs/epi_data.rds", #' cleaned input
-  "ene-ifr.csv", #' input sourced from mbevands estimate
-  "%s/outputs/intervention_timing/%s.rds",
-  .debug[2],
-  "%s/outputs/introductions/%s.rds"
-), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
-
-yuref <- readRDS(.args[1])[order(eqs)][which.max(eqs >= .5)]
+if (sys.nframe() == 0) {
+  .debug <- c("~/Dropbox/SA2UK", "ZAF")
+  .args <- if (interactive()) sprintf(c(
+    "%s/inputs/yuqs/%s.rds", #' estimated
+    "%s/outputs/r0/%s.rds", #' estimated
+    "%s/inputs/populations.rds", #' assembled from other inputs, no estimation
+    "%s/inputs/pops/%s.rds", #' assembled from other inputs, no estimation
+    "%s/inputs/epi_data.rds", #' cleaned input
+    "ene-ifr.csv", #' input sourced from mbevands estimate
+    "%s/outputs/intervention_timing/%s.rds",
+    .debug[2],
+    "%s/outputs/introductions/%s.rds"
+  ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
+  yuref <- readRDS(.args[1])[order(eqs)][which.max(eqs >= .5)]
+  Rl <- readRDS(.args[2])[, median(pre)]
+  window_start <- readRDS(.args[7])[era == "pre", end]
+  tariso <- tail(.args, 2)[1]
+  pop <- readRDS(.args[3])[iso3 == tariso]
+  pars <- readRDS(.args[4])
+  epi_data <- readRDS(.args[5])[iso3 == tariso, .SD][date >= window_start]
+  ifr <- fread(.args[6])$ifr/100
+  outfile <- tail(.args, 1)
+}
 us <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
 ys <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
-Rl <- readRDS(.args[2])[, median(pre)]
-window_start <- readRDS(.args[7])[era == "pre", end]
 
-tariso <- tail(.args, 2)[1]
-pop <- readRDS(.args[3])[iso3 == tariso]
-pars <- readRDS(.args[4])
 
 load("NGM.rda")
 
@@ -36,9 +40,9 @@ agedist <- cm_ss_age_distro(refngm$ss)
 #' generation interval depends on age distro + model infectious period durations
 gen_int <- cm_generation_time(pars, ymod = ys, ngm = refngm)
 
-ref <- readRDS(.args[5])[iso3 == tariso, .SD][date >= window_start][1:(which.max(deaths > 0)+round(gen_int))]
+ref <- epi_data[1:(which.max(deaths > 0)+round(gen_int))]
 
-ifr <- fread(.args[6])$ifr/100
+
 # MAGIC NUMBER WARNING
 pop_vs_ifr <- 2 #' pop age categories per IFR age category
 
@@ -87,4 +91,4 @@ intros <- slc[,.(
 ), by=.(continent, iso3, date = date - inf2death_dur)]
 # }
 
-saveRDS(intros, tail(.args, 1))
+saveRDS(intros, outfile)

@@ -4,11 +4,13 @@ suppressPackageStartupMessages({
   require(countrycode)
 })
 
-.debug <- "~/Dropbox/covidLMIC"
-.args <- if (interactive()) sprintf(c(
-  "%s/inputs/populations.rds"
-), .debug) else commandArgs(trailingOnly = TRUE)
-
+if (sys.nframe() == 0) {
+  .debug <- "~/Dropbox/covidLMIC"
+  .args <- if (interactive()) sprintf(c(
+    "%s/inputs/populations.rds"
+  ), .debug) else commandArgs(trailingOnly = TRUE)
+  outfile <- tail(.args, 1)
+}
 data(popF)
 data(popM)
 
@@ -30,4 +32,4 @@ pop.dt <- rbind(
   reformat(popM, "M")
 )[, .(pop = sum(pop)), keyby=.(iso3, age)]
 
-saveRDS(pop.dt, tail(.args, 1))
+saveRDS(pop.dt, outfile)

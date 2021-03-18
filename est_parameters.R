@@ -3,31 +3,35 @@ suppressPackageStartupMessages({
   require(optimization)
 })
 
-#' fixed stride of 20; adjust starting point
-.debug <- c("~/Dropbox/SA2UK","ZAF","0001")
-.args <- if (interactive()) sprintf(c(
-  "%s/inputs/pops/%s.rds",
-  "%s/inputs/urbanization.rds",
-  "%s/inputs/epi_data.rds",
-  "%s/outputs/intervention_timing/%s.rds",
-  "%s/outputs/introductions/%s.rds",
-  "%s/outputs/sample/%s.rds",
-  .debug[2], # ZAF
-  .debug[3], # the id
-  "../covidm",
-  "%s/outputs/params/%s_%s.rds"
-), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
-
-fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
-tariso <- tail(.args, 4)[1]
-
-params <- readRDS(.args[1])
-urbfrac <- readRDS(.args[2])[iso3 == tariso, value / 100]
-case.dt <- readRDS(.args[3])[iso3 == tariso, .(date, cases)]
+if (sys.nframe() == 0) {
+  #' fixed stride of 20; adjust starting point
+  .debug <- c("~/Dropbox/SA2UK","ZAF","0001")
+  .args <- if (interactive()) sprintf(c(
+    "%s/inputs/pops/%s.rds",
+    "%s/inputs/urbanization.rds",
+    "%s/inputs/epi_data.rds",
+    "%s/outputs/intervention_timing/%s.rds",
+    "%s/outputs/introductions/%s.rds",
+    "%s/outputs/sample/%s.rds",
+    .debug[2], # ZAF
+    .debug[3], # the id
+    "../covidm",
+    "%s/outputs/params/%s_%s.rds"
+  ), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
+  starting_step <- as.integer(tail(.args, 3)[1])
+  tariso <- tail(.args, 4)[1]
+  params <- readRDS(.args[1])
+  urbfrac <- readRDS(.args[2])[iso3 == tariso, value / 100]
+  case.dt <- readRDS(.args[3])[iso3 == tariso, .(date, cases)]
+  timings <- readRDS(.args[4])
+  intros.dt <- readRDS(.args[5])[iso3 == tariso]
+  sample <- readRDS(.args[6])
+  cm_path = tail(.args, 2)[1]
+  outfile <- tail(.args, 1)
+}
+fitslc <- seq(starting_step, by=1, length.out = 20)
+bootstrap.dt <- sample[fitslc]
 case.dt[, croll := frollmean(cases, align = "center", 7)]
-timings <- readRDS(.args[4])
-intros.dt <- readRDS(.args[5])[iso3 == tariso]
-bootstrap.dt <- readRDS(.args[6])[fitslc]
 
 day0 <- as.Date(intros.dt[, min(date)])
 intros <- intros.dt[,
@@ -59,7 +63,6 @@ peakday <- case.dt[date <= "2020-10-01"][which.max(croll), date]
 peakt <- as.numeric(peakday - day0)
 
 # load covidm
-cm_path = tail(.args, 2)[1]
 cm_force_rebuild = F;
 cm_build_verbose = F;
 cm_force_shared = T
@@ -154,7 +157,7 @@ fits.dt <- bootstrap.dt[, {
   as.list(pars)
 }, by=sample]
 
-saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))
+saveRDS(bootstrap.dt[fits.dt, on = .(sample)], outfile)
 
 # est <- rbindlist(lapply(1:nrow(fits2.dt), function(i) with(as.list(fits2.dt[i,]), {
 #   us <- rep(bootstrap.dt[i, as.numeric(.SD)*umod, .SDcols = grep("^u_",names(bootstrap.dt))], each = 2)
