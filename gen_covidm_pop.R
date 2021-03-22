@@ -2,6 +2,7 @@
 suppressPackageStartupMessages({
   require(data.table)
   require(countrycode)
+  require(wpp2019)
 })
 
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
@@ -166,6 +167,26 @@ params$processes = burden_processes
 
 params$pop <- lapply(params$pop, popnorm)
 #params1$time1 <- as.Date(params1$time1)
+
+
+birthrates = fread(.args[6])
+mortality = fread(.args[7])
+
+if (demographics) {
+  params$pop[[1]]$A = rep(1 / (5 * 365.25), 16);
+  params$pop[[1]]$B = c(birthrates[name == mat, birth_rate / 365.25], rep(0, length(params$pop[[1]]$size) - 1));
+  mort = mortality[name == mat, mx]
+  ex = data.table(age = 75:124, mx = c(rep(mort[16:20], each = 5), rep(mort[21], 25)))
+  ex[, p := 1]
+  for (i in 2:nrow(ex)) {
+    ex[i]$p = ex[i - 1]$p * (1 - ex[i - 1]$mx);
+  }
+  lex_75 = weighted.mean(ex$age, ex$p) - 75;
+  mort[16] = 1 / lex_75;
+  params$pop[[1]]$D = c(mort[1:15], 1 / lex_75) / 365.25;
+}
+
+
 
 saveRDS(params, outfile)
 
