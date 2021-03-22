@@ -4,11 +4,11 @@ suppressPackageStartupMessages({
 })
 
 #' fixed stride of 20; adjust starting point
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","GHA","0001")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","GHA","0021")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/pops/%s.rds",
   "%s/inputs/urbanization.rds",
-  "%s/inputs/epi_data.rds",
+  "%s/outputs/r0/%s.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/outputs/sample/%s.rds",
@@ -22,16 +22,21 @@ fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
 tariso <- tail(.args, 4)[1]
 
 urbfrac <- readRDS(.args[2])[iso3 == tariso, value / 100]
-#' target hitting this growth rate on these dates
-#[era == "relaxation"]
 
 timings <- readRDS(.args[4])
 tarwindow <- timings[era == "relaxation", c(start, end)]
 
+# case.dt <- readRDS(.args[3])[
+#   iso3 == tariso & between(date, tarwindow[1]-6, tarwindow[2]),
+#   .(date, croll = frollmean(cases, 7))
+# ][!is.na(croll)]
+
 case.dt <- readRDS(.args[3])[
-  iso3 == tariso & between(date, tarwindow[1]-6, tarwindow[2]),
-  .(date, croll = frollmean(cases, 7))
-][!is.na(croll)]
+  variable == "infections" &
+  between(date, tarwindow[1]-6, tarwindow[2]),
+  .(croll = median(value)),
+  by=.(date)
+]
 
 intros.dt <- readRDS(.args[5])[iso3 == tariso][sample %in% fitslc]
 bootstrap.dt <- readRDS(.args[6])[sample %in% fitslc][period == 1]
@@ -123,40 +128,41 @@ fits.dt <- bootstrap.dt[, {
   sid <- sample
   pop$pop[[1]]$seed_times <- intros[sample == sid, t]
   
-  pars_int <- optim_sa(function(ps) {
-    lrg <- ps[1]; sml <- ps[2]; symp <- ps[3];
-    if ((lrg < sml) | (lrg < symp)) NA_real_ else {
+  pars_int <- optim(fn = function(ps, pop) {
+    lrg <- ps[1]; sml <- ps[2]; symp <- ps[3]; k <- ps[4]; shft <- ps[5]
+    if ((lrg < sml) | (lrg < symp)) .Machine$integer.max else {
       #' calculate reduced Rt
-      (cm_ngm(
+      rerr <- (cm_ngm(
         pop, contact_reductions = c(home=0, work=sml, school=lrg, other=sml),
         fIs_reductions = symp
       )$R0/post-1)^2
+      
+      #' project and compare to relaxation period
+      pop$schedule <- scheduler(lrg, sml, symp, k, shft)
+      est <- cm_simulate(
+        pop, 1,
+        model_seed = 42L
+      )$dynamics[
+        compartment == "cases",
+        .(value = sum(value)), by=t
+      ][between(t, tart[1], tart[2]), value]
+      #' find the best possible ascertainment prob:
+      ret <- optimize(ascll, c(1e-6, .99), sim.cases = est)$objective
+      if (is.infinite(ret) | is.na(ret)) ret <- .Machine$integer.max
+      rerr + ret/length(est)
     }},
-    start = c(0.8, 0.25, 0.25) ,
-    lower = c(0.1, 0.01, 0.01),
-    upper = c(0.9, 0.9, 0.9)
-  )$par
+    pop = pop,
+    par = c(0.8, 0.25, 0.25, 0.01, 0) ,
+    lower = c(0.1, 0.01, 0.01, 1e-6, -50),
+    upper = c(0.9, 0.9, 0.9, 0.9, 50),
+    method = "L-BFGS-B"
+  )
   
-  setTxtProgressBar(pb, .GRP - 0.5)
+  setTxtProgressBar(pb, .GRP)
   
-  lrg <- pars_int[1]; sml <- pars_int[2]; symp <- pars_int[3]
-  safun <- function(ps, pop, lrg, sml, symp) {
-    k <- ps[1]; shft <- ps[2]
-    pop$schedule <- scheduler(lrg, sml, symp, k, shft)
-    est <- cm_simulate(
-      pop, 1,
-      model_seed = 42L
-    )$dynamics[
-      compartment == "cases",
-      .(value = sum(value)), by=t
-    ][between(t, tart[1], tart[2]), value]
-    #' find the best possible ascertainment prob:
-    ret <- optimize(ascll, c(1e-6, .99), sim.cases = est)$objective
-    if (is.infinite(ret) | is.na(ret)) return(.Machine$integer.max)
-    ret
-  }
-  pars_relax <- optim(c(0.1, 0), safun, pop = pop, lrg = lrg, sml = sml, symp = symp, lower = c(1e-6, -28), upper = c(0.5, 28), method = "L-BFGS-B")
-  k <- pars_relax$par[1]; shft <- pars_relax$par[2]
+  lrg <- pars_int$par[1]; sml <- pars_int$par[2]; symp <- pars_int$par[3];
+  k <- pars_int$par[4]; shft <- pars_int$par[5]
+  
   pop$schedule <- scheduler(lrg, sml, symp, k, shft)
   est <- cm_simulate(
     pop, 1,
@@ -169,9 +175,8 @@ fits.dt <- bootstrap.dt[, {
   #' find the best possible ascertainment prob:
   asc <- optimize(ascll, c(1e-6, .99), sim.cases = est)$minimum
   
-  pars <- c(pars_int, pars_relax$par, asc)
+  pars <- c(pars_int$par, asc)
   names(pars) <- c("large", "small", "sympt", "k", "shft", "asc")
-  setTxtProgressBar(pb, .GRP)
   as.list(pars)
 }, by=sample]
 

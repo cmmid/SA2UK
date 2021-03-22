@@ -2,9 +2,9 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/params/%s_consolidated.rds",
+  "%s/outputs/params/%s_0001.rds",
   "%s/inputs/pops/%s.rds",
   "%s/inputs/urbanization.rds",
   "%s/outputs/projections/%s.rds",

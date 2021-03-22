@@ -1,4 +1,5 @@
 
+
 suppressPackageStartupMessages({
   require(data.table)
 })
@@ -24,7 +25,7 @@ timings <- readRDS(.args[5])
 
 day0 <- as.Date(intros.dt[, min(date)])
 intros <- intros.dt[,
-  intro.day := as.integer(date - date[1])
+                    intro.day := as.integer(date - date[1])
 ][, .(t=Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))), by=sample ]
 
 popsetup <- function(basep, urbanfraction, day0) {
@@ -104,11 +105,11 @@ sims <- fits[,{
 }, by=sample]
 
 res <- sims[,
-  .(
-    sample, date = t + day0,
-    group, compartment,
-    value
-  )
+            .(
+              sample, date = t + day0,
+              group, compartment,
+              value
+            )
 ]
 
 #' @examples 
@@ -128,4 +129,3 @@ res <- sims[,
 #'   theme_minimal()
 
 saveRDS(res, tail(.args, 1))
-

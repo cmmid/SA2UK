@@ -3,17 +3,17 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF", "0001")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA", "0002")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/params/%s_consolidated.rds",
+  "%s/outputs/params/%s_0001.rds",
   "%s/inputs/pops/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/inputs/urbanization.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/variant/%s.rds",
   "%s/inputs/scenario.rds",
-  .debug[2],
   .debug[3],
+  .debug[2],
   "../covidm",
   "%s/outputs/vax/%s/%s.rds"
 ), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
@@ -74,9 +74,9 @@ from_age <- 4
 to_age <- 16
 strategy_str <- 365
 t_end <- t_vax + strategy_str
-horizon <- 5
+horizon <- 1
 base$time1 <- t_vax + horizon*365
-strategy <- "none"
+strategy <- if (tarscenario == 1) "none" else "campaign"
 
 mk_waning <- function(baseline_dur_days, ages = 16, age_dur_mods = rep(1, ages) ) {
   rep(
@@ -210,10 +210,9 @@ res[order(t), cvalue := cumsum(value), by=.(sample, group, compartment)]
 res[, date := t + day0 ]
 evalts <- t_vax + 0:5*365
 
-int_id <- 2
-ret <- res[t %in% evalts][, anni_year := (t - t_vax)/365 ][, epi_id := 0 ][, intervention_id := int_id ]
+ret <- res[, epi_id := 0 ][, intervention_id := tarscenario ]
 
-saveRDS(ret, sprintf("example_%04i.rds", int_id))
+saveRDS(ret, sprintf("example_%04i.rds", tarscenario))
 
 #' @examples 
 #' comparison <- res[compartment == "cases" & between(date, tarwindow[1], tarwindow[2]), .(value = sum(value)), by=.(sample, date)][sample == 1]
