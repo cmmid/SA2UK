@@ -17,15 +17,15 @@ if (sys.nframe() == 0) {
   cm_path = tail(.args, 2)[1]
   target = tail(.args, 3)[1]
   outfile = tail(.args, 1)
-}
-cm_force_rebuild = F;
-cm_build_verbose = F;
-cm_force_shared = T;
-cm_version = 2;
+  cm_force_rebuild = F;
+  cm_build_verbose = F;
+  cm_force_shared = T;
+  cm_version = 2;
 
-suppressPackageStartupMessages({
-  source(file.path(cm_path, "R", "covidm.R"))
-})
+  suppressPackageStartupMessages({
+    source(file.path(cm_path, "R", "covidm.R"))
+  })
+}
 
 matref <- country <- cm_populations[
   country_code == countrycode(target, "iso3c", "iso3n"),
