@@ -95,7 +95,7 @@ scheduler <- function(large, small, symp, k, shft) {
     ),
     list(
       parameter = "fIs",
-      pops = numeric(),final_task <- metaflow::task_client$new(step, step$tasks[1])
+      pops = numeric(),final_task <- metaflow::task_client$new(step, step$tasks[1]),
       mode = "multiply",
       values = c(si, relaxsi),
       times = c(tms, relaxtms)
