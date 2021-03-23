@@ -1,8 +1,9 @@
+print("hello")
 suppressPackageStartupMessages({
   require(data.table)
   require(optimization)
 })
-
+print("hello")
 if (sys.nframe() == 0) {
   #' fixed stride of 20; adjust starting point
   .debug <- c("~/Dropbox/SA2UK","ZAF","0001")
