@@ -3,7 +3,7 @@ suppressPackageStartupMessages({
   require(optimization)
 })
 if (sys.nframe() == 0) {
-    #' fixed stride of 20; adjust starting point
+      #' fixed stride of 20; adjust starting point
   .debug <- c("~/Dropbox/SA2UK", "ZAF", "0001")
   .args <- if (interactive()) sprintf(c(
     "%s/inputs/pops/%s.rds",
@@ -116,7 +116,7 @@ fits.dt <- bootstrap.dt[,
     sml <- ps[2]
     symp <- ps[3]
     if ((lrg < sml) | (lrg < symp)) NA_real_ else {
-                                                                                    #' calculate reduced Rt
+                                                                                          #' calculate reduced Rt
       (cm_ngm(
         pop, contact_reductions = c(home = 0, work = sml, school = lrg, other = sml),
         fIs_reductions = symp
@@ -134,13 +134,19 @@ fits.dt <- bootstrap.dt[,
     asc <- ps[3]
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
     print("here")
-    sim <- cm_simulate(
-      pop, 1,
-      model_seed = 42L
-    )$dynamics[
-      compartment == "cases",
-      .(value = sum(value) * asc), by = t
-    ]
+    withCallingHandlers(
+      sim <- cm_simulate(
+        pop, 1,
+        model_seed = 42L
+      )$dynamics[
+        compartment == "cases",
+        .(value = sum(value) * asc), by = t
+      ],
+      error = function(e) {
+        print(capture.output(rlang::trace_back()))
+        print(e)
+      }
+    )
     print("done simulatin")
     est <- sim[between(t, tart[1], tart[2]), value]
     casefact <- sum((1 - est / case.slc)^2) / length(est)
