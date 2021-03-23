@@ -1,9 +1,7 @@
-print("hello")
 suppressPackageStartupMessages({
   require(data.table)
   require(optimization)
 })
-print("hello")
 if (sys.nframe() == 0) {
   #' fixed stride of 20; adjust starting point
   .debug <- c("~/Dropbox/SA2UK","ZAF","0001")
@@ -37,29 +35,24 @@ if (sys.nframe() == 0) {
 
   load("NGM.rda")
 }
-print("hello")
 fitslc <- seq(starting_step, by=1, length.out = 20)
 bootstrap.dt <- sample[fitslc]
 case.dt[, croll := frollmean(cases, align = "center", 7)]
 
-print("hello")
 day0 <- as.Date(intros.dt[, min(date)])
 intros <- intros.dt[,
   intro.day := as.integer(date - date[1])
 ][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
 
-print("hello")
 params$date0 <- day0
 params$pop[[1]]$seed_times <- intros
 params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
 params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
 
-print("hello")
 tarwindow <- as.Date(c("2020-09-01","2020-10-01"))
 tart <- as.numeric(tarwindow - day0)
 case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), cases]
 
-print("hello")
 startrelax <- as.integer(timings[era == "relaxation", start] - day0)
 endrelax <- as.integer(min(timings[era == "relaxation", end], tarwindow[2]) - day0)
 
@@ -70,7 +63,6 @@ params$time1 <- endrelax
 print("hello")
 tms <- day0 + startpost
 relaxtms <- day0 + startrelax:endrelax
-final_task <- metaflow::task_client$new(step, step$tasks[1])
 tier2 <- as.Date("2020-08-15")
 
 print("hello")
