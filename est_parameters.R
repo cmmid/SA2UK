@@ -60,23 +60,19 @@ startpost <- as.integer(timings[era == "transition", start[1]] - day0)
 
 params$time1 <- endrelax
 
-print("hello")
 tms <- day0 + startpost
 relaxtms <- day0 + startrelax:endrelax
 tier2 <- as.Date("2020-08-15")
 
-print("hello")
 peakday <- case.dt[date <= "2020-10-01"][which.max(croll), date]
 peakt <- as.numeric(peakday - day0)
 
-print("hello")
 # load covidm
 # suppressPackageStartupMessages({
   source(file.path(cm_path, "R", "covidm.R"))
 # })
 
 
-print("hello")
 #' reference for all bootstrap evaluation
 scheduler <- function(large, small, symp, k, shft) {
   cons <- list(1-c(0, small, large, small))
@@ -105,9 +101,9 @@ scheduler <- function(large, small, symp, k, shft) {
   )
 }
 
-print("hello")
+print("foo")
 pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1) 
-
+print("bar")
 #' TODO expand sampling
 fits.dt <- bootstrap.dt[, {
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
@@ -161,7 +157,7 @@ fits.dt <- bootstrap.dt[, {
   as.list(pars)
 }, by=sample]
 
-print("hello")
+print("baz")
 saveRDS(bootstrap.dt[fits.dt, on = .(sample)], outfile)
 
 # est <- rbindlist(lapply(1:nrow(fits2.dt), function(i) with(as.list(fits2.dt[i,]), {
