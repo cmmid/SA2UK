@@ -28,6 +28,12 @@ if (sys.nframe() == 0) {
   sample <- readRDS(.args[6])
   cm_path = tail(.args, 2)[1]
   outfile <- tail(.args, 1)
+
+  cm_force_rebuild = F;
+  cm_build_verbose = F;
+  cm_force_shared = T
+  cm_version = 2
+
 }
 fitslc <- seq(starting_step, by=1, length.out = 20)
 bootstrap.dt <- sample[fitslc]
@@ -63,11 +69,6 @@ peakday <- case.dt[date <= "2020-10-01"][which.max(croll), date]
 peakt <- as.numeric(peakday - day0)
 
 # load covidm
-cm_force_rebuild = F;
-cm_build_verbose = F;
-cm_force_shared = T
-cm_version = 2
-
 suppressPackageStartupMessages({
   source(file.path(cm_path, "R", "covidm.R"))
 })
