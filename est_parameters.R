@@ -34,6 +34,7 @@ if (sys.nframe() == 0) {
   cm_force_shared = T
   cm_version = 2
 
+  load("NGM.rda")
 }
 fitslc <- seq(starting_step, by=1, length.out = 20)
 bootstrap.dt <- sample[fitslc]
@@ -62,7 +63,7 @@ params$time1 <- endrelax
 
 tms <- day0 + startpost
 relaxtms <- day0 + startrelax:endrelax
-
+final_task <- metaflow::task_client$new(step, step$tasks[1])
 tier2 <- as.Date("2020-08-15")
 
 peakday <- case.dt[date <= "2020-10-01"][which.max(croll), date]
@@ -73,7 +74,6 @@ suppressPackageStartupMessages({
   source(file.path(cm_path, "R", "covidm.R"))
 })
 
-load("NGM.rda")
 
 #' reference for all bootstrap evaluation
 scheduler <- function(large, small, symp, k, shft) {
@@ -95,7 +95,7 @@ scheduler <- function(large, small, symp, k, shft) {
     ),
     list(
       parameter = "fIs",
-      pops = numeric(),
+      pops = numeric(),final_task <- metaflow::task_client$new(step, step$tasks[1])
       mode = "multiply",
       values = c(si, relaxsi),
       times = c(tms, relaxtms)
