@@ -24,12 +24,12 @@ if (sys.nframe() == 0) {
   epi_data <- readRDS(.args[5])[iso3 == tariso, .SD][date >= window_start]
   ifr <- fread(.args[6])$ifr/100
   outfile <- tail(.args, 1)
+  load("NGM.rda")
 }
 us <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
 ys <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
 
 
-load("NGM.rda")
 
 #' the stable age distribution of infection in the exponential growth period
 #' == the principle eigenvector
