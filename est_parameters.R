@@ -141,7 +141,7 @@ fits.dt <- bootstrap.dt[,
       compartment == "cases",
       .(value = sum(value) * asc), by = t
     ]
-
+    print("done simulatin")
     est <- sim[between(t, tart[1], tart[2]), value]
     casefact <- sum((1 - est / case.slc)^2) / length(est)
     pfact <- (1 - sim[which.max(value), t] / peakt)^2
