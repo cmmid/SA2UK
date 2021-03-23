@@ -3,8 +3,8 @@ suppressPackageStartupMessages({
   require(optimization)
 })
 if (sys.nframe() == 0) {
-  #' fixed stride of 20; adjust starting point
-  .debug <- c("~/Dropbox/SA2UK","ZAF","0001")
+    #' fixed stride of 20; adjust starting point
+  .debug <- c("~/Dropbox/SA2UK", "ZAF", "0001")
   .args <- if (interactive()) sprintf(c(
     "%s/inputs/pops/%s.rds",
     "%s/inputs/urbanization.rds",
@@ -35,7 +35,7 @@ if (sys.nframe() == 0) {
 
   load("NGM.rda")
 }
-fitslc <- seq(starting_step, by=1, length.out = 20)
+fitslc <- seq(starting_step, by = 1, length.out = 20)
 bootstrap.dt <- sample[fitslc]
 case.dt[, croll := frollmean(cases, align = "center", 7)]
 
@@ -46,10 +46,10 @@ intros <- intros.dt[,
 
 params$date0 <- day0
 params$pop[[1]]$seed_times <- intros
-params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
-params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
+params$pop[[1]]$size <- round(params$pop[[1]]$size * urbfrac)
+params$pop[[1]]$dist_seed_ages <- c(rep(0, 4), rep(1, 6), rep(0, 6))
 
-tarwindow <- as.Date(c("2020-09-01","2020-10-01"))
+tarwindow <- as.Date(c("2020-09-01", "2020-10-01"))
 tart <- as.numeric(tarwindow - day0)
 case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), cases]
 
@@ -69,20 +69,20 @@ peakt <- as.numeric(peakday - day0)
 
 # load covidm
 # suppressPackageStartupMessages({
-  source(file.path(cm_path, "R", "covidm.R"))
+source(file.path(cm_path, "R", "covidm.R"))
 # })
 
 
 #' reference for all bootstrap evaluation
 scheduler <- function(large, small, symp, k, shft) {
-  cons <- list(1-c(0, small, large, small))
-  si <- list(rep(1-symp, 16))
-  
-  relaxfact <- 1-(1+exp(-k*as.numeric(relaxtms-tier2-shft)))^-1
-  relaxfact <- (1-relaxfact[1]) + relaxfact
-  relaxcons <- lapply(relaxfact, function(rf) 1-c(0, small, large, small)*rf)
-  relaxsi <- lapply(relaxfact, function(rf) 1-rep(symp, 16)*rf)
-  
+  cons <- list(1 - c(0, small, large, small))
+  si <- list(rep(1 - symp, 16))
+
+  relaxfact <- 1 - (1 + exp(-k * as.numeric(relaxtms - tier2 - shft)))^-1
+  relaxfact <- (1 - relaxfact[1]) + relaxfact
+  relaxcons <- lapply(relaxfact, function(rf) 1 - c(0, small, large, small) * rf)
+  relaxsi <- lapply(relaxfact, function(rf) 1 - rep(symp, 16) * rf)
+
   list(
     list(
       parameter = "contact",
@@ -93,7 +93,7 @@ scheduler <- function(large, small, symp, k, shft) {
     ),
     list(
       parameter = "fIs",
-      pops = numeric(),final_task <- metaflow::task_client$new(step, step$tasks[1]),
+      pops = numeric(), final_task <- metaflow::task_client$new(step, step$tasks[1]),
       mode = "multiply",
       values = c(si, relaxsi),
       times = c(tms, relaxtms)
@@ -101,63 +101,90 @@ scheduler <- function(large, small, symp, k, shft) {
   )
 }
 
-print("foo")
-pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1) 
-print("bar")
+pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1)
 #' TODO expand sampling
-fits.dt <- bootstrap.dt[, {
-  us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
-  ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_",names(.SD))], each = 2)
+fits.dt <- bootstrap.dt[,
+{
+  print("hello")
+  us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", names(.SD))], each = 2) * umod
+  print("hello")
+  ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_", names(.SD))], each = 2)
+  print("hello")
   pop <- params # copy constructor
+  print("hello")
   pop$pop[[1]]$y <- ys
-  pop$pop[[1]]$u <- pop$pop[[1]]$u*us
-  
+  print("hello")
+  pop$pop[[1]]$u <- pop$pop[[1]]$u * us
+
   pars_int <- optim_sa(function(ps) {
-    lrg <- ps[1]; sml <- ps[2]; symp <- ps[3];
+    print("foo")
+    lrg <- ps[1]
+    print("foo")
+    sml <- ps[2]
+    print("foo")
+    symp <- ps[3]
+    print("foo")
     if ((lrg < sml) | (lrg < symp)) NA_real_ else {
-      #' calculate reduced Rt
+                                                                                    #' calculate reduced Rt
       (cm_ngm(
-        pop, contact_reductions = c(home=0, work=sml, school=lrg, other=sml),
+        pop, contact_reductions = c(home = 0, work = sml, school = lrg, other = sml),
         fIs_reductions = symp
-      )$R0/post-1)^2
-    }},
-    start = c(0.8, 0.25, 0.25) ,
-    lower = c(0.1, 0.01, 0.01),
-    upper = c(0.9, 0.9, 0.9)
+      )$R0 / post - 1)^2
+    } },
+                       start = c(0.8, 0.25, 0.25),
+                       lower = c(0.1, 0.01, 0.01),
+                       upper = c(0.9, 0.9, 0.9)
   )$par
-  
+  print("baz")
+
   setTxtProgressBar(pb, .GRP - 0.5)
-  
+  print("baz")
+
   lrg <- pars_int[1]; sml <- pars_int[2]; symp <- pars_int[3]
-  
+  print("baz")
+
   pars_relax <- optim_sa(function(ps) {
-    k <- ps[1]; shft <- as.integer(ps[2]); asc <- ps[3];
-     
+    print("bar")
+    k <- ps[1]
+    print("bar")
+    shft <- as.integer(ps[2])
+    print("bar")
+    asc <- ps[3]
+
+    print("bar")
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
+    print("bar")
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
     )$dynamics[
       compartment == "cases",
-      .(value = sum(value)*asc), by=t
+      .(value = sum(value) * asc), by = t
     ]
-    
-      est <- sim[between(t, tart[1], tart[2]), value]
-      casefact <- sum((1 - est/case.slc)^2)/length(est)
-      pfact <- (1-sim[which.max(value), t]/peakt)^2
-      casefact + pfact
-    },
-    start = c(0.1, 0, 0.10) ,
-    lower = c(0.001, -14, 0.01),
-    upper = c(0.2, 28, 0.5)
-  )$par
-  pars <- c(pars_int, pars_relax)
-  names(pars) <- c("large", "small", "sympt", "k", "shft", "asc")
-  setTxtProgressBar(pb, .GRP)
-  as.list(pars)
-}, by=sample]
 
-print("baz")
+    print("bar")
+    est <- sim[between(t, tart[1], tart[2]), value]
+    print("bar")
+    casefact <- sum((1 - est / case.slc)^2) / length(est)
+    print("bar")
+    pfact <- (1 - sim[which.max(value), t] / peakt)^2
+    print("bar")
+    casefact + pfact
+  },
+                         start = c(0.1, 0, 0.10),
+                         lower = c(0.001, -14, 0.01),
+                         upper = c(0.2, 28, 0.5)
+  )$par
+  print("baz")
+  pars <- c(pars_int, pars_relax)
+  print("baz")
+  names(pars) <- c("large", "small", "sympt", "k", "shft", "asc")
+  print("baz")
+  setTxtProgressBar(pb, .GRP)
+  print("baz")
+  as.list(pars)
+}, by = sample]
+
 saveRDS(bootstrap.dt[fits.dt, on = .(sample)], outfile)
 
 # est <- rbindlist(lapply(1:nrow(fits2.dt), function(i) with(as.list(fits2.dt[i,]), {
