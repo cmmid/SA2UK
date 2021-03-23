@@ -34,7 +34,7 @@ Rpipe = ${RSCRIPT} $^ $| $@
 # star + pipe
 Rsp = ${RSCRIPT} $^ $* $| $@
 
-FROMDIR := override/path/on/commandline
+FROMDIR ?= override/path/on/commandline
 
 xfer: | ${FROMDIR}
-	rsync -rv ${FROMDIR}/ ${SINK}
+	rsync -rv $|/ ${SINK}

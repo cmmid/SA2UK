@@ -1,27 +1,25 @@
 
-# if present, include local.makefile
-# a local.makefile should provide alternative definitions
-# of default variables, paths, etc
--include local.makefile
+#################### SETUP ###################################################
 
-# default assumes subfolders of this repository;
-# example local.makefile overrides this to point to Dropbox folder
+-include local.makefile
+# if present, include local.makefile to provide alternative definitions of
+# elements assigned via `?=` (e.g. default variables, paths)
+
+# root filesystem location for inputs & outputs
 DATART ?= .
+# example local.makefile overrides this to point to a Dropbox folder
 
 SOURCE := ${DATART}/inputs
 SINK   := ${DATART}/outputs
 
-# for running EpiNow2; should override in local.makefile
 NCORES ?= 4
 NSAMPS ?= 4e3
-
-# TODO define parallel path, url lists; feed to something in support.makefile
-# TODO that support.makefile should also do existence checks, and pull if repo
-#   already exists
+# sets # of samples and non-embarassingly parallel (cores) populations
+# primarily for running EpiNow2
 
 # default assumption: covidm is a sibling to this repository
-COVIDM ?= ../covidm
 COVIDMGIT := https://github.com/nicholasdavies/covidm
+COVIDM ?= ../covidm
 
 # TODO correct these - seems to clone in this folder instead?
 ${COVIDM}:
@@ -30,7 +28,9 @@ ${COVIDM}:
 GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} $(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) $(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
+MKDIRS := ${SOURCE} ${SINK} \
+	$(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) \
+	$(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
 ISOS ?= ZAF GHA
 
@@ -40,6 +40,7 @@ include support.makefile
 # very basic R package installation; THIS MAY NOT "JUST WORK"
 # checks availability of packages (via require)
 # attempts to install any not available
+# performs compile step for covidm repo
 # writes .install if it succeeds otherwise errors uninformatively
 .install: get_install.R rpack.txt ${COVIDM}
 	${R}
@@ -57,13 +58,18 @@ ${SOURCE}/prov_data.rds: get_prov_data.R | ${SOURCE}
 ${SINK}/cfrs.rds: est_scale_prov.R ${SOURCE}/prov_data.rds | ${SINK}
 	${R}
 
-WBURL := http://api.worldbank.org/v2/en/indicator/SP.URB.TOTL.IN.ZS?downloadformat=csv
-
 ${SOURCE}/urbanization.rds: gen_urbanization.R | ${SOURCE}
-	curl ${WBURL} --output tmp.urban.zip
-	unzip tmp.urban.zip API_SP.URB.TOTL.IN.ZS_DS2_*.csv
-	mv API_SP.URB.TOTL.IN.ZS_DS2_*.csv tmp.urban.csv
-	Rscript $^ tmp.urban.csv $@
+	${R}
+
+${SOURCE}/mortality.rds: gen_mortality.R | ${SOURCE}
+	${R}
+
+${SOURCE}/fertility.rds: gen_fertility.R | ${SOURCE}
+	${R}
+
+${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
+	${RSCRIPT} $^ $* ${COVIDM} $@
+
 
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
 	${R}
@@ -89,9 +95,6 @@ ${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data
 	${Rstar}
 
 timing: $(patsubst %,${SINK}/intervention_timing/%.png,${ISOS})
-
-${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
-	${RSCRIPT} $^ $* ${COVIDM} $@
 
 NGM.rda: NGM.R
 	${R}

@@ -7,3 +7,4 @@ tmp.urban.zip
 *.rds
 *.rda
 *.png
+local.makefile

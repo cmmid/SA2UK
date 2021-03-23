@@ -8,6 +8,9 @@ suppressPackageStartupMessages({
 .debug <- c("~/Dropbox/SA2UK", "ZAF")
 .args <- if (interactive()) sprintf(c(
   .debug[2],
+  "%s/inputs/mortality.rds",
+  "%s/inputs/fertility.rds",
+  "%s/inputs/urbanization.rds",
   "../covidm",
   "%s/inputs/pops/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
