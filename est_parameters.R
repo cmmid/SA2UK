@@ -36,24 +36,29 @@ if (sys.nframe() == 0) {
 
   load("NGM.rda")
 }
+print("hello")
 fitslc <- seq(starting_step, by=1, length.out = 20)
 bootstrap.dt <- sample[fitslc]
 case.dt[, croll := frollmean(cases, align = "center", 7)]
 
+print("hello")
 day0 <- as.Date(intros.dt[, min(date)])
 intros <- intros.dt[,
   intro.day := as.integer(date - date[1])
 ][, Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))]
 
+print("hello")
 params$date0 <- day0
 params$pop[[1]]$seed_times <- intros
 params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
 params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
 
+print("hello")
 tarwindow <- as.Date(c("2020-09-01","2020-10-01"))
 tart <- as.numeric(tarwindow - day0)
 case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), cases]
 
+print("hello")
 startrelax <- as.integer(timings[era == "relaxation", start] - day0)
 endrelax <- as.integer(min(timings[era == "relaxation", end], tarwindow[2]) - day0)
 
@@ -61,20 +66,24 @@ startpost <- as.integer(timings[era == "transition", start[1]] - day0)
 
 params$time1 <- endrelax
 
+print("hello")
 tms <- day0 + startpost
 relaxtms <- day0 + startrelax:endrelax
 final_task <- metaflow::task_client$new(step, step$tasks[1])
 tier2 <- as.Date("2020-08-15")
 
+print("hello")
 peakday <- case.dt[date <= "2020-10-01"][which.max(croll), date]
 peakt <- as.numeric(peakday - day0)
 
+print("hello")
 # load covidm
-suppressPackageStartupMessages({
+# suppressPackageStartupMessages({
   source(file.path(cm_path, "R", "covidm.R"))
-})
+# })
 
 
+print("hello")
 #' reference for all bootstrap evaluation
 scheduler <- function(large, small, symp, k, shft) {
   cons <- list(1-c(0, small, large, small))
@@ -103,6 +112,7 @@ scheduler <- function(large, small, symp, k, shft) {
   )
 }
 
+print("hello")
 pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1) 
 
 #' TODO expand sampling
@@ -158,6 +168,7 @@ fits.dt <- bootstrap.dt[, {
   as.list(pars)
 }, by=sample]
 
+print("hello")
 saveRDS(bootstrap.dt[fits.dt, on = .(sample)], outfile)
 
 # est <- rbindlist(lapply(1:nrow(fits2.dt), function(i) with(as.list(fits2.dt[i,]), {
