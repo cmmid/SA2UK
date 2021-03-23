@@ -132,9 +132,8 @@ fits.dt <- bootstrap.dt[,
     k <- ps[1]
     shft <- as.integer(ps[2])
     asc <- ps[3]
-    print("hello")
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
-    print("world")
+    print("here")
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
