@@ -21,12 +21,12 @@ if (sys.nframe() == 0) {
   cm_build_verbose = F;
   cm_force_shared = T;
   cm_version = 2;
-
-  suppressPackageStartupMessages({
-    source(file.path(cm_path, "R", "covidm.R"))
-  })
 }
 
+
+#suppressPackageStartupMessages({
+  source(file.path(cm_path, "R", "covidm.R"))
+#})
 matref <- country <- cm_populations[
   country_code == countrycode(target, "iso3c", "iso3n"),
   unique(as.character(name))
