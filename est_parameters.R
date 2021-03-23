@@ -93,7 +93,7 @@ scheduler <- function(large, small, symp, k, shft) {
     ),
     list(
       parameter = "fIs",
-      pops = numeric(), final_task <- metaflow::task_client$new(step, step$tasks[1]),
+      pops = numeric(),
       mode = "multiply",
       values = c(si, relaxsi),
       times = c(tms, relaxtms)
@@ -105,25 +105,16 @@ pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1)
 #' TODO expand sampling
 fits.dt <- bootstrap.dt[,
 {
-  print("hello")
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", names(.SD))], each = 2) * umod
-  print("hello")
   ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_", names(.SD))], each = 2)
-  print("hello")
   pop <- params # copy constructor
-  print("hello")
   pop$pop[[1]]$y <- ys
-  print("hello")
   pop$pop[[1]]$u <- pop$pop[[1]]$u * us
 
   pars_int <- optim_sa(function(ps) {
-    print("foo")
     lrg <- ps[1]
-    print("foo")
     sml <- ps[2]
-    print("foo")
     symp <- ps[3]
-    print("foo")
     if ((lrg < sml) | (lrg < symp)) NA_real_ else {
                                                                                     #' calculate reduced Rt
       (cm_ngm(
@@ -135,25 +126,15 @@ fits.dt <- bootstrap.dt[,
                        lower = c(0.1, 0.01, 0.01),
                        upper = c(0.9, 0.9, 0.9)
   )$par
-  print("baz")
-
   setTxtProgressBar(pb, .GRP - 0.5)
-  print("baz")
-
   lrg <- pars_int[1]; sml <- pars_int[2]; symp <- pars_int[3]
-  print("baz")
-
   pars_relax <- optim_sa(function(ps) {
-    print("bar")
     k <- ps[1]
-    print("bar")
     shft <- as.integer(ps[2])
-    print("bar")
     asc <- ps[3]
-
-    print("bar")
+    print("hello")
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
-    print("bar")
+    print("world")
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
@@ -162,26 +143,18 @@ fits.dt <- bootstrap.dt[,
       .(value = sum(value) * asc), by = t
     ]
 
-    print("bar")
     est <- sim[between(t, tart[1], tart[2]), value]
-    print("bar")
     casefact <- sum((1 - est / case.slc)^2) / length(est)
-    print("bar")
     pfact <- (1 - sim[which.max(value), t] / peakt)^2
-    print("bar")
     casefact + pfact
   },
                          start = c(0.1, 0, 0.10),
                          lower = c(0.001, -14, 0.01),
                          upper = c(0.2, 28, 0.5)
   )$par
-  print("baz")
   pars <- c(pars_int, pars_relax)
-  print("baz")
   names(pars) <- c("large", "small", "sympt", "k", "shft", "asc")
-  print("baz")
   setTxtProgressBar(pb, .GRP)
-  print("baz")
   as.list(pars)
 }, by = sample]
 
