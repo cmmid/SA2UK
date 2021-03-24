@@ -1,8 +1,6 @@
 suppressPackageStartupMessages({
   require(data.table)
   require(countrycode)
-  require(wpp2019)
-  require(socialmixr)
 })
 
 .debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper")
@@ -10,32 +8,30 @@ suppressPackageStartupMessages({
   "%s/inputs/mortality.rds"
 ), .debug[1]) else commandArgs(trailingOnly = TRUE)
 
-get_sex_data <- function(sx, covidm_age_ulim = 75, covid_m_age_w = 5) {
-  age_low_lims <- seq(0, covidm_age_ulim, by=covid_m_age_w)
-  
-  # need pop to weight 75+ mortality
-  pop <- as.data.table(get(data(list=list(sprintf("pop%s", sx)))[[1]]))[,.(
-    iso3c = countrycode(country_code, "iso3n", "iso3c"),
-    pop = `2020`*1000,
-    age = as.integer(gsub("^(\\d+)[^\\d]+$","\\1",age))
-  )][!is.na(iso3c)]
-  
-  # get unweighted mortality
-  # going to use [1,5) mortality for infants as well,
-  # and deduct "excess" infant mortality from birthrate
-  mort <- as.data.table(get(data(list=list(sprintf("mx%s", sx)))[[1]]))[,.(
-    iso3c = countrycode(country_code, "iso3n", "iso3c"),
-    mortality = `2015-2020`, age
-  )][!is.na(iso3c)][order(age),
-    .(
-      age = age[-2],
-      mortality = mortality[-1]
-    ),
-    by=iso3c
-  ]
-  
-  mort[pop, on=.(iso3c, age)][, sex := sx ]
-}
+wppurl <- "https://population.un.org/wpp/Download/Files/1_Indicators%20(Standard)/CSV_FILES/WPP2019_Life_Table_Medium.csv"
+#' covidm population not differentiated by sex, so want total value (SexID == 3)
+#' exclude aggregate populations (LocID >= 900) and Channel Islands (830)
+wpp.dt <- fread(wppurl)[SexID == 3][!(LocID >= 900) & LocID != 830]
+#' TODO: is this the correct interpretation of WPP life tables?
+#' an alternative reading of data description suggests that different ages values
+#' should come from different time periods (0-4 from 2015-2020, 5-9 from 2010-2015, etc)
+#' goal is to have best approximation of expected non-COVID mortality, today, by age
+#' since model doesn't have a 0-1 age group, combine that with 1-4 category
+#' model stops at 75+, so use expected additional life years at 75 for death rate
+mort.dt <- wpp.dt[Time == "2015-2020" & AgeGrpStart <= 75, .(
+  AgeGrp = AgeGrp[-1], AgeGrpStart = AgeGrpStart[-2], AgeGrpSpan = 5,
+  px = c(px[1]*px[2], px[-c(1:2)]),
+  ex = ex[-1]
+), by=.(iso3 = countrycode(LocID, "iso3n", "iso3c"))]
 
-f <- get_sex_data("F")
-m <- get_sex_data("M")
+#' now need to convert this into ODE compartment exit rate for this age strata
+#' px = probability of not dying in this age strata
+#' the aging rate is 1/(5*365.25) (for daily time step)
+#' px = aging rate / (aging rate + death rate)
+#' death rate = aging*(1 / px - 1)  = 
+
+mort.dt[, per_capita_day := (1/(5*365.25))*(1/px - 1) ]
+mort.dt[AgeGrpStart == 75, per_capita_day := 1/(ex*365.25) ]
+mort.dt[, per_capita_day_alt := -log(px)/AgeGrpSpan/365.25 ]
+
+saveRDS(mort.dt, tail(.args, 1))
