@@ -103,7 +103,7 @@ scheduler <- function(large, small, symp, k, shft) {
 
 pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1)
 #' TODO expand sampling
-fits.dt <- bootstrap.dt[,
+fits.dt <- bootstrap.dt[1,
 {
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", names(.SD))], each = 2) * umod
   ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_", names(.SD))], each = 2)
