@@ -1,16 +1,15 @@
-#' default simulation parameters
 suppressPackageStartupMessages({
   require(data.table)
   require(countrycode)
   require(wpp2019)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "ZAF")
 .args <- if (interactive()) sprintf(c(
-  .debug[2],
   "%s/inputs/mortality.rds",
   "%s/inputs/fertility.rds",
   "%s/inputs/urbanization.rds",
+  .debug[2],
   "../covidm",
   "%s/inputs/pops/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -21,6 +20,10 @@ suppressPackageStartupMessages({
 cm_path = tail(.args, 2)[1]
 target = tail(.args, 3)[1]
 outfile = tail(.args, 1)
+
+mort.dt <- readRDS(.args[1])[iso3 == target]
+fert.dt <- readRDS(.args[2])[iso3 == target]
+urb.dt <- readRDS(.args[3])[iso3 == target]
 
 cm_force_rebuild = F;
 cm_build_verbose = F;
@@ -39,6 +42,7 @@ matref <- country <- cm_populations[
 stopifnot(length(country)==1)
 
 #set up node-runs
+#TODO: country speci
 probs = fread(
   "Age_low,Age_high,Prop_symptomatic,IFR,Prop_inf_hosp,Prop_inf_critical,Prop_critical_fatal,Prop_noncritical_fatal,Prop_symp_hospitalised,Prop_hospitalised_critical
 0,9,0.66,8.59E-05,0.002361009,6.44E-05,0.5,0,0,0.3

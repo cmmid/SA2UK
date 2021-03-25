@@ -70,7 +70,6 @@ ${SOURCE}/fertility.rds: gen_fertility.R | ${SOURCE}
 ${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
-
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
 	${R}
 
@@ -163,3 +162,7 @@ ${SINK}/figs/relaxed_rt.rds: fig_relaxed_rt.R ${SOURCE}/nextstrain_groups_ngs-sa
 	${R}
 
 figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo cfr timeseries AR)
+
+########################## CONVENIENCE TARGETS ###########################################
+
+popprep: $(patsubst %,${SOURCE}/%.rds,urbanization mortality fertility)
