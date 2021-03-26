@@ -140,7 +140,7 @@ burden_processes = list(
   )
 )
 
-popnorm <- function(x, seed_cases = 50, urbfrac){
+popnorm <- function(x, seed_cases = 50, urbfrac) {
   
   #age-specific probability of being symptomatic
   #x$y <- c(rep(0.056, 3), rep(0.49, 8), rep(0.74, 8))
@@ -157,12 +157,12 @@ popnorm <- function(x, seed_cases = 50, urbfrac){
   x$seed_times <- rep(0, seed_cases)
   
   # incorporate urbanization fraction(s)
-  X$size <- round(x$size*urbfrac)
+  x$size <- round(x$size*urbfrac)
   
   return(x)
 }
 
-params <- cm_parameters_SEI3R(
+params <- cm_build_pop_SEI3R(
   country, matref,
   deterministic=FALSE, date_end = 365*2,
   dE  = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
@@ -178,7 +178,7 @@ params$schedule = list()
 
 params$processes = burden_processes
 
-params$pop <- lapply(params$pop, popnorm, urb.dt$value)
+params$pop <- lapply(params$pop, popnorm, urbfrac = urb.dt$value)
 #params1$time1 <- as.Date(params1$time1)
 
 saveRDS(params, outfile)

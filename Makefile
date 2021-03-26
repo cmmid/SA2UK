@@ -32,7 +32,10 @@ MKDIRS := ${SOURCE} ${SINK} \
 	$(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) \
 	$(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
-ISOS ?= ZAF GHA
+africaisos.txt: gen_isos.R
+	${R}
+
+ISOS ?= $(shell cat africaisos.txt)
 
 # provides non-analysis support
 include support.makefile
@@ -61,14 +64,19 @@ ${SINK}/cfrs.rds: est_scale_prov.R ${SOURCE}/prov_data.rds | ${SINK}
 ${SOURCE}/urbanization.rds: gen_urbanization.R | ${SOURCE}
 	${R}
 
+${SOURCE}/matrices.rds: get_matrices.R | ${SOURCE}
+	${R}
+
 ${SOURCE}/mortality.rds: gen_mortality.R | ${SOURCE}
 	${R}
 
 ${SOURCE}/fertility.rds: gen_fertility.R | ${SOURCE}
 	${R}
 
-${SOURCE}/pops/%.rds: gen_covidm_pop.R | ${COVIDM} ${SOURCE}/pops
+${SOURCE}/pops/%.rds: gen_covidm_pop.R $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization) | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
+
+allpops: $(patsubst %,${SOURCE}/pops/%.rds,${ISOS})
 
 ${SOURCE}/populations.rds: gen_populations.R | ${SOURCE}
 	${R}
@@ -165,4 +173,4 @@ figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo cfr timeseries AR)
 
 ########################## CONVENIENCE TARGETS ###########################################
 
-popprep: $(patsubst %,${SOURCE}/%.rds,urbanization mortality fertility)
+popprep: $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization)
