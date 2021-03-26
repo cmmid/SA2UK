@@ -140,7 +140,7 @@ burden_processes = list(
   )
 )
 
-popnorm <- function(x, seed_cases = 50){
+popnorm <- function(x, seed_cases = 50, urbfrac){
   
   #age-specific probability of being symptomatic
   #x$y <- c(rep(0.056, 3), rep(0.49, 8), rep(0.74, 8))
@@ -150,11 +150,14 @@ popnorm <- function(x, seed_cases = 50){
   #   rep(0.4445867, 2), rep(0.5635720, 2), rep(0.8169443, 6)
   # )
   
-  #no cases in empty compartments
+  # no cases in empty compartments
   x$dist_seed_ages <- as.numeric(!(x$size == 0))
   
-  #seed cases
+  # seed cases
   x$seed_times <- rep(0, seed_cases)
+  
+  # incorporate urbanization fraction(s)
+  X$size <- round(x$size*urbfrac)
   
   return(x)
 }
@@ -175,7 +178,7 @@ params$schedule = list()
 
 params$processes = burden_processes
 
-params$pop <- lapply(params$pop, popnorm)
+params$pop <- lapply(params$pop, popnorm, urb.dt$value)
 #params1$time1 <- as.Date(params1$time1)
 
 saveRDS(params, outfile)
