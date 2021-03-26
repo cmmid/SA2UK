@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(wpp2019)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/mortality.rds",
   "%s/inputs/fertility.rds",
@@ -165,7 +165,10 @@ params <- cm_parameters_SEI3R(
   dE  = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
   dIp = cm_delay_gamma(1.5, 4.0, t_max = 15, t_step = 0.25)$p,
   dIs = cm_delay_gamma(3.5, 4.0, t_max = 15, t_step = 0.25)$p,
-  dIa = cm_delay_gamma(5.0, 4.0, t_max = 15, t_step = 0.25)$p
+  dIa = cm_delay_gamma(5.0, 4.0, t_max = 15, t_step = 0.25)$p,
+  A   = c(rep(1/(5*365.25), 15), 0),
+  B   = c(fert.dt$per_capita_day, rep(0, 15)),
+  D   = mort.dt$per_capita_day
 )
 
 params$schedule = list()
@@ -174,26 +177,6 @@ params$processes = burden_processes
 
 params$pop <- lapply(params$pop, popnorm)
 #params1$time1 <- as.Date(params1$time1)
-
-
-birthrates = fread(.args[6])
-mortality = fread(.args[7])
-
-if (demographics) {
-  params$pop[[1]]$A = rep(1 / (5 * 365.25), 16);
-  params$pop[[1]]$B = c(birthrates[name == mat, birth_rate / 365.25], rep(0, length(params$pop[[1]]$size) - 1));
-  mort = mortality[name == mat, mx]
-  ex = data.table(age = 75:124, mx = c(rep(mort[16:20], each = 5), rep(mort[21], 25)))
-  ex[, p := 1]
-  for (i in 2:nrow(ex)) {
-    ex[i]$p = ex[i - 1]$p * (1 - ex[i - 1]$mx);
-  }
-  lex_75 = weighted.mean(ex$age, ex$p) - 75;
-  mort[16] = 1 / lex_75;
-  params$pop[[1]]$D = c(mort[1:15], 1 / lex_75) / 365.25;
-}
-
-
 
 saveRDS(params, outfile)
 
