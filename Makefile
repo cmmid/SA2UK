@@ -73,7 +73,7 @@ ${SOURCE}/mortality.rds: gen_mortality.R | ${SOURCE}
 ${SOURCE}/fertility.rds: gen_fertility.R | ${SOURCE}
 	${R}
 
-${SOURCE}/pops/%.rds: gen_covidm_pop.R $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization) | ${COVIDM} ${SOURCE}/pops
+${SOURCE}/pops/%.rds: gen_covidm_pop.R $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization matrices) | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
 allpops: $(patsubst %,${SOURCE}/pops/%.rds,${ISOS})
@@ -173,4 +173,4 @@ figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo cfr timeseries AR)
 
 ########################## CONVENIENCE TARGETS ###########################################
 
-popprep: $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization)
+popprep: $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization matrices)
