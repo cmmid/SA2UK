@@ -164,19 +164,22 @@ popnorm <- function(x, seed_cases = 50, urbfrac) {
   return(x)
 }
 
+calllist <- list(
+  country, matref,
+  dE  = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
+  dIp = cm_delay_gamma(1.5, 4.0, t_max = 15, t_step = 0.25)$p,
+  dIs = cm_delay_gamma(3.5, 4.0, t_max = 15, t_step = 0.25)$p,
+  dIa = cm_delay_gamma(5.0, 4.0, t_max = 15, t_step = 0.25)$p,
+  A   = c(rep(1/(5*365.25), 15), 0),
+  B   = c(fert.dt$per_capita_day, rep(0, 15)),
+  D   = mort.dt$per_capita_day
+)
+
+if (!is.null(mats)) calllist$matrices <- mats
+
 params <- cm_base_parameters_SEI3R(
   deterministic=FALSE,
-  pop=list(cm_build_pop_SEI3R(
-    country, matref,
-    dE  = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
-    dIp = cm_delay_gamma(1.5, 4.0, t_max = 15, t_step = 0.25)$p,
-    dIs = cm_delay_gamma(3.5, 4.0, t_max = 15, t_step = 0.25)$p,
-    dIa = cm_delay_gamma(5.0, 4.0, t_max = 15, t_step = 0.25)$p,
-    A   = c(rep(1/(5*365.25), 15), 0),
-    B   = c(fert.dt$per_capita_day, rep(0, 15)),
-    D   = mort.dt$per_capita_day,
-    matrices = mats
-  ))
+  pop=list(do.call(cm_build_pop_SEI3R, calllist))
 )
 
 params$schedule = list()

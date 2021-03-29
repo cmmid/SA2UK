@@ -33,4 +33,7 @@ ret <- lapply(isos, function(iso) {
 })
 names(ret) <- isos
 
+#' one substitution for all-Africa analysis
+ret[["SOM"]] <- ret[["DJI"]]
+
 saveRDS(ret, tail(.args, 1))

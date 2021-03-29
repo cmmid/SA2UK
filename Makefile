@@ -32,7 +32,7 @@ MKDIRS := ${SOURCE} ${SINK} \
 	$(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) \
 	$(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
 
-africaisos.txt: gen_isos.R
+africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
 
 ISOS ?= $(shell cat africaisos.txt)
