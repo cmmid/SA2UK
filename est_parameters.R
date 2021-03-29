@@ -106,6 +106,7 @@ pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1)
 # brower()
 print("outer_scope")
 print(ls())
+print(cm_ngm)
 fits.dt <- bootstrap.dt[1,
 {
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", names(.SD))], each = 2) * umod
@@ -141,6 +142,7 @@ fits.dt <- bootstrap.dt[1,
     print(as.environment(-1))
 #    browser()
     print(search())
+    print(cm_ngm)
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
