@@ -138,11 +138,8 @@ fits.dt <- bootstrap.dt[1,
     asc <- ps[3]
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
     print("here")
-    print(ls())
-    print(as.environment(-1))
-#    browser()
-    print(search())
-    print(cm_ngm)
+    browser()
+    save(pop,file="/data/lshtm-batch/debug_est_parameters.Rdata")
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
