@@ -138,7 +138,7 @@ fits.dt <- bootstrap.dt[1,
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
     print("here")
     print(ls())
-    # browser()
+    browser()
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
