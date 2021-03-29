@@ -139,6 +139,7 @@ fits.dt <- bootstrap.dt[1,
     print("here")
     print(ls())
     browser()
+    print(search())
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
