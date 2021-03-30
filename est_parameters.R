@@ -103,8 +103,6 @@ scheduler <- function(large, small, symp, k, shft) {
 
 pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1)
 #' TODO expand sampling
-browser()
-print("outer_scope")
 fits.dt <- bootstrap.dt[1,
 {
   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", names(.SD))], each = 2) * umod
@@ -135,9 +133,6 @@ fits.dt <- bootstrap.dt[1,
     shft <- as.integer(ps[2])
     asc <- ps[3]
     pop$schedule <- scheduler(lrg, sml, symp, k, shft)
-    print("here")
-    browser()
-    save(pop,file="/data/lshtm-batch/debug_est_parameters.Rdata")
     sim <- cm_simulate(
       pop, 1,
       model_seed = 42L
@@ -145,7 +140,6 @@ fits.dt <- bootstrap.dt[1,
       compartment == "cases",
       .(value = sum(value) * asc), by = t
     ]
-    print("done simulatin")
     est <- sim[between(t, tart[1], tart[2]), value]
     casefact <- sum((1 - est / case.slc)^2) / length(est)
     pfact <- (1 - sim[which.max(value), t] / peakt)^2
