@@ -103,7 +103,7 @@ scheduler <- function(large, small, symp, k, shft) {
 
 pb = txtProgressBar(min = 1, max = length(fitslc), initial = 1)
 #' TODO expand sampling
-# brower()
+brower()
 print("outer_scope")
 fits.dt <- bootstrap.dt[1,
 {
