@@ -48,28 +48,28 @@ mlt[, measure := fifelse(grepl("roll", variable), "rolling", "raw")]
 mlt[, variant := fifelse(grepl("var", variable), "variant", "all")]
 
 p <- force(ggplot(mlt[measure == "raw" | (value > 0.1)]) +
-  aes(date, y= value, color = variant, alpha = measure, linetype = outcome) +
-  geom_line() +
-  geom_rect(
-    aes(
-      ymin = 0.1, ymax = Inf,
-      xmin=start-0.5, xmax=end+0.5,
-      fill = era
-    ), data = eras[!(era %in% c("censor","transition"))], inherit.aes = FALSE,
-    alpha = 0.2
-  ) +
-  theme_minimal() +
-  scale_y_log10(sprintf("Incidence", roll.window), breaks = 10^(0:5), labels = scales::label_number_si()) +
-  scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
-  scale_color_manual(name = NULL, labels = c(all = "all", variant = "est. 501Y.V2"), values = c(all="black", variant = "red")) +
-  scale_linetype_manual(name = NULL, values = c(cases="solid", deaths = "longdash")) +
-  scale_alpha_manual(name = NULL, values = c(raw=0.5, rolling = 1)) +
-  scale_fill_manual(
-    name = NULL,
-    breaks=c("pre","post","relaxation","variant"),
-    labels=c(pre="pre-intervention",post="post-intervention",relaxation="relaxation",variant="emergent variant"),
-    values = c(pre="firebrick", post="dodgerblue",relaxation="goldenrod",variant="red")
-  ) +
-  coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", "2021-03-01")), expand = FALSE))
+             aes(date, y= value, color = variant, alpha = measure, linetype = outcome) +
+             geom_line() +
+             geom_rect(
+               aes(
+                 ymin = 0, ymax = Inf,
+                 xmin=start-0.5, xmax=end+0.5,
+                 fill = era
+               ), data = eras[!(era %in% c("censor","transition"))], inherit.aes = FALSE,
+               alpha = 0.2
+             ) +
+             theme_minimal() +
+             scale_y_log10(sprintf("Incidence", roll.window), breaks = 10^(0:5), labels = scales::label_number_si()) +
+             scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
+             scale_color_manual(name = NULL, labels = c(all = "all", variant = "est. 501Y.V2"), values = c(all="black", variant = "red")) +
+             scale_linetype_manual(name = NULL, values = c(cases="solid", deaths = "longdash")) +
+             scale_alpha_manual(name = NULL, values = c(raw=0.5, rolling = 1)) +
+             scale_fill_manual(
+               name = NULL,
+               breaks=c("pre","post","relaxation","variant"),
+               labels=c(pre="pre-intervention",post="post-intervention",relaxation="relaxation",variant="emergent variant"),
+               values = c(pre="firebrick", post="dodgerblue",relaxation="goldenrod",variant="red")
+             ) +
+             coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", "2021-03-01")), expand = FALSE))
 
 ggsave(tail(.args, 1), p, height = 3, width = 6, units = "in", dpi = 900)
