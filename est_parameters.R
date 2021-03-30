@@ -33,9 +33,11 @@ if (sys.nframe() == 0) {
   cm_force_shared = T
   cm_version = 2
 
+  batch_size <- 20
+
   load("NGM.rda")
 }
-fitslc <- seq(starting_step, by = 1, length.out = 20)
+fitslc <- seq(starting_step, by = 1, length.out = batch_size)
 bootstrap.dt <- sample[fitslc]
 case.dt[, croll := frollmean(cases, align = "center", 7)]
 
