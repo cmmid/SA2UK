@@ -30,7 +30,7 @@ GITLIBS := ${COVIDM}
 # support.makefile will provide a directory target for all of these
 MKDIRS := ${SOURCE} ${SINK} \
 	$(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) \
-	$(addprefix ${SOURCE}/,pops yuqs) ${MIRDIR}
+	$(addprefix ${SOURCE}/,pops yuqs figs/epi) ${MIRDIR}
 
 africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
@@ -52,6 +52,11 @@ include support.makefile
 # was ECDC data, but now that's only weekly
 ${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
 	${R}
+
+${SOURCE}/figs/epi/%.png: fig_epi_overview.R ${SOURCE}/epi_data.rds | ${SOURCE}/figs/epi
+	${Rstar}
+
+epireview: $(patsubst %,${SOURCE}/figs/epi/%.png,${ISOS})
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
