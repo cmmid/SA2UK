@@ -28,7 +28,7 @@ outcomes$cases <- as.numeric(outcomes$cases)
 outcomes$deaths <- as.numeric(outcomes$deaths)
 
 mlt <- melt(
-  outcomes, id.vars = "date", measure.vars = c("cases", "deaths", "rollcases", "rolldeaths", "grollcases", "grolldeaths")
+  outcomes, id.vars = "date", measure.vars = c("cases", "deaths", "rollcases", "rolldeaths")#, "grollcases", "grolldeaths")
 )[!is.na(value)]
 
 mlt[, outcome := fifelse(grepl("case", variable), "cases", "deaths")]
