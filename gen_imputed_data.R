@@ -11,6 +11,14 @@ suppressPackageStartupMessages({
 
 raw.dt <- readRDS(.args[1])
 
+#' want to impute daily incidence for iso3s where there is an
+#' apparent shift from daily reporting to some other sporadic
+#' interval
+#' 
+#' for those intervals, asserting 0s are actually NAs
+#' 
+#' going to impute
+
 #' want: iso3s with "apparent sporadic reporting intervals"
 #' define ASRI as
 #'  - an interval of days
@@ -80,6 +88,20 @@ asri.dt[, merge.asri := asri ]
 asri.dt[!is.na(merge.asri), merge.asri := fill.asri(merge.asri), by=iso3 ]
 
 raw.dt[asri.dt, on=.(iso3, date), asri := merge.asri ]
+
+frollgmean <- function(x) {
+  #' if there are no zeros, we take the unweighted, geometric mean
+  if (!any(x == 0)) {
+    
+  } else {
+    
+  }
+}
+
+
+
+
+
 
 matchfun <- function(r, dt, inc0, incf) inc0*sum(r^(1:dt)) - incf
 
