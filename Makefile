@@ -50,7 +50,8 @@ include support.makefile
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
-${RAWDATA} := ${SOURCE}/epi_data.rds
+RAWDATA := ${SOURCE}/epi_data.rds
+
 rawdata: ${RAWDATA}
 
 ${RAWDATA}: get_epi_data.R | ${SOURCE}
@@ -62,15 +63,17 @@ ${SOURCE}/figs/epi/%.png: fig_epi_overview.R ${RAWDATA} | ${SOURCE}/figs/epi
 
 epireview: $(patsubst %,${SOURCE}/figs/epi/%.png,${ISOS})
 
-${EPIDATA} := ${SINK}/adj_data.rds
+EPIDATA := ${SINK}/adj_data.rds
 
 ${EPIDATA}: est_imputed_data.R ${RAWDATA}
 	${R}
 
 adjdata: ${EPIDATA}
 
-${SOURCE}/figs/adjusted/%.png: fig_epi_adjusted.R ${RAWDATA} ${EPIDATA} | ${SOURCE}/figs/adjusted
+${SOURCE}/figs/adjusted/%.png: fig_epi_adjusted.R ${EPIDATA} | ${SOURCE}/figs/adjusted
 	${Rstar}
+
+adjreview: $(patsubst %,${SOURCE}/figs/adjusted/%.png,${ISOS})
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
