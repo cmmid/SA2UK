@@ -35,7 +35,7 @@ MKDIRS := ${SOURCE} ${SINK} \
 africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
 
-ISOS ?= $(shell cat africaisos.txt)
+ISOS ?= $(shell cat africaisos.txt) PAK
 
 # provides non-analysis support
 include support.makefile
@@ -50,13 +50,27 @@ include support.makefile
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
-${SOURCE}/epi_data.rds: get_epi_data.R | ${SOURCE}
+${RAWDATA} := ${SOURCE}/epi_data.rds
+rawdata: ${RAWDATA}
+
+${RAWDATA}: get_epi_data.R | ${SOURCE}
 	${R}
 
-${SOURCE}/figs/epi/%.png: fig_epi_overview.R ${SOURCE}/epi_data.rds | ${SOURCE}/figs/epi
+# overview of all raw data
+${SOURCE}/figs/epi/%.png: fig_epi_overview.R ${RAWDATA} | ${SOURCE}/figs/epi
 	${Rstar}
 
 epireview: $(patsubst %,${SOURCE}/figs/epi/%.png,${ISOS})
+
+${EPIDATA} := ${SINK}/adj_data.rds
+
+${EPIDATA}: est_imputed_data.R ${RAWDATA}
+	${R}
+
+adjdata: ${EPIDATA}
+
+${SOURCE}/figs/adjusted/%.png: fig_epi_adjusted.R ${RAWDATA} ${EPIDATA} | ${SOURCE}/figs/adjusted
+	${Rstar}
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly

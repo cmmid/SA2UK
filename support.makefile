@@ -11,8 +11,8 @@ alldirs: ${MKDIRS}
 alllibs: ${GITLIBS}
 
 # will copy example.makefile for a locally edited copy
-local.makefile: | example.makefile
-	cp $| $@
+egcopy: | example.makefile
+	cp $| local.makefile
 
 # ASSORTED CONVENIENCE DEFINITIONS FOR R-RELATED RULES
 
