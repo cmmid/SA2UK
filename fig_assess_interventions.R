@@ -3,13 +3,13 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/epi_data.rds",
+  "%s/outputs/adj_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/phylo.rds",
   .debug[2],
-  "%s/outputs/figs/eras.rds"
+  "%s/outputs/intervention_timing/%s.png"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 tariso <- tail(.args, 2)[1]
@@ -19,6 +19,13 @@ outcomes <- readRDS(.args[1])[iso3 == tariso]
 eras <- readRDS(.args[2])
 
 phylo.frac <- readRDS(.args[3])
+
+#' for visualization convenience, approximating this phylo frac
+#' change as universal
+#' so transition last date to begining of period 3
+
+newend <- eras[period == 3 & era == "pre", start ]
+phylo.frac[, date := newend + -(.N-1):0 ]
 
 outcomes[, var.frac := 0 ]
 outcomes[phylo.frac[!is.na(binop)], on=.(date), var.frac := binop ]
@@ -31,6 +38,9 @@ outcomes[phylo.frac[!is.na(binop), .(date = date + 21, binop)], on=.(date), del.
 outcomes[!between(date, phylo.frac[, min(date)+21], phylo.frac[, max(date)+21]), del.var.frac := NA ]
 
 roll.window <- 7
+
+#' set to adjusted cases
+outcomes[, cases := adj ]
 
 outcomes[order(date), rollcases := frollmean(cases, roll.window), by=iso3 ]
 outcomes[order(date), rolldeaths := frollmean(deaths, roll.window), by=iso3 ]
@@ -58,10 +68,10 @@ p <- force(ggplot(mlt[measure == "raw" | (value > 0.1)]) +
                ), data = eras[!(era %in% c("censor","transition"))], inherit.aes = FALSE,
                alpha = 0.2
              ) +
-             theme_minimal() +
+             theme_minimal(base_size = 14) +
              scale_y_log10(sprintf("Incidence", roll.window), breaks = 10^(0:5), labels = scales::label_number_si()) +
              scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
-             scale_color_manual(name = NULL, labels = c(all = "all", variant = "est. 501Y.V2"), values = c(all="black", variant = "red")) +
+             scale_color_manual(name = NULL, labels = c(all = "all", variant = "est. variant"), values = c(all="black", variant = "red")) +
              scale_linetype_manual(name = NULL, values = c(cases="solid", deaths = "longdash")) +
              scale_alpha_manual(name = NULL, values = c(raw=0.5, rolling = 1)) +
              scale_fill_manual(
@@ -70,6 +80,6 @@ p <- force(ggplot(mlt[measure == "raw" | (value > 0.1)]) +
                labels=c(pre="pre-intervention",post="post-intervention",relaxation="relaxation",variant="emergent variant"),
                values = c(pre="firebrick", post="dodgerblue",relaxation="goldenrod",variant="red")
              ) +
-             coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", "2021-03-01")), expand = FALSE))
+             coord_cartesian(ylim = c(1, NA), xlim = as.Date(c("2020-03-01", NA)), expand = FALSE))
 
-ggsave(tail(.args, 1), p, height = 3, width = 6, units = "in", dpi = 900)
+ggsave(tail(.args, 1), p, height = 6.5, width = 15, units = "in", dpi = 900)

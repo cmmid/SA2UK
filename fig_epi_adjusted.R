@@ -3,7 +3,7 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/adj_data.rds",
   .debug[2],
@@ -30,7 +30,11 @@ p <- ggplot(outcomes) +
   scale_color_discrete(NULL, drop = F) +
   scale_alpha_manual(NULL, values = c(asri = 0.2, normal = 1), drop = F) +
   scale_y_log10() +
-  scale_x_date(name = NULL, date_breaks = "month", minor_breaks = NULL, date_labels = "%b %y")
+  scale_x_date(
+    name = NULL,
+    date_breaks = "month", date_minor_breaks = "week",
+    date_labels = "%b %y"
+  )
 
 #ggsave(tail(.args, 1), p(mlt[outcome == "cases" & date >= "2020-03-01"], 1600), width = 16, height = 8, dpi = 300)
 ggsave(tail(.args, 1),
