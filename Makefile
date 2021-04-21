@@ -35,7 +35,8 @@ MKDIRS := ${SOURCE} ${SINK} \
 africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
 
-ISOS ?= $(shell cat africaisos.txt) PAK
+ISOS = PAK
+# ISOS ?= $(shell cat africaisos.txt) PAK
 
 # provides non-analysis support
 include support.makefile
@@ -116,11 +117,11 @@ ${SINK}/phylo.rds: est_phylo_share.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-
 	${R}
 
 # only works for ZAF, placeholder that just sets by hand values identified in covidLMIC
-${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R | ${SINK}/intervention_timing
+${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R interventions.csv | ${SINK}/intervention_timing
 	${Rstar}
 
 #${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SINK}/interventions.rds ${SOURCE}/ecdc_data.rds ${SINK}/introductions/%.rds | ${SINK}/intervention_timing
-${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SINK}/phylo.rds | ${SINK}/intervention_timing
+${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${EPIDATA} ${SINK}/intervention_timing/%.rds ${SINK}/phylo.rds | ${SINK}/intervention_timing
 	${Rstar}
 
 timing: $(patsubst %,${SINK}/intervention_timing/%.png,${ISOS})
@@ -134,15 +135,15 @@ ${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/po
 .PRECIOUS: ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds
 
 #' TODO strip relaxation calculation
-${SINK}/r0/%.rds: est_r0.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds | ${SINK}/r0
+${SINK}/r0/%.rds: est_r0.R ${EPIDATA} ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds | ${SINK}/r0
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
-int_r0: $(patsubst %,${SINK}/r0/%.rds,${ISOS})
+int_r0: $(patsubst %,${SINK}/r0/%.rds,PAK)
 
-${SINK}/introductions/%.rds: est_introductions.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${SOURCE}/epi_data.rds ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
+${SINK}/introductions/%.rds: est_introductions.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${EPIDATA} ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
-intros: $(patsubst %,${SINK}/introductions/%.rds,${ISOS})
+intros: $(patsubst %,${SINK}/introductions/%.rds,PAK)
 
 STARTID ?= 0001
 

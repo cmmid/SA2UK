@@ -3,14 +3,14 @@ suppressPackageStartupMessages({
   require(EpiNow2)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/epi_data.rds",
+  "%s/outputs/adj_data.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/yuqs/%s.rds",
   "%s/inputs/pops/%s.rds",
   getDTthreads(),
-  "1e3", #' cores, samples
+  "4e3", #' cores, samples
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
@@ -22,7 +22,7 @@ tariso <- tail(.args, 2)[1]
 
 case.dt <- readRDS(.args[1])[iso3 == tariso][, .(date, confirm = cases )]
 fill.case <- case.dt[
-  case.dt[, .(date = seq(min(date),max(date),by="day"))],
+  case.dt[, .(date = seq(min(date),max(date), by="day"))],
   on=.(date),
   .(date, confirm = fifelse(is.na(confirm), 0, confirm))
 ]
