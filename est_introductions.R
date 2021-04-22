@@ -2,13 +2,13 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/yuqs/%s.rds", #' estimated
   "%s/outputs/r0/%s.rds", #' estimated
   "%s/inputs/populations.rds", #' assembled from other inputs, no estimation
   "%s/inputs/pops/%s.rds", #' assembled from other inputs, no estimation
-  "%s/inputs/epi_data.rds", #' cleaned input
+  "%s/outputs/adj_data.rds", #' cleaned input
   "ene-ifr.csv", #' input sourced from mbevands estimate
   "%s/outputs/intervention_timing/%s.rds",
   .debug[2],
@@ -77,7 +77,7 @@ inf2death_dur <- 22
 slc <- ref[which.max(deaths > 0):.N][1:(gen_int/2)][deaths > 0]
 
 #' MAGIC NUMBER WARNING
-death_underreporting <- 1 #' assume initially no under-reporting vs later estimate of ~2.7 for SA
+death_underreporting <- 2.7*10 #' assume initially no under-reporting vs later estimate of ~2.7 for SA
 
 if (slc[.N, date] - inf2death_dur < window_start) {
   expansion <- Rs[,{
