@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/pops/%s.rds",
   "%s/outputs/r0/%s.rds",
+  "%s/inputs/mobility.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/outputs/sample/%s.rds",
@@ -21,7 +22,22 @@ suppressPackageStartupMessages({
 fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = 20)
 tariso <- tail(.args, 4)[1]
 
+mob <- readRDS(.args[3])[iso3 == tariso]
+
 timings <- readRDS(.args[4])
+
+#' going to use these to figure out the 
+r0multipliers <- timings[(period == 1) & (era %in% c("pre","post"))][
+  mob, on=.(iso3), allow.cartesian = TRUE
+][
+  between(date, start, end),
+  .(
+    work_multiplier = prod(work_multiplier)^(1/.N),
+    other_multiplier = prod(other_multiplier)^(1/.N),
+    school_multiplier = mean(school_multiplier)
+  ), by = .(period, era)
+]
+
 tarwindow <- timings[era == "relaxation", c(start, end)]
 
 # case.dt <- readRDS(.args[3])[
@@ -40,6 +56,13 @@ intros.dt <- readRDS(.args[5])[iso3 == tariso][sample %in% fitslc]
 bootstrap.dt <- readRDS(.args[6])[sample %in% fitslc][period == 1]
 
 day0 <- as.Date(intros.dt[, min(date)])
+
+contact_schedule <- with(mob[date >= day0], mapply(
+  function(work, school, other, home = 1) c(home, work, school, other),
+  work = workr, school = school_multiplier, other = otherr,
+  SIMPLIFY = FALSE
+))
+
 intros <- intros.dt[,
   intro.day := as.integer(date - date[1])
 ][, .(t=Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))), by=.(sid=sample) ]
@@ -51,6 +74,15 @@ popsetup <- function(basep, day0) {
 }
 
 params <- popsetup(readRDS(.args[1]), day0)
+params$schedule <- list(
+  list(
+    parameter = "contact",
+    pops = numeric(),
+    mode = "multiply",
+    values = contact_schedule,
+    times = day0 + 0:(length(contact_schedule)-1)
+  )
+)
 
 tart <- as.numeric(tarwindow - day0)
 case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), round(croll)]

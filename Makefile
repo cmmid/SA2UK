@@ -96,6 +96,13 @@ ${SOURCE}/mortality.rds: gen_mortality.R | ${SOURCE}
 ${SOURCE}/fertility.rds: gen_fertility.R | ${SOURCE}
 	${R}
 
+MOBURLS := https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv $(patsubst %,https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/timeseries/c1_%.csv,school_closing flag)
+
+${SOURCE}/mobility.rds: get_mobility.R | ${SOURCE}
+	${RSCRIPT} $^ ${MOBURLS} $@ 
+
+mob: ${SOURCE}/mobility.rds
+
 ${SOURCE}/pops/%.rds: gen_covidm_pop.R $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization matrices) | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
@@ -152,7 +159,7 @@ ${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SIN
 
 samples: $(patsubst %,${SINK}/sample/%.rds,${ISOS})
 
-${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/r0/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
+${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/r0/%.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 pars: $(patsubst %,${SINK}/params/%.rds,${ISOS})
