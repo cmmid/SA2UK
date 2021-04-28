@@ -136,8 +136,8 @@ timing: $(patsubst %,${SINK}/intervention_timing/%.png,${ISOS})
 NGM.rda: NGM.R
 	${R}
 
-${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/pops/%.rds | ${SOURCE}/yuqs NGM.rda
-	${R}
+${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/pops/%.rds ${SINK}/intervention_timing/%.rds ${SOURCE}/mobility.rds | ${SOURCE}/yuqs ${COVIDM}
+	${RSCRIPT} $^ $* ${COVIDM} $@
 
 .PRECIOUS: ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds
 
@@ -157,7 +157,7 @@ STARTID ?= 0001
 ${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SINK}/sample
 	${R}
 
-samples: $(patsubst %,${SINK}/sample/%.rds,${ISOS})
+samples: $(patsubst %,${SINK}/sample/%.rds,PAK)
 
 ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/r0/%.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
