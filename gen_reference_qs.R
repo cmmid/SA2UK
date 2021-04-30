@@ -55,7 +55,7 @@ source(file.path(cm_path, "R", "covidm.R"))
 uids <- rep(grep("^u_", colnames(yu)), each = 2)
 yids <- rep(grep("^y_", colnames(yu)), each = 2)
 
-qs.dt <- yu[1:5, {
+qs.dt <- yu[, {
   umod <- as.numeric(.SD[1,])[1:16]
   ymod <- as.numeric(.SD[1,])[17:32]
   ngm <- cm_eigen_ngm(

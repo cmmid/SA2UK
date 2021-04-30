@@ -77,7 +77,7 @@ inf2death_dur <- 22
 slc <- ref[which.max(deaths > 0):.N][1:(gen_int/2)][deaths > 0]
 
 #' MAGIC NUMBER WARNING
-death_underreporting <- 2.7*10 #' assume initially no under-reporting vs later estimate of ~2.7 for SA
+death_underreporting <- 2.7 #' assume initially no under-reporting vs later estimate of ~2.7 for SA
 
 if (slc[.N, date] - inf2death_dur < window_start) {
   expansion <- Rs[,{

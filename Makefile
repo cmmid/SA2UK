@@ -159,10 +159,12 @@ ${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SIN
 
 samples: $(patsubst %,${SINK}/sample/%.rds,PAK)
 
-${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SOURCE}/r0/%.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params NGM.rda ${COVIDM}
+${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SINK}/r0/%.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
-pars: $(patsubst %,${SINK}/params/%.rds,${ISOS})
+pars:
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0051
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0056
 
 .SECONDEXPANSION:
 ${SINK}/params/%_consolidated.rds: gen_consolidate.R $$(wildcard ${SINK}/params/%_*.rds)
