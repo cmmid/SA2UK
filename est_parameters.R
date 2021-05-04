@@ -95,7 +95,7 @@ params$time1 <- endrelax
 #' assert: fIs reduction is related to number of observed cases
 #' more cases == higher percent of peak reduction
 #' desired constraints:
-#'  - at infinite cases, value is some L <= 1 (<= 100% reduction)
+#'  - TODO: at infinite cases, value is some L <= 1 (<= 100% reduction); CURRENT: L = 1
 #'  - at some reference value of cases, has some known reduction value (post-intervention R0)
 #'  
 #'  use logistic on observed cases to achieve this
@@ -107,13 +107,6 @@ params$time1 <- endrelax
 #'  
 #'  ref_red = 1/(1+exp(-k(ref_cases-cases0)))*(1-baseline) + baseline
 #'  (ref_red*(1+exp(-k(ref_cases-cases0))) - 1)/(exp(-k(ref_cases-cases0)) = baseline 
-#'  
-#'  f(cases) = L/(1+exp(-k*(cases-case0))) => 
-#'  L is max (reference < L <= 1)
-#'  given either k or case0 + reference constraint, other is determined
-#'  
-#'  reduction at initial R0 = f(cases at R0) => k*(cases at R0 - case0) = -log(L/X - 1)
-#'  so k = -log(L/X - 1)/(delta cases)
 #'  
 fIs_amp <- function(
   case0, k, # fit elements
@@ -256,8 +249,9 @@ fits.dt <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
     source(file.path(cm_path, "R", "covidm.R"))
   })
   sdt <- bootstrap.dt[i,]
-  dtfun(sdt, sdt$umod, params, intros[sdt$sample == sid, t], sdt$post)
-}))[, sample := 1:.N ]
+  res <- dtfun(sdt, sdt$umod, params, intros[sdt$sample == sid, t], sdt$post)
+  res$sample <- sdt$sample
+}))
 
 saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))
 

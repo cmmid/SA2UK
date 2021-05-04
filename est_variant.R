@@ -2,11 +2,10 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/params/%s_0001.rds",
+  "%s/outputs/params/%s_consolidated.rds",
   "%s/inputs/pops/%s.rds",
-  "%s/inputs/urbanization.rds",
   "%s/outputs/projections/%s.rds",
   "%s/outputs/sample/%s.rds",
   .debug[2],
@@ -16,29 +15,16 @@ suppressPackageStartupMessages({
 tariso <- tail(.args, 2)[1]
 
 #' targets included here in `variant` column
-ref <- readRDS(.args[5])[period == 3][, .(variant = pre), by=sample]
+ref <- readRDS(.args[4])[period == 3][, .(variant = pre), by=sample]
 fits <- readRDS(.args[1])[ref, on=.(sample), nomatch = 0]
 
 
 #' get susceptible depletion
-proj.dt <- readRDS(.args[4])[compartment == "R" & date == max(date) ]
+proj.dt <- readRDS(.args[3])[compartment == "R" & date == max(date) ]
 cmpdate <- proj.dt[1, date]
 
 params <- readRDS(.args[2])
-urbfrac <- readRDS(.args[3])[iso3 == tariso, value / 100]
-params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
-proj.dt[, AR := value / params$pop[[1]]$size[as.numeric(group)] ]
-
-load("NGM.rda")
-
-tier2 <- as.Date("2020-08-15")
-
-rfs <- function(k, shft) {
-  relaxref <- (1+exp(-k*as.numeric(as.Date("2020-05-01")-tier2-shft)))^-1
-  relaxref + 1 - (1+exp(-k*as.numeric(cmpdate-tier2-shft)))^-1
-}
-
-fits[, relaxfactor := rfs(k, shft) ]
+proj.dt[, AR := rv / params$pop[[1]]$size[as.numeric(group)] ]
 
 sims <- rbindlist(lapply(1:nrow(fits), function(i) with(as.list(fits[i,.(variantR=variant, large, small, sympt, relaxfactor)]), {
   AR <- proj.dt[sample == i, AR]

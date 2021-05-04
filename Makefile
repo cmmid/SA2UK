@@ -163,20 +163,23 @@ ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SINK}/r0/%.rds ${S
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 pars:
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0051
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0056
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0061
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0066
 
 .SECONDEXPANSION:
 ${SINK}/params/%_consolidated.rds: gen_consolidate.R $$(wildcard ${SINK}/params/%_*.rds)
 	Rscript $< $(@D) $* $@
 
 testpars: ${SINK}/params/ZAF.rds
-conspars: ${SINK}/params/ZAF_consolidated.rds
+conspars: ${SINK}/params/PAK_consolidated.rds
+
+${SINK}/params/%.png: fig_params_overview.R ${SINK}/params/%_consolidated.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${EPIDATA} | ${SINK}/params ${COVIDM}
+	Rscript $^ $* ${COVIDM} $@
 
 ${SINK}/scenarios.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
 
-${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SINK}/introductions/%.rds ${SOURCE}/urbanization.rds ${SINK}/intervention_timing/%.rds | ${SINK}/projections
+${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${EPIDATA} | ${SINK}/projections ${COVIDM}
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
 ${SINK}/variant/%.rds: est_variant.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SINK}/projections/%.rds ${SINK}/sample/%.rds | ${SINK}/variant

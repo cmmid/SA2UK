@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
   "%s/outputs/adj_data.rds",
   .debug[2], # PAK
   "../covidm",
-  "%s/outputs/projections/%s.rds"
+  "%s/outputs/params/%s.png"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 fits.dt <- readRDS(.args[2])
@@ -42,7 +42,7 @@ contact_schedule <- with(mob[date >= day0], mapply(
 ))
 
 intros <- intros.dt[,
-                    intro.day := as.integer(date - date[1])
+  intro.day := as.integer(date - date[1])
 ][, .(t=Reduce(c, mapply(rep, intro.day, infections, SIMPLIFY = FALSE))), by=.(sid=sample) ]
 
 popsetup <- function(basep, day0) {
@@ -140,53 +140,31 @@ est <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
   testpop$pop[[1]]$u <- us(sdt)
   testpop$pop[[1]]$seed_times <- intros[i == sid, t]
   testpop$schedule[[2]] <- add_fIs(sdt$case0, sdt$k, sdt$sympt)
-  sim_consolidate(
-    sim_step(testpop, c("cases","death_o","R")),
-    c("t", "group", "compartment")
-  )[order(t), .(
-    sample = i, date = t + day0, group, compartment,
-    rv = value, value = value*sdt$asc, asc = sdt$asc
-  )]
+  sim_consolidate(sim_step(testpop))[order(t), .(sample = i, date = t + day0, rv = value, value = value*sdt$asc, asc = sdt$asc)]
 }))
 
+parplot <- ggplot(est) +
+ aes(date, rv, group = sample) +
+ geom_line(aes(color="sim. total"), alpha = 0.2) +
+ geom_line(aes(y=value, color="sim. ascertained"), alpha = 0.2) +
+ geom_line(
+    aes(date, croll, color = "observed"),
+    data = case.dt,
+    inherit.aes = FALSE
+  ) +
+  coord_cartesian(xlim = as.Date(c("2020-03-01",NA))) +
+ scale_color_manual(
+   name=NULL,
+   breaks = c("sim. total", "sim. ascertained", "observed"),
+   values = c("firebrick", "goldenrod", "black")
+ ) +
+ scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
+ scale_y_log10(
+   "Cases",
+   breaks = 10^c(0,3,6),
+   minor_breaks = 10^(1:6),
+   labels = scales::label_number_si()
+  ) +
+ theme_minimal()
 
-# sims <- fits[,{
-#   us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_",names(.SD))], each = 2)*umod
-#   ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_",names(.SD))], each = 2)
-#   testpop <- base;
-#   testpop$pop[[1]]$y <- ys
-#   testpop$pop[[1]]$u <- testpop$pop[[1]]$u*us
-#   sid <- sample
-#   testpop$pop[[1]]$seed_times <- intros[sample == sid, t]
-#   testpop$schedule <- scheduler(large, small, sympt, k, shft)
-#   res <- cm_simulate(
-#     testpop, 1, model_seed = 42L
-#   )$dynamics[compartment %in% c("cases","death_o","R")]
-# }, by=sample]
-# 
-# res <- sims[,
-#             .(
-#               sample, date = t + day0,
-#               group, compartment,
-#               value
-#             )
-# ]
-
-#' @examples 
-#' comparison <- res[compartment == "cases" & between(date, tarwindow[1], tarwindow[2]), .(value = sum(value)), by=.(sample, date)][sample == 1]
-#' ggplot(res[compartment == "cases"][fits[, .(sample, asc)], on=.(sample)][, .(asc.value = sum(value)*asc, value = sum(value)), by=.(sample, date)]) +
-#'   aes(date, asc.value, group = sample) +
-#'   geom_line(alpha = 0.1) +
-#'   geom_line(aes(y=value), alpha = 0.1, color = "red") +
-#'   geom_line(
-#'     aes(date, cases),
-#'     data = readRDS("~/Dropbox/Covid_LMIC/All_Africa_paper/inputs/epi_data.rds")[iso3 == .debug[2]],
-#'     color = "black", inherit.aes = FALSE
-#'   ) +
-#'   annotate("rect", xmin=as.Date("2020-09-01"), xmax =as.Date("2020-10-01"), ymin = 0.01, ymax = Inf, alpha = 0.2, fill = "dodgerblue") +
-#'   scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
-#'   scale_y_log10() +
-#'   theme_minimal()
-
-saveRDS(est, tail(.args, 1))
-
+ggsave(tail(.args, 1), parplot, height = 6.5, width = 15, units = "in", dpi = 900)
