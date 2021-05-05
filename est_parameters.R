@@ -6,7 +6,7 @@ suppressPackageStartupMessages({
 
 #' fixed stride of 5, so adjust starting point; TODO: unfix
 .stride <- 5
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","PAK","0006")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","PAK","0001")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/pops/%s.rds",
   "%s/outputs/r0/%s.rds",
@@ -108,11 +108,31 @@ params$time1 <- endrelax
 #'  ref_red = 1/(1+exp(-k(ref_cases-cases0)))*(1-baseline) + baseline
 #'  (ref_red*(1+exp(-k(ref_cases-cases0))) - 1)/(exp(-k(ref_cases-cases0)) = baseline 
 #'  
+
+fIs_baseline <- function(
+  case0, k, reff, refcase = case.slc[1]
+) {
+  M <- exp(-k*(refcase-case0))
+  if (is.infinite(M)) {
+    reff
+  } else {
+    (reff*(1+M) - 1)/M
+  }
+}
+
+#' need (reff*(1+exp(-k*(refcase-case0))) - 1)/exp(-k*(refcase-case0)) > epsilon
+suggest_k <- function(
+  reff, 
+  case0 = 10^(mean(log10(range(case.slc)))),
+  refcase = case.slc[1]
+) -log(1/reff-1)/(refcase-case0) + c(1e-4,-1e-4)[(reff > 0.5)+1]
+
+
 fIs_amp <- function(
   case0, k, # fit elements
   reff, # sampling element: value of function at css[1]
   css = case.slc, # data element
-  baseline = (reff*(1+exp(-k*(css[1]-case0))) - 1)/exp(-k*(css[1]-case0)) # entailed remaining coefficient
+  baseline = fIs_baseline(case0, k, reff, css[1]) # entailed remaining coefficient
 ) (1-baseline)/(1+exp(-k*(css-case0))) + baseline
 
 #   case0 = 10^mean(range(log10(case.slc)))
@@ -157,69 +177,52 @@ ys <- function(sdt.row) {
   rep(sdt.row[, as.numeric(.SD), .SDcols = grep("^y_",names(sdt.row))], each = 2)
 }
 
-
-# pcopy$pop[[1]]$u <- us(bootstrap.dt[1])
-# pcopy$pop[[1]]$y <- ys(bootstrap.dt[1])
-# pcopy$pop[[1]]$seed_times <- intros[sid == 1, t]
-# pcopy$schedule[[2]] <- add_fIs(800, .0005, sympt)
-# 
-# thing2 <- sim_step(pcopy)
-# 
-# ggplot(thing2) + aes(t, value) +
-#   geom_point() +
-#   geom_point(data = case.dt[, .(t=date-day0, value = croll)], color = "red") +
-#   scale_y_log10() +
-#   theme_minimal()
-
 #' seeds = intros[sample == sid, t]
-dtfun <- function(sdt, umod, pars, seeds, post) {
+dtfun <- function(sdt, pars, seeds, post) {
   pop <- pars # copy constructor
   pop$pop[[1]]$y <- ys(sdt)
-  pop$pop[[1]]$u <- us(sdt, umod)
+  pop$pop[[1]]$u <- us(sdt)
   pop$pop[[1]]$seed_times <- seeds
   
+  symp <- optimize(function(symp) abs(cm_eigen_ngm(
+    pop, contact_reductions = post_contact_reductions,
+    # contact_reductions = c(home=0, work=sml, school=lrg, other=sml),
+    fIs_reductions = symp
+  )$R0/post-1), c(0.1, 0.9))$minimum
+  
   ofun <- function(ps) {
-    symp <- ps[1]; k <- ps[2]; case0 <- ps[3]
-    #' calculate reduced Rt
-    rerr <- abs(cm_eigen_ngm(
-      pop, contact_reductions = post_contact_reductions,
-      # contact_reductions = c(home=0, work=sml, school=lrg, other=sml),
-      fIs_reductions = symp
-    )$R0/post-1)
-      
-    #' project and compare to relaxation period
-    pop$schedule[[2]] <- add_fIs(case0, k, symp)
-    est <- sim_step(pop)[between(t, tart[1], tart[2]), value]
-    #' find the best possible ascertainment prob:
-    ret <- optimize(ascll, c(1e-6, .2), sim.cases = est)$objective
-    if (is.infinite(ret) | is.na(ret)) ret <- .Machine$integer.max
-    rerr + ret/length(est)
+    k <- ps[1]; case0 <- ps[2]
+    if (fIs_baseline(case0, k, symp) >= 0) {
+      #' project and compare to relaxation period
+      pop$schedule[[2]] <- add_fIs(case0, k, symp)
+      est <- sim_step(pop)[between(t, tart[1], tart[2]), value]
+      #' find the best possible ascertainment prob:
+      ret <- optimize(ascll, c(1e-6, .2), sim.cases = est)$objective
+      if (is.infinite(ret) | is.na(ret)) ret <- .Machine$integer.max
+      ret/length(est)
+    } else .Machine$integer.max
   }
   
-  pars_int <- optim_sa(
+  cmin <- c(10,case.slc[1]+1)[(symp < 0.5)+1]
+  cmax <- c(case.slc[1]-1,1e5)[(symp < 0.5)+1]
+  cmed <- sqrt(cmin*cmax)
+  ks <- sort(suggest_k(symp, c(cmin, cmed, cmax)))
+  
+  pars_int <- optim(c(
+      k = ks[2],
+      case0 = cmed
+    ),
     ofun,
-    start = c(
-      symp = 0.5,#, the *reduction* in symptomatic transmission
-      k = 1e-3,
-      case0 = 10^(mean(log10(range(case.slc))))
-    ),
-    lower = c(
-      0.01,
-      k = 1e-8,
-      case0 = 10
-    ),
-    upper = c(
-      0.9,
-      k = .1,
-      case0 = 1e5
-    )
+    lower = c(k = ks[1], case0 = cmin),
+    upper = c(k = ks[3], case0 = cmax),
+    method = "L-BFGS-B"
     # ,control = list(
-    #   nlimit = 1000, maxgood = 1000, ac_acc = 0.1
+    #   nlimit = 300, ac_acc = 1
     # )
   )
   
   #lrg <- pars_int$par[1]; sml <- pars_int$par[2];
-  symp <- pars_int$par[1]; k <- pars_int$par[2]; case0 <- pars_int$par[3];
+  k <- pars_int$par[1]; case0 <- pars_int$par[2];
   #rel_delay <- pars_int$par[4]; relax_frac <- pars_int$par[5]; relax_period <- pars_int$par[6]
   
   pop$schedule[[2]] <- add_fIs(case0, k, symp)# <- scheduler(lrg, sml, symp, rel_delay, relax_frac, relax_period)
@@ -228,9 +231,9 @@ dtfun <- function(sdt, umod, pars, seeds, post) {
   #' find the best possible ascertainment prob:
   asc <- optimize(ascll, c(1e-6, .2), sim.cases = est)$minimum
   
-  pars <- c(pars_int$par, asc)
+  pars <- c(symp, pars_int$par, asc, fIs_baseline(case0, k, symp, case.slc[1]))
   #names(pars) <- c("large", "small", "sympt", "rel_delay", "rel_frac", "rel_dur", "asc")
-  names(pars) <- c("sympt", "k", "case0", "asc")
+  names(pars) <- c("sympt", "k", "case0", "asc", "fIsbaseline")
   as.list(pars)
 }
 
@@ -249,8 +252,9 @@ fits.dt <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
     source(file.path(cm_path, "R", "covidm.R"))
   })
   sdt <- bootstrap.dt[i,]
-  res <- dtfun(sdt, sdt$umod, params, intros[sdt$sample == sid, t], sdt$post)
+  res <- dtfun(sdt, params, intros[sdt$sample == sid, t], sdt$post)
   res$sample <- sdt$sample
+  res
 }))
 
 saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))

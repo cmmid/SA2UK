@@ -163,6 +163,18 @@ ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SINK}/r0/%.rds ${S
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 pars:
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0001
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0006
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0011
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0016
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0021
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0026
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0031
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0036
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0041
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0046
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0051
+	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0056
 	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0061
 	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0066
 
