@@ -3,10 +3,10 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "ZAF")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/relaxation/%s.rds",
-  "../covidm",
+  "covidm",
   .debug[2],
   "thing.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)

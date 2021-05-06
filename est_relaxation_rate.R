@@ -5,7 +5,7 @@ suppressPackageStartupMessages({
   require(qs)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "ZAF")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/scenarios/%s.rds",
   "%s/inputs/pops/%s.rds",
@@ -15,7 +15,7 @@ suppressPackageStartupMessages({
   "%s/inputs/urbanization.rds",
   "%s/outputs/relaxation/%s.rds",
   .debug[2],
-  "../covidm",
+  "covidm",
   "%s/outputs/projections/%s.qs"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 

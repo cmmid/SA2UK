@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("~/Dropbox/SA2UK")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/epi_data.rds",
   "%s/outputs/figs/cfr.rds"

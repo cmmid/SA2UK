@@ -143,7 +143,7 @@ saveRDS(ret, tail(.args, 1))
 #' ][, .(date, v = cumsum((v-1)/generation_time$mean)), by=sample]
 #' dr <- tst[, range(date)]
 #' epi.dt <- readRDS(
-#'   "~/Dropbox/SA2UK/inputs/epi_data.rds")[
+#'   "~/Dropbox/Covid_LMIC/All_Africa_paper/inputs/epi_data.rds")[
 #'     iso3 == "ZAF" & between(date, dr[1], dr[2]),
 #'     .(date, v = log(cases + exp(tst[date == min(date), mean(v)])), sample = 0)
 #' ]

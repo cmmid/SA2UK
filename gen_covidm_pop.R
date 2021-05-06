@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
   "%s/inputs/urbanization.rds",
   "%s/inputs/matrices.rds",
   .debug[2],
-  "../covidm",
+  "covidm",
   "%s/inputs/pops/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 #' @examples 

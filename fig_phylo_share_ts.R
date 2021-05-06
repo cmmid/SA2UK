@@ -3,7 +3,7 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- "~/Dropbox/SA2UK"
+.debug <- "~/Dropbox/Covid_LMIC/All_Africa_paper"
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/phylo.rds",
   "%s/outputs/figs/phylo.rds"

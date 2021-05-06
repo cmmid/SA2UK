@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
   "%s/outputs/intervention_timing/%s.rds",
   "%s/inputs/mobility.rds",
   .debug[2],
-  "../covidm",
+  "covidm",
   "%s/inputs/yuqs/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 

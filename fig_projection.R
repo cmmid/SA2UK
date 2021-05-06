@@ -7,7 +7,7 @@ suppressPackageStartupMessages({
   require(patchwork)
 })
 
-.debug <- c("~/Dropbox/SA2UK", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "ZAF")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/projections/%s.qs",
   "%s/inputs/pops/%s.rds",
