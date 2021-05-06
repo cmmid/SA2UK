@@ -11,9 +11,8 @@ suppressPackageStartupMessages({
   "%s/inputs/mobility.rds",
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/introductions/%s.rds",
-  "%s/outputs/adj_data.rds",
   .debug[2], # PAK
-  "../covidm",
+  "covidm",
   "%s/outputs/projections/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
@@ -25,11 +24,6 @@ mob <- readRDS(.args[3])[iso3 == tariso]
 timings <- readRDS(.args[4])
 tarwindow <- timings[era == "relaxation", start]
 tarwindow[2] <- timings[era == "pre" & period == 3, start]
-
-case.dt <- readRDS(.args[6])[
-  (iso3 == tariso),
-  .(date, croll = frollmean(cases, 7, align = "center"))
-]
 
 intros.dt <- readRDS(.args[5])[iso3 == tariso]
 
@@ -52,58 +46,63 @@ popsetup <- function(basep, day0) {
 }
 
 params <- popsetup(readRDS(.args[1]), day0)
-params$schedule <- list(
-  list(
-    parameter = "contact",
-    pops = numeric(),
-    mode = "multiply",
-    values = contact_schedule,
-    times = day0 + 0:(length(contact_schedule)-1)
-  )
-)
 
 #' TODO: fix warning here; providing correct value, however
 startpost <- as.integer(timings[era == "transition" & period == 1, start[1]] - day0)
 startrelax <- as.integer(timings[period == 2, start[1]] - day0)
 
 tart <- as.numeric(tarwindow - day0)
-case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), round(croll)]
-params$time1 <- tarwindow[2]
+params$time1 <- tart[2]
 
-#' TODO extract fIs model into it's own thing
-fIs_amp <- function(
-  case0, k, # fit elements
-  reff, # sampling element: value of function at css[1]
-  css = case.slc, # data element
-  baseline = (reff*(1+exp(-k*(css[1]-case0))) - 1)/exp(-k*(css[1]-case0)) # entailed remaining coefficient
-) (1-baseline)/(1+exp(-k*(css-case0))) + baseline
+alltms <- 0:params$time1
+pretms <- (1:startpost)-1
+posttms <- startpost:params$time1
 
-#   case0 = 10^mean(range(log10(case.slc)))
-
-add_fIs <- function(
-  case0, k, # fit elements
-  fIs_reduction_at_post, # value at post-intervention
-  model_t = startpost, d0 = startrelax
-) {
-  reds <- fIs_amp(case0, k, fIs_reduction_at_post)
-  vals <- c(list(rep(1-fIs_reduction_at_post, 16)), lapply(reds, function(d) rep(1-d, 16)))
-  tms <- d0 + 0:(length(vals)-2)
-  # vals <- c(list(rep(1-fIs_reduction_at_post, 16)), list(rep(0, 16)))
-  return(list(
+params$schedule <- list(
+  list(
     parameter = "fIs",
     pops = numeric(),
     mode = "multiply",
-    values = vals,
-    times = day0 + c(model_t, tms)
-    #times = day0 + c(model_t, model_t+30)
-  ))
-}
+    # values = c(lapply(pretms, function(x) rep(1, 16)),lapply(posttms, function(x) rep(0, 16))),
+    # times = c(pretms, posttms)
+    values = lapply(alltms, function(x) rep(1, 16)),
+    times = alltms
+  ),
+  list(
+    parameter = "contact",
+    pops = numeric(),
+    mode = "multiply",
+    values = contact_schedule,
+    times = 0:(length(contact_schedule)-1)
+  )
+)
 
-sim_step <- function(p, comps = "cases") cm_simulate(p, 1, model_seed = 42L)$dynamics[
-  compartment %in% comps
+
+cm_path = tail(.args, 2)[1]
+cm_force_rebuild = F;
+cm_build_verbose = F;
+cm_force_shared = T
+cm_version = 2
+
+underlying <- function(
+  p, case0, k, baseline, asc, startt = startpost
+) cm_backend_sample_fit_test(
+  R_base_parameters = p,
+  posterior = data.frame(
+    placeholder0=1, placeholder1=1, placeholder2=1, placeholder3=1,
+    case0=case0, k=k, baseline=baseline, asc=asc, startt=startt
+  ),
+  n = 1, seed = 42L
+)[[1]]
+
+sim_step <- function(
+  p, case0, k, baseline, asc,
+  startt = startpost,
+  keepoutcomes = "cases",
+  idv = c("t", "group")
+) melt(underlying(p, case0, k, baseline, asc, startt = startpost), id.vars = c("t", "group"), measure.vars = keepoutcomes, variable.name = "compartment")[
+  , .(value = sum(value)), by=c(idv, "compartment")
 ]
-
-sim_consolidate <- function(dt, grp = c("t")) dt[, .(value = sum(value)), by = grp]
 
 us <- function(sdt.row, umod = sdt.row[1, umod]) {
   rep(sdt.row[, as.numeric(.SD), .SDcols = grep("^u_",names(sdt.row))], each = 2)*umod
@@ -112,13 +111,6 @@ us <- function(sdt.row, umod = sdt.row[1, umod]) {
 ys <- function(sdt.row) {
   rep(sdt.row[, as.numeric(.SD), .SDcols = grep("^y_",names(sdt.row))], each = 2)
 }
-
-# load covidm
-cm_path = tail(.args, 2)[1]
-cm_force_rebuild = F;
-cm_build_verbose = F;
-cm_force_shared = T
-cm_version = 2
 
 .cl <- makeCluster(getDTthreads())
 clusterExport(.cl, ls(), environment())
@@ -139,11 +131,11 @@ est <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
   testpop$pop[[1]]$y <- ys(sdt)
   testpop$pop[[1]]$u <- us(sdt)
   testpop$pop[[1]]$seed_times <- intros[i == sid, t]
-  testpop$schedule[[2]] <- add_fIs(sdt$case0, sdt$k, sdt$sympt)
-  sim_consolidate(
-    sim_step(testpop, c("cases","death_o","R")),
-    c("t", "group", "compartment")
-  )[order(t), .(
+  res <- sim_step(
+    testpop, case0 = sdt$case0, k = sdt$k, baseline = sdt$fIsbaseline, asc = sdt$asc,
+    keepoutcomes = c("cases", "death_o", "R")
+  )
+  res[order(t), .(
     sample = i, date = t + day0, group, compartment,
     rv = value, value = value*sdt$asc, asc = sdt$asc
   )]

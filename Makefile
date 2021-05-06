@@ -19,11 +19,11 @@ NSAMPS ?= 4e3
 
 # default assumption: covidm is a sibling to this repository
 COVIDMGIT := https://github.com/nicholasdavies/covidm
-COVIDM ?= ../covidm
+COVIDM ?= covidm
 
 # TODO correct these - seems to clone in this folder instead?
 ${COVIDM}:
-	cd $(dir $@); git clone ${COVIDMGIT} $(notdir $@)
+	cd $(dir $@); git clone ${COVIDMGIT} $(notdir $@); cd $@; git checkout -b ngmupdate
 
 GITLIBS := ${COVIDM}
 
@@ -46,8 +46,8 @@ include support.makefile
 # attempts to install any not available
 # performs compile step for covidm repo
 # writes .install if it succeeds otherwise errors uninformatively
-.install: get_install.R rpack.txt ${COVIDM}
-	${R}
+.install: get_install.R rpack.txt | ${COVIDM}
+	${Rpipe}
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
@@ -163,7 +163,6 @@ ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SINK}/r0/%.rds ${S
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 pars:
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0001
 	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0006
 	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0011
 	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0016

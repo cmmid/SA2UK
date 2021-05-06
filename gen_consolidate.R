@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK/outputs", "ZAF")
+.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper/outputs", "PAK")
 .args <- if (interactive()) sprintf(c(
   "%s/params", .debug[2], "%s/params/%s_consolidated.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)

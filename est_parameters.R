@@ -16,7 +16,7 @@ suppressPackageStartupMessages({
   "%s/outputs/sample/%s.rds",
   .debug[2], # ZAF
   .debug[3], # the id
-  "../covidm",
+  "covidm",
   "%s/outputs/params/%s_%s.rds"
 ), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
 
@@ -73,15 +73,6 @@ popsetup <- function(basep, day0) {
 }
 
 params <- popsetup(readRDS(.args[1]), day0)
-params$schedule <- list(
-  list(
-    parameter = "contact",
-    pops = numeric(),
-    mode = "multiply",
-    values = contact_schedule,
-    times = day0 + 0:(length(contact_schedule)-1)
-  )
-)
 
 #' TODO: fix warning here; providing correct value, however
 startpost <- as.integer(timings[era == "transition" & period == 1, start[1]] - day0)
@@ -91,6 +82,32 @@ tart <- as.numeric(tarwindow - day0)
 case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), round(croll)]
 endrelax <- as.integer(min(timings[era == "relaxation", end], tarwindow[2]) - day0)
 params$time1 <- endrelax
+
+alltms <- 0:params$time1
+pretms <- (1:startpost)-1
+posttms <- startpost:params$time1
+
+#' ! n.b.: the fIs multiplier MUST be in the first schedule position
+#' TODO: insert this in population construction?
+params$schedule <- list(
+  list(
+    parameter = "fIs",
+    pops = numeric(),
+    mode = "multiply",
+    # values = c(lapply(pretms, function(x) rep(1, 16)),lapply(posttms, function(x) rep(0, 16))),
+    # times = c(pretms, posttms)
+    values = lapply(alltms, function(x) rep(1, 16)),
+    times = alltms
+  ),
+  list(
+    parameter = "contact",
+    pops = numeric(),
+    mode = "multiply",
+    values = contact_schedule,
+    times = 0:(length(contact_schedule)-1)
+  )
+)
+
 
 #' assert: fIs reduction is related to number of observed cases
 #' more cases == higher percent of peak reduction
@@ -137,23 +154,23 @@ fIs_amp <- function(
 
 #   case0 = 10^mean(range(log10(case.slc)))
 
-add_fIs <- function(
-  case0, k, # fit elements
-  fIs_reduction_at_post, # value at post-intervention
-  model_t = startpost, d0 = startrelax, df = endrelax
-) {
-  reds <- fIs_amp(case0, k, fIs_reduction_at_post)
-  vals <- c(list(rep(1-fIs_reduction_at_post, 16)), lapply(reds, function(d) rep(1-d, 16)))
-  # vals <- c(list(rep(1-fIs_reduction_at_post, 16)), list(rep(0, 16)))
-  return(list(
-    parameter = "fIs",
-    pops = numeric(),
-    mode = "multiply",
-    values = vals,
-    times = day0 + c(model_t, d0:df)
-    #times = day0 + c(model_t, model_t+30)
-  ))
-}
+# add_fIs <- function(
+#   case0, k, # fit elements
+#   fIs_reduction_at_post, # value at post-intervention
+#   model_t = startpost, d0 = startrelax, df = endrelax
+# ) {
+#   reds <- fIs_amp(case0, k, fIs_reduction_at_post)
+#   vals <- c(list(rep(1-fIs_reduction_at_post, 16)), lapply(reds, function(d) rep(1-d, 16)))
+#   # vals <- c(list(rep(1-fIs_reduction_at_post, 16)), list(rep(0, 16)))
+#   return(list(
+#     parameter = "fIs",
+#     pops = numeric(),
+#     mode = "multiply",
+#     values = vals,
+#     times = day0 + c(model_t, d0:df)
+#     #times = day0 + c(model_t, model_t+30)
+#   ))
+# }
 
 # load covidm
 cm_path = tail(.args, 2)[1]
@@ -164,9 +181,26 @@ cm_version = 2
 
 ascll <- function(asc, sim.cases) -sum(dpois(case.slc, sim.cases*asc, log = TRUE))
 
-sim_step <- function(p) cm_simulate(p, 1, model_seed = 42L)$dynamics[
-  compartment == "cases",
-  .(value = sum(value)), by=t
+underlying <- function(
+  p, case0, k, baseline, asc, startt = startpost
+) cm_backend_sample_fit_test(
+  R_base_parameters = p,
+  posterior = data.frame(
+    placeholder0=1, placeholder1=1, placeholder2=1, placeholder3=1,
+    case0=case0, k=k, baseline=baseline, asc=asc, startt=startt
+  ),
+  n = 1, seed = 42L
+)[[1]]
+
+altunderlying <- function(p, ..., comps = "cases") cm_simulate(p, 1, model_seed = 42L)$dynamics[
+  compartment %in% comps
+]
+
+sim_step <- function(
+  p, case0, k, baseline, asc, startt = startpost,
+  keepoutcomes = "cases"
+) melt(underlying(p, case0, k, baseline, asc, startt = startpost), id.vars = c("t","group"), measure.vars = keepoutcomes, variable.name = "compartment")[
+  , .(value = sum(value)), by=.(t, compartment)
 ]
 
 us <- function(sdt.row, umod = sdt.row[1, umod]) {
@@ -187,51 +221,47 @@ dtfun <- function(sdt, pars, seeds, post) {
   symp <- optimize(function(symp) abs(cm_eigen_ngm(
     pop, contact_reductions = post_contact_reductions,
     # contact_reductions = c(home=0, work=sml, school=lrg, other=sml),
-    fIs_reductions = symp
+    fIs_reductions = symp #+(1-symp)*symp
+    #, fIa_reductions = symp, fIp_reductions = symp
   )$R0/post-1), c(0.1, 0.9))$minimum
-  
-  ofun <- function(ps) {
-    k <- ps[1]; case0 <- ps[2]
-    if (fIs_baseline(case0, k, symp) >= 0) {
-      #' project and compare to relaxation period
-      pop$schedule[[2]] <- add_fIs(case0, k, symp)
-      est <- sim_step(pop)[between(t, tart[1], tart[2]), value]
-      #' find the best possible ascertainment prob:
-      ret <- optimize(ascll, c(1e-6, .2), sim.cases = est)$objective
-      if (is.infinite(ret) | is.na(ret)) ret <- .Machine$integer.max
-      ret/length(est)
-    } else .Machine$integer.max
-  }
   
   cmin <- c(10,case.slc[1]+1)[(symp < 0.5)+1]
   cmax <- c(case.slc[1]-1,1e5)[(symp < 0.5)+1]
   cmed <- sqrt(cmin*cmax)
   ks <- sort(suggest_k(symp, c(cmin, cmed, cmax)))
   
-  pars_int <- optim(c(
-      k = ks[2],
-      case0 = cmed
+  ofun <- function(ps) {
+    k <- ps[1]; case0 <- ps[2]; asc <- ps[3]
+    baseline <- fIs_baseline(case0, k, symp)
+    if (baseline >= 0) {
+      #' project and compare to relaxation period
+      # pop$schedule[[2]] <- add_fIs(case0, k, symp)
+      est <- sim_step(pop, case0, k, baseline, asc)[between(t, tart[1], tart[2]), value]
+      ret <- ascll(asc, est)
+      if (is.infinite(ret) | is.na(ret)) ret <- .Machine$integer.max
+      ret
+    } else .Machine$integer.max
+  }
+  
+  pars_int <- optim_sa(
+    start = c(
+      k = suggest_k(symp, cmed),
+      case0 = cmed,
+      asc = 0.05
     ),
-    ofun,
-    lower = c(k = ks[1], case0 = cmin),
-    upper = c(k = ks[3], case0 = cmax),
-    method = "L-BFGS-B"
-    # ,control = list(
-    #   nlimit = 300, ac_acc = 1
-    # )
+    fun = ofun,
+    #method = "L-BFGS-B",
+    lower = c(k = ks[1], case0 = cmin, asc = 0.005),
+    upper = c(k = ks[3], case0 = cmax, asc = 0.80)
+    ,control = list(
+      nlimit = 300, ac_acc = 1
+    )
   )
   
   #lrg <- pars_int$par[1]; sml <- pars_int$par[2];
-  k <- pars_int$par[1]; case0 <- pars_int$par[2];
-  #rel_delay <- pars_int$par[4]; relax_frac <- pars_int$par[5]; relax_period <- pars_int$par[6]
-  
-  pop$schedule[[2]] <- add_fIs(case0, k, symp)# <- scheduler(lrg, sml, symp, rel_delay, relax_frac, relax_period)
-  est <- sim_step(pop)[between(t, tart[1], tart[2]), value]
-  
-  #' find the best possible ascertainment prob:
-  asc <- optimize(ascll, c(1e-6, .2), sim.cases = est)$minimum
-  
-  pars <- c(symp, pars_int$par, asc, fIs_baseline(case0, k, symp, case.slc[1]))
+  k <- pars_int$par[1]; case0 <- pars_int$par[2] # also has asc as par 3
+
+  pars <- c(symp, pars_int$par, fIs_baseline(case0, k, symp, case.slc[1]))
   #names(pars) <- c("large", "small", "sympt", "rel_delay", "rel_frac", "rel_dur", "asc")
   names(pars) <- c("sympt", "k", "case0", "asc", "fIsbaseline")
   as.list(pars)
@@ -239,7 +269,7 @@ dtfun <- function(sdt, pars, seeds, post) {
 
 .cl <- makeCluster(getDTthreads())
 clusterExport(.cl, ls(), environment())
-clusterEvalQ(.cl, { 
+clusterEvalQ(.cl, {
   require(data.table)
   require(optimization)
 })
@@ -261,28 +291,31 @@ saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))
 
 # stop()
 # 
+# fits2.dt <- bootstrap.dt[fits.dt, on = .(sample)]
 # suppressPackageStartupMessages({
 #   source(file.path(cm_path, "R", "covidm.R"))
 # })
 # 
-# fits2.dt <- bootstrap.dt[fits.dt, on = .(sample)]
-# est <- rbindlist(lapply(1:nrow(fits2.dt), function(i) with(as.list(fits2.dt[i,]), {
+# fits2.dt <- bootstrap.dt[fits.dt, on = .(sample)]#readRDS("~/Dropbox/Covid_LMIC/All_Africa_paper/outputs/params/PAK_consolidated.rds")[1:10]
+# est <- rbindlist(lapply(1:nrow(fits2.dt), function(i) {
 #   sdt <- fits2.dt[i]
 #   testpop <- params;
 #   testpop$pop[[1]]$y <- ys(sdt)
 #   testpop$pop[[1]]$u <- us(sdt)
 #   testpop$pop[[1]]$seed_times <- intros[i == sid, t]
-#   testpop$schedule[[2]] <- add_fIs(sdt$case0, sdt$k, sdt$sympt)
-#   cm_simulate(
-#     testpop, 1,
-#     model_seed = 42L
-#   )$dynamics[compartment == "cases", .(rv = sum(value), value = sum(value)*sdt$asc, asc = sdt$asc), by=.(date=t+day0)][, sample := i ]
-# })))
+#   #testpop$schedule[[2]] <- add_fIs(sdt$case0, sdt$k, sdt$sympt)
+# #  browser()
+# #  thing1 <- underlying(testpop, sdt$case0, sdt$k, sdt$fIsbaseline, sdt$asc)[, .(value = sum(cases), ver = "backend"), by=t]
+# #  thing2 <- altunderlying(testpop, sdt$case0, sdt$k, sdt$fIsbaseline, sdt$asc)[, .(value = sum(value), ver = "sim"), by=t]
+# #  ggplot(rbind(thing1, thing2)) + aes(t, value, color = ver) + geom_line() + scale_y_log10()
 # 
+#   ret <- sim_step(testpop, sdt$case0, sdt$k, baseline = sdt$fIsbaseline, sdt$asc)
+#   ret[, .(rv = value, value = value*sdt$asc, asc = sdt$asc), by=.(date=t+day0)][, sample := i ]
+# }))
 # 
 # ggplot(est) +
 #  aes(date, rv, group = sample) +
-#  geom_line(color="red", alpha = 0.2) +
+#  geom_line(aes(color = factor(sample)), alpha = 0.2) +
 #   geom_line(aes(y=value, alpha = asc)) +
 #  # geom_line(
 #  #   aes(date, croll),
@@ -294,6 +327,7 @@ saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))
 #     data = case.dt,
 #     color = "black", inherit.aes = FALSE
 #   ) +
+#   geom_vline(xintercept = day0+startpost, color = "blue") +
 #  scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
 #  scale_y_log10() +
 #  theme_minimal()
