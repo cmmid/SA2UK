@@ -196,6 +196,9 @@ ${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURC
 ${SINK}/variant/%.rds: est_variant.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SINK}/projections/%.rds ${SINK}/sample/%.rds | ${SINK}/variant
 	${Rstar}
 
+${SINK}/scenario/%.rds: sim_scenarios.R ${SINK}/pops/%.rds ${SINK}/params/%_consolidated.rds ${SINK}/projections/%.rds ${SINK}/sample/%.rds | ${SINK}/variant
+	${RSCRIPT} $^ $* ${COVIDM} $@
+
 int_scen: ${SINK}/scenarios/ZAF.rds
 int_proj: ${SINK}/projections/ZAF.rds
 int_var: ${SINK}/variant/ZAF.rds
