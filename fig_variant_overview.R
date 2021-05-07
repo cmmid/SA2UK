@@ -5,14 +5,14 @@ suppressPackageStartupMessages({
 
 .debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/projections/%s.rds",
+  "%s/outputs/scenarios/%s.rds",
   "%s/outputs/adj_data.rds",
   .debug[2], # PAK
-  "%s/outputs/params/%s.png"
+  "%s/outputs/variant/%s.png"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 est <- readRDS(.args[1])[
-  compartment == "cases",
+  compartment == "cases" & scenario == "none",
   .(rv = sum(rv), value = sum(value), asc = unique(asc)),
   by=.(sample, date)
 ]
@@ -21,35 +21,39 @@ tariso <- tail(.args, 2)[1]
 
 case.dt <- readRDS(.args[2])[
   (iso3 == tariso),
-  .(date, croll = frollmean(cases, 7, align = "center"))
+  .(date, croll = frollapply(adj, 7, function(x) prod(x)^(1/7), align = "center"))
 ]
 
 parplot <- ggplot(est) +
  aes(date, rv, group = sample) +
-  geom_line(aes(color="sim. total"), alpha = 0.05) +
+ geom_line(aes(color="sim. total"), alpha = 0.05) +
+ geom_line(
+   aes(color="sim. total", group = NULL),
+   data = function(dt) dt[, .(rv=median(rv)), by=.(date)]
+ ) +
+ geom_line(aes(y=value, color="sim. ascertained"), alpha = 0.05) +
   geom_line(
-    aes(color="sim. total", group = NULL),
-    data = function(dt) dt[, .(rv=median(rv)), by=.(date)]
-  ) +
-  geom_line(aes(y=value, color="sim. ascertained"), alpha = 0.05) +
-  geom_line(
-    aes(y=value, color="sim. ascertained", group = NULL),
-    data = function(dt) dt[, .(value=median(value)), by=.(date)]
+  aes(y=value, color="sim. ascertained", group = NULL),
+  data = function(dt) dt[, .(value=median(value)), by=.(date)]
   ) +
  geom_line(
     aes(date, croll, color = "observed"),
     data = case.dt,
     inherit.aes = FALSE
   ) +
- coord_cartesian(xlim = as.Date(c("2020-03-01",NA)), ylim = c(1, 1e6), expand = F) +
+ coord_cartesian(xlim = as.Date(c("2020-03-01",NA)), ylim=c(1,1e6), expand = F) +
  scale_color_manual(
    name=NULL,
    breaks = c("sim. total", "sim. ascertained", "observed"),
    values = c("firebrick", "goldenrod", "black")
  ) +
- scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
+ scale_x_date(
+   NULL,
+   date_breaks = "month", date_minor_breaks = "week",
+   labels = function(d) c("J","F","M","A","M","J","J","A","S","O","N","D")[data.table::month(d)]
+ ) +
  scale_y_log10(
-   "Cases",
+   "Cases (per day)",
    breaks = 10^c(0,3,6),
    minor_breaks = 10^(1:6),
    labels = scales::label_number_si()
