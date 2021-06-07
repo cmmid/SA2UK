@@ -1,8 +1,4 @@
 
-# from https://stackoverflow.com/questions/10858261/abort-makefile-if-variable-not-set
-check_defined = $(strip $(foreach 1,$1,$(call __check_defined,$1,$(strip $(value 2)))))
-__check_defined = $(if $(value $1),, $(error Undefined $1$(if $2, ($2))))
-
 ${MKDIRS}:
 	mkdir -p $@
 
@@ -18,21 +14,20 @@ egcopy: | example.makefile
 
 # get path to Rscript; complain if undefined
 RSCRIPT := $(shell which Rscript)
-$(call check_defined, RSCRIPT)
 
 # the following define common rule arrangements
 # assumes first dependency is something.R, called with other dependencies ($^) &
 # the target ($@) as arguments
-R = ${RSCRIPT} $^ $@
+unexport R = ${RSCRIPT} $^ $@
 
 # for pattern matching rules, to pass the match (rather than extracting it from $@)
-Rstar = ${RSCRIPT} $^ $* $@
+unexport Rstar = ${RSCRIPT} $^ $* $@
 
 # for with pipe dependencies
-Rpipe = ${RSCRIPT} $^ $| $@
+unexport Rpipe = ${RSCRIPT} $^ $| $@
 
 # star + pipe
-Rsp = ${RSCRIPT} $^ $* $| $@
+unexport Rsp = ${RSCRIPT} $^ $* $| $@
 
 FROMDIR ?= override/path/on/commandline
 

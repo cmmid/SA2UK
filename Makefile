@@ -1,12 +1,16 @@
 
 #################### SETUP ###################################################
 
+export
+# export all variable definitions except those tagged for "unexport"
+# provides all these top-level variables to sub-make invocations
+
 -include local.makefile
 # if present, include local.makefile to provide alternative definitions of
 # elements assigned via `?=` (e.g. default variables, paths)
 
 # root filesystem location for inputs & outputs
-DATART ?= .
+DATART ?= $(shell pwd)
 # example local.makefile overrides this to point to a Dropbox folder
 
 SOURCE := ${DATART}/inputs
@@ -39,6 +43,7 @@ ISOS = PAK
 # ISOS ?= $(shell cat africaisos.txt) PAK
 
 # provides non-analysis support
+# n.b. this is reloaded in sub-make files
 include support.makefile
 
 # very basic R package installation; THIS MAY NOT "JUST WORK"
@@ -52,29 +57,18 @@ include support.makefile
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
 RAWDATA := ${SOURCE}/epi_data.rds
-
-rawdata: ${RAWDATA}
+EPIDATA := ${SINK}/adj_data.rds
 
 ${RAWDATA}: get_epi_data.R | ${SOURCE}
 	${R}
 
-# overview of all raw data
-${SOURCE}/figs/epi/%.png: fig_epi_overview.R ${RAWDATA} | ${SOURCE}/figs/epi
-	${Rstar}
-
-epireview: $(patsubst %,${SOURCE}/figs/epi/%.png,${ISOS})
-
-EPIDATA := ${SINK}/adj_data.rds
-
-${EPIDATA}: est_imputed_data.R ${RAWDATA}
+${EPIDATA}: est_imputed_data.R ${RAWDATA} | ${SOURCE}
 	${R}
 
-adjdata: ${EPIDATA}
+datasetup: ${RAWDATA} ${EPIDATA}
 
-${SOURCE}/figs/adjusted/%.png: fig_epi_adjusted.R ${EPIDATA} | ${SOURCE}/figs/adjusted
-	${Rstar}
-
-adjreview: $(patsubst %,${SOURCE}/figs/adjusted/%.png,${ISOS})
+epireview adjreview timing:
+	${MAKE} -C figs $@
 
 # get + subset the JHU data
 # was ECDC data, but now that's only weekly
@@ -103,6 +97,9 @@ ${SOURCE}/mobility.rds: get_mobility.R | ${SOURCE}
 
 mob: ${SOURCE}/mobility.rds
 
+
+
+
 ${SOURCE}/pops/%.rds: gen_covidm_pop.R $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization matrices) | ${COVIDM} ${SOURCE}/pops
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
@@ -126,12 +123,6 @@ ${SINK}/phylo.rds: est_phylo_share.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-
 # only works for ZAF, placeholder that just sets by hand values identified in covidLMIC
 ${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R interventions.csv | ${SINK}/intervention_timing
 	${Rstar}
-
-#${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${SINK}/interventions.rds ${SOURCE}/ecdc_data.rds ${SINK}/introductions/%.rds | ${SINK}/intervention_timing
-${SINK}/intervention_timing/%.png: fig_assess_interventions.R ${EPIDATA} ${SINK}/intervention_timing/%.rds ${SINK}/phylo.rds | ${SINK}/intervention_timing
-	${Rstar}
-
-timing: $(patsubst %,${SINK}/intervention_timing/%.png,${ISOS})
 
 NGM.rda: NGM.R
 	${R}
@@ -209,8 +200,11 @@ ${SINK}/figs/timeseries.rds: fig_relax_proj.R ${SOURCE}/epi_data.rds ${SINK}/int
 ${SINK}/figs/phylo.rds: fig_phylo_share_ts.R ${SINK}/phylo.rds | ${SINK}/figs
 	${R}
 
-${SINK}/figs/ccfr.rds: fig_scaled_cfr.R ${SINK}/cfrs.rds | ${SINK}/figs
-	${R}
+#${SINK}/figs/ccfr.rds: fig_scaled_cfr.R ${SINK}/cfrs.rds | ${SINK}/figs
+#	${R}
+
+${SINK}/figs/%:
+	${MAKE} -C figs
 
 ${SINK}/figs/AR.rds: fig_relax_AR.R ${SOURCE}/urbanization.rds ${SOURCE}/pops/ZAF.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs
 	Rscript $^ ZAF $@
