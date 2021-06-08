@@ -23,7 +23,7 @@ MKDIRS := ${SOURCE} ${SINK} ${SINK}/intervention_timing
 africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
 
-ISOS = NGA GHA ETH PAK
+ISOS = NGA GHA PAK
 # ISOS ?= $(shell cat africaisos.txt) PAK
 
 # provides non-analysis support

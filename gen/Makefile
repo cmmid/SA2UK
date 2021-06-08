@@ -15,9 +15,22 @@ ${SOURCE}/mortality.rds: mortality.R | ${SOURCE}
 ${SOURCE}/fertility.rds: fertility.R | ${SOURCE}
 	${R}
 
-MOBURLS := https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv $(patsubst %,https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/timeseries/c1_%.csv,school_closing flag)
+GOOGURL := https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv
+OXURLS := $(patsubst %,https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/timeseries/c1_%.csv,school_closing flag)
 
-${SOURCE}/mobility.rds: mobility.R | ${SOURCE}
+${SOURCE}/google_mobility.csv:
+	${WGET} ${GOOGURL}
+
+${SOURCE}/ox_si_schools.csv:
+	${WGET} $(firstword ${OXURLS})
+
+${SOURCE}/ox_si_schools_flag.csv:
+	${WGET} $(lastword ${OXURLS})
+
+MOBDATA := $(patsubst %,${SOURCE}/%.csv,google_mobility ox_si_schools ox_si_schools_flag)
+rawmob: ${MOBDATA}
+
+${SOURCE}/mobility.rds: mobility.R ${MOBDATA} | ${SOURCE}
 	${RSCRIPT} $^ ${MOBURLS} $@
 
 REFDATA := $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization matrices mobility)

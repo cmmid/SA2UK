@@ -10,6 +10,9 @@ alllibs: ${GITLIBS}
 egcopy: | example.makefile
 	cp $| local.makefile
 
+# DATA FETCHING DEFINITION; USE AS ${WGET} ${THEURL}
+WGET = wget -c -O $@
+
 # ASSORTED CONVENIENCE DEFINITIONS FOR R-RELATED RULES
 
 # get path to Rscript; complain if undefined

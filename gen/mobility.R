@@ -4,11 +4,10 @@ suppressPackageStartupMessages({
   require(countrycode)
 })
 
-.oxpat <- "https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/timeseries/c1_%s.csv"
-.debug <- "~/Dropbox/Covid_LMIC/All_Africa_paper"
+.debug <- "analysis"
 .args <- if (interactive()) sprintf(c(
-  "https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv",
-  sprintf(.oxpat, c("school_closing", "flag")),
+  "%s/inputs/google_mobility.csv",
+  sprintf("%%s/inputs/ox_si_schools%s.csv", c("", "_flag")),
   "%s/inputs/mobility.rds"
 ), .debug) else commandArgs(trailingOnly = TRUE)
 
@@ -37,7 +36,7 @@ national <- setkey(dt[
   sub_region_1 == "" & metro_area == "",
   .(
     iso3 = fifelse(is.na(country_region_code), "NAM", countrycode(country_region_code, "iso2c", "iso3c")),
-    date,
+    date = as.Date(date),
     work_multiplier = workplaces_percent_change_from_baseline/100 + 1,
     other_multiplier = (
       grocery_and_pharmacy_percent_change_from_baseline +
@@ -47,11 +46,11 @@ national <- setkey(dt[
   )
 ], iso3, date)
 
-national[sch.dt, school_multiplier := 1 - school_status ]
+mrg <- merge(national, sch.dt, by=c("iso3", "date"), all = TRUE)[, school_multiplier := 1 - school_status ]
 
 window.width <- 7
 
-national[order(date),
+mrg[order(date),
   c("workr", "otherr") := .(
     frollapply(work_multiplier, window.width, function(x) prod(x, na.rm = TRUE)^(1/window.width)),
     frollapply(other_multiplier, window.width, function(x) prod(x, na.rm = TRUE)^(1/window.width))
@@ -61,11 +60,12 @@ national[order(date),
 
 #' going to use these to adjust contact matrices
 
-saveRDS(national, tail(.args, 1))
+saveRDS(mrg, tail(.args, 1))
 
 #' @example 
 #' require(ggplot2)
-#' ggplot(national[iso3=="PAK"]) + aes(date) +
+#' ggplot(mrg[iso3 %in% c("NGA","GHA","ETH","PAK")]) + aes(date) +
+#' facet_grid(iso3 ~ .) +
 #' geom_line(aes(y=otherr, color = "other")) +
 #' geom_line(aes(y=workr, color = "work")) +
 #' geom_line(aes(y=school_multiplier, color = "school")) +
