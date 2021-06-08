@@ -18,18 +18,21 @@ RSCRIPT := $(shell which Rscript)
 # the following define common rule arrangements
 # assumes first dependency is something.R, called with other dependencies ($^) &
 # the target ($@) as arguments
-unexport R = ${RSCRIPT} $^ $@
+R = ${RSCRIPT} $^ $@
 
 # for pattern matching rules, to pass the match (rather than extracting it from $@)
-unexport Rstar = ${RSCRIPT} $^ $* $@
+Rstar = ${RSCRIPT} $^ $* $@
 
 # for with pipe dependencies
-unexport Rpipe = ${RSCRIPT} $^ $| $@
+Rpipe = ${RSCRIPT} $^ $| $@
 
 # star + pipe
-unexport Rsp = ${RSCRIPT} $^ $* $| $@
+Rsp = ${RSCRIPT} $^ $* $| $@
 
 FROMDIR ?= override/path/on/commandline
 
 xfer: | ${FROMDIR}
 	rsync -rv $|/ ${SINK}
+
+# intended to be used as $(call alliso,PATH,MIME)
+alliso = $(patsubst %,$(1)/%.$(2),${ISOS})

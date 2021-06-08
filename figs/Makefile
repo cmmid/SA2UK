@@ -1,7 +1,10 @@
 # organization file for making figures
-
 IFDIR := ${SOURCE}/figs
 OFDIR := ${SINK}/figs
+
+MKDIRS := ${IFDIR} ${OFDIR} ${IFDIR}/epi ${IFDIR}/intervention_timing ${IFDIR}/adjusted
+
+include ../support.makefile
 
 # overview of all raw data
 ${IFDIR}/epi/%.png: epi_overview.R ${RAWDATA} | ${IFDIR}/epi
@@ -14,12 +17,13 @@ ${IFDIR}/adjusted/%.png: epi_adjusted.R ${EPIDATA} | ${IFDIR}/adjusted
 ${IFDIR}/intervention_timing/%.png: assess_interventions.R ${EPIDATA} ${SINK}/intervention_timing/%.rds ${SINK}/phylo.rds | ${IFDIR}/intervention_timing
 	${Rstar}
 
-epireview: $(patsubst %,${IFDIR}/epi/%.png,${ISOS})
+epireview: $(call alliso,${IFDIR}/epi,png)
+adjreview: $(call alliso,${IFDIR}/adjusted,png)
+timing: $(call alliso,${IFDIR}/intervention_timing,png)
+allfigs: epireview adjreview timing
 
-adjreview: $(patsubst %,${IFDIR}/adjusted/%.png,${ISOS})
+.PRECIOUS: %.rds
 
-timing: $(patsubst %,${IFDIR}/intervention_timing/%.png,${ISOS})
-
-MKDIRS := ${IFDIR} ${OFDIR} ${IFDIR}/intervention_timing
-
-include ../support.makefile
+# may need to send inputs dependencies back to parent
+%.rds:
+	$(MAKE) -C .. $@
