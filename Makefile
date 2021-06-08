@@ -9,8 +9,9 @@ export
 # if present, include local.makefile to provide alternative definitions of
 # elements assigned via `?=` (e.g. default variables, paths)
 
+PROJRT := $(shell pwd)
 # root filesystem location for inputs & outputs
-DATART ?= analysis
+DATART ?= ${PROJRT}/analysis
 # example local.makefile overrides this to point to a Dropbox folder
 
 SOURCE := ${DATART}/inputs
@@ -53,11 +54,8 @@ datasetup: ${RAWDATA} ${EPIDATA}
 allfigs epireview adjreview timing: | allgen
 	${MAKE} -wC figs $@
 
-allgen:
+allgen ${SINK}/intervention_timing/%.rds:
 	${MAKE} -wC gen $@
-
-${SINK}/intervention_timing/%.rds: gen_r0_est_timing.R interventions.csv | ${SINK}/intervention_timing
-	${Rstar}
 
 #' assumes the replacement trend of beta in ZAF
 ${SINK}/phylo.rds: est_phylo_share.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv
