@@ -3,15 +3,16 @@ suppressPackageStartupMessages({
   require(countrycode)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper")
+.debug <- c("analysis")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/mortality.rds"
+  "%s/ins/lifetables.csv",
+  "%s/gen/mortality.rds"
 ), .debug[1]) else commandArgs(trailingOnly = TRUE)
 
-wppurl <- "https://population.un.org/wpp/Download/Files/1_Indicators%20(Standard)/CSV_FILES/WPP2019_Life_Table_Medium.csv"
 #' covidm population not differentiated by sex, so want total value (SexID == 3)
 #' exclude aggregate populations (LocID >= 900) and Channel Islands (830)
-wpp.dt <- fread(wppurl)[SexID == 3][!(LocID >= 900) & LocID != 830]
+wpp.dt <- fread(.args[1])[SexID == 3][!(LocID >= 900) & LocID != 830]
+
 #' TODO: is this the correct interpretation of WPP life tables?
 #' an alternative reading of data description suggests that different ages values
 #' should come from different time periods (0-4 from 2015-2020, 5-9 from 2010-2015, etc)

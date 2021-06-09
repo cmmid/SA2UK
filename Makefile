@@ -1,4 +1,6 @@
 
+default: setup generate
+
 #################### SETUP ###################################################
 
 export
@@ -14,11 +16,16 @@ PROJRT := $(shell pwd)
 DATART ?= ${PROJRT}/analysis
 # example local.makefile overrides this to point to a Dropbox folder
 
-SOURCE := ${DATART}/inputs
-SINK   := ${DATART}/outputs
+# directories for the various tasks in the analysis
+# grouped by kind, not order, though order is generally:
+# inputs -> generation -> estimation -> figures
+SOURCE := ${DATART}/ins
+GEND   := ${DATART}/gen
+ESTD   := ${DATART}/est
+FIGS   := ${DATART}/fig
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} ${SINK}/intervention_timing
+MKDIRS := ${SOURCE} ${FIGS} ${GEND} ${ESTD}
 
 africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
@@ -38,26 +45,30 @@ include support.makefile
 .install: get_install.R rpack.txt | ${COVIDM}
 	${Rpipe}
 
-# get + subset the JHU data
-# was ECDC data, but now that's only weekly
-RAWDATA := ${SOURCE}/epi_data.rds
-EPIDATA := ${SINK}/adj_data.rds
 
-${RAWDATA}: get_epi_data.R | ${SOURCE}
-	${R}
+SM = ${MAKE} -wC $(notdir $|)
 
-${EPIDATA}: est_imputed_data.R ${RAWDATA} | ${SINK}
-	${R}
+${SOURCE}/%: | ${SOURCE}
+	${SM} $@
 
-datasetup: ${RAWDATA} ${EPIDATA}
+setup: | ${SOURCE}
+	${SM}
 
-allfigs epireview adjreview timing: | allgen
-	${MAKE} -wC figs $@
+${GEND}/%: | ${GEND}
+	${SM} $@
 
-allgen ${SINK}/intervention_timing/%.rds:
-	${MAKE} -wC gen $@
+generate: | ${GEND}
+	${SM}
 
-#' assumes the replacement trend of beta in ZAF
-${SINK}/phylo.rds: est_phylo_share.R ${SOURCE}/nextstrain_groups_ngs-sa_COVID19-ZA-2020.12.17_metadata.tsv
-	${R}
+${ESTD}/%: | ${ESTD}
+	${SM} $@
+
+estimate: | ${ESTD}
+	${SM}
+
+${FIGS}/%: | ${FIGS}
+	${SM} $@
+
+figures: | ${FIGS}
+	${SM}
 
