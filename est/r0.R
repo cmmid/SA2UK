@@ -5,10 +5,10 @@ suppressPackageStartupMessages({
 
 .debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/adj_data.rds",
-  "%s/outputs/intervention_timing/%s.rds",
-  "%s/inputs/yuqs/%s.rds",
-  "%s/inputs/pops/%s.rds",
+  "%s/ins/adj_data.rds",
+  "%s/gen/intervention_timing/%s.rds",
+  "%s/gen/yuqs/%s.rds",
+  "%s/gen/pops/%s.rds",
   getDTthreads(),
   "4e3", #' cores, samples
   .debug[2],
