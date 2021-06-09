@@ -71,11 +71,9 @@ qs.dt <- yu[, {
     yval = ymod,
     contact_reductions = c_reductions
   )
-  si <- cm_generation_interval(
-    pop$pop[[1]], yval = ymod,
-    eigen_vector = ngm$ss, time_step = pop$time_step
-  )
-  .(baseR = ngm$R0, si = si)
+  ngmfrac <- ngm$frac
+  names(ngmfrac) <- sprintf("o_%i", 1:length(ngmfrac))
+  c(.(baseR = ngm$R0), as.list(ngmfrac))
 }, by=sample_id, .SDcols = c(uids, yids)]
 
 ret <- qs.dt[order(baseR), eqs := (1:.N)/.N ][yu, on=.(sample_id), nomatch = 0]
