@@ -24,6 +24,9 @@ GEND   := ${DATART}/gen
 ESTD   := ${DATART}/est
 FIGS   := ${DATART}/fig
 
+RAWDATA := ${SOURCE}/epi_data.rds
+EPIDATA := ${SOURCE}/adj_data.rds
+
 # support.makefile will provide a directory target for all of these
 MKDIRS := ${SOURCE} ${FIGS} ${GEND} ${ESTD}
 
@@ -66,7 +69,7 @@ generate: | ${GEND}
 ${ESTD}/%: | ${ESTD}
 	${SM} $@
 
-estimate: | ${ESTD}
+estimate allr0: | ${ESTD}
 	${SM}
 
 ${FIGS}/%: | ${FIGS}
