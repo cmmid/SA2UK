@@ -30,9 +30,6 @@ MKDIRS := ${SOURCE} ${FIGS} ${GEND} ${ESTD}
 # override with local.makefile
 NSAMPLES ?= 4000
 
-${PROJRT}/sampling.json: config.R
-	${R}
-
 africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
 

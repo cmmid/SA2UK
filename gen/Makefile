@@ -30,7 +30,7 @@ ${GEND}/intervention_timing/%.rds: r0_est_timing.R ${PROJRT}/interventions.csv |
 ${GEND}/pops/%.rds: covidm_pop.R ${REFDATA} | ${COVIDM} ${GEND}/pops
 	${RSCRIPT} $^ $* $(firstword $|) $@
 
-${GEND}/yuqs/%.rds: reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${GEND}/pops/%.rds ${GEND}/intervention_timing/%.rds ${GEND}/mobility.rds | ${COVIDM} ${GEND}/yuqs
+${GEND}/yuqs/%.rds: reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/sampling.json ${GEND}/pops/%.rds ${GEND}/intervention_timing/%.rds ${GEND}/mobility.rds | ${COVIDM} ${GEND}/yuqs
 	${RSCRIPT} $^ $* $(firstword $|) $@
 
 allints: $(call alliso,${GEND}/intervention_timing,rds)
