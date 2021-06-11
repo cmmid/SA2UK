@@ -1,16 +1,11 @@
 
-require(jsonlite)
-
 .args <- if (interactive()) c(
-  "rpack.txt", "covidm", ".install"
+  "ins/rpack.csv", "covidm", ".install"
 ) else commandArgs(trailingOnly = TRUE)
 
-pcks <- readLines(.args[1])
-need <- !sapply(pcks, require, character.only = TRUE)
-if (length(pcks[need])) install.packages(pcks[need])
-if (dim(installed.packages()[pcks,])[1] == length(pcks)) {
-  writeLines("COMPLETE\n", tail(.args, 1))
-} else stop("Unable to install all packages.")
+pcks <- read.csv(.args[1], header = FALSE, col.names = c("source", "name"))
+cranset <- subset(pcks, source == "cran")
+install.packages(cranset$name, dependencies = TRUE)
 
 cm_path <- .args[2]
 

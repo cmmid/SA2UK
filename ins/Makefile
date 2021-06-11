@@ -13,7 +13,7 @@ include ../support.makefile
 # attempts to install any not available
 # performs compile step for covidm repo
 # writes .install if it succeeds otherwise errors uninformatively
-${SOURCE}/.install: get_install.R ${SOURCE}/rpack.txt | ${COVIDM}
+${SOURCE}/.install: get_install.R ${PROJRT}/ins/rpack.txt | ${COVIDM}
 	${Rpipe}
 
 
