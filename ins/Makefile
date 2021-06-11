@@ -40,15 +40,14 @@ ${SOURCE}/ox_si_schools.csv:
 ${SOURCE}/ox_si_schools_flag.csv:
 	${WGET} $(lastword ${OXURLS})
 
-WPPURLS := $(patsubst %,"https://population.un.org/wpp/Download/Files/1_Indicators (Standard)/CSV_FILES/WPP2019_%_Medium.csv",Life_Table Period_Indicators)
-MORTURL := $(firstword ${WPPURLS})
-LIFEURL := $(lastword ${WPPURLS})
+MORTURL := https://population.un.org/wpp/Download/Files/1_Indicators (Standard)/CSV_FILES/WPP2019_Life_Table_Medium.csv
+LIFEURL := https://population.un.org/wpp/Download/Files/1_Indicators (Standard)/CSV_FILES/WPP2019_Period_Indicators_Medium.csv
 
 ${SOURCE}/lifetables.csv:
-	${WGET} ${MORTURL}
+	${WGET} "${MORTURL}"
 
 ${SOURCE}/fertility.csv:
-	${WGET} ${LIFEURL}
+	${WGET} "${LIFEURL}"
 
 ${SOURCE}/sampling.json: config.R
 	${RSCRIPT} $^ ${NSAMPLES} $@
