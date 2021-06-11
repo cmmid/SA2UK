@@ -1,15 +1,12 @@
-{
- "cran": [
-    "data.table",
-    "qs",
-    "jsonlite",
-    "ggplot2",
-    "ggrepel",
-    "patchwork",
-    "wpp2019",
-    "countrycode",
-    "lubridate",
-    "optimization"
-  ],
- "github": [ "EpiNow2" ]
-}
+cran, data.table
+cran, qs
+cran, jsonlite
+cran, ggplot2
+cran, ggrepel
+cran, patchwork
+cran, wpp2019
+cran, countrycode
+cran, lubridate
+cran, optimization
+cran, remotes
+github, EpiNow2
