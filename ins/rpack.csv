@@ -11,4 +11,5 @@ cran, optimization
 cran, remotes
 cran, HDInterval
 cran, RcppGSL
+cran, socialmixr
 github, epiforecasts/EpiNow2
