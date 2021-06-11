@@ -5,7 +5,7 @@ MKDIRS := $(addprefix ${ESTD}/,r0 introductions sample params)
 
 include ../support.makefile
 
-GENITEMS := ${GEND}/intervention_timing/%.rds ${GEND}/yuqs/%.rds ${GEND}/pops/%.rds
+GENITEMS := ${GEND}/intervention_timing/%.rds ${GEND}/pops/%.rds ${GEND}/yuqs/%.rds
 
 #' TODO strip relaxation calculation
 ${ESTD}/r0/%.rds: r0.R ${EPIDATA} ${SOURCE}/sampling.json ${GENITEMS} | ${ESTD}/r0

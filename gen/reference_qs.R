@@ -63,16 +63,14 @@ yids <- rep(grep("^y_", colnames(yu)), each = 2)
 #' TODO parallelize this?
 #' annoying bit is exporting the relevant covidm parts vs loading it in parallel vs how much time savings accrue
 qs.dt <- yu[, {
-  umod <- as.numeric(.SD[1,])[1:16]
-  ymod <- as.numeric(.SD[1,])[17:32]
+  mod <- as.numeric(.SD[1,])
   ngm <- cm_eigen_ngm(
     pop,
-    uval = umod,
-    yval = ymod,
+    uval = mod[1:16], yval = mod[17:32],
     contact_reductions = c_reductions
   )
-  ngmfrac <- ngm$frac
-  names(ngmfrac) <- sprintf("o_%i", 1:length(ngmfrac))
+  ngmfrac <- ngm$frac[seq(1,15,by=2)] + ngm$frac[seq(2,16,by=2)]
+  names(ngmfrac) <- sprintf("o_%i0", (1:length(ngmfrac))-1)
   c(.(baseR = ngm$R0), as.list(ngmfrac))
 }, by=sample_id, .SDcols = c(uids, yids)]
 

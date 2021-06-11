@@ -1,22 +1,24 @@
 suppressPackageStartupMessages({
   require(data.table)
+  require(jsonlite)
   require(EpiNow2)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
+.debug <- c("analysis", "PAK")
 .args <- if (interactive()) sprintf(c(
   "%s/ins/adj_data.rds",
+  "%s/ins/sampling.json",
   "%s/gen/intervention_timing/%s.rds",
-  "%s/gen/yuqs/%s.rds",
   "%s/gen/pops/%s.rds",
-  getDTthreads(),
-  "4e3", #' cores, samples
+  "%s/gen/yuqs/%s.rds", # not used currently
   .debug[2],
   "%s/outputs/r0/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-smps <- as.integer(tail(.args, 3)[1])
-crs <- as.integer(tail(.args, 4)[1])
+sampler <- read_json(.args[2])
+
+smps <- sampler$samplen * sampler$rtsamplemul
+crs <- sampler$cores
 
 tariso <- tail(.args, 2)[1]
 
@@ -27,33 +29,49 @@ fill.case <- case.dt[
   .(date, confirm = fifelse(is.na(confirm), 0, confirm))
 ]
 
-lims.dt <- readRDS(.args[2])
+lims.dt <- readRDS(.args[3])
+pop <- readRDS(.args[4])
 
-mean_generation_interval <- readRDS(.args[3])[, mean(si)]
+#' TODO this approximation relies on
+#'  - asymptomatic == presymptomatic + symptomatic infector waiting time distributions
+#'  - (which comes from the average of those distros being equal + infectiousness for pre- and symptomatic being equal)
+#'  - not true (in the model world) once fIs modified (by intervention)
+#'  - not true (ibid) for *distribution*, given dIp + dIs variance, etc will differ from dIa variance
+#'  - probably not true in the real world (fIp != fIs, because age specific fIX effects, etc)
+#'  
+#' Alternatives:
+#'  - use NGM information to approximate the correct distribution of age & symptom combinations of *infectors*,
+#'  weighted by contribution to creating *infectees*; downside: some gnarly bayes-theorem work to do here to get it right?
+#'  - run the simulation, and extract times? not really setup for that - don't have the info about how long an
+#'  infector has been infectious  
 
-simpar <- readRDS(.args[4])
-tstep <- simpar$time_step
-pop <- simpar$pop[[1]]
+#' drawing infection generation times:
+#'  - assumes non-depleting / infinite infectee population
+#'  - therefore, for time of infection: each interval of infectivity has same
+#'  hazard for producing infections
+#'  - however, the relative distribution of those intervals is influenced by the infectious duration
 
-#' Set up example generation time
-#' TODO: approach this similarly to incubation period?
-#' right now allows variation by age distro etc,
-#' but the model assumptions mean that's not practically relevant
-generation_time <- as.list(EpiNow2::generation_times[disease == "SARS-CoV-2",
-  .(mean, mean_sd, sd, sd_sd, max=30)
-])
+p_of_having_an_interval <- 1-cumsum(c(0, pop$pop[[1]]$dIa))
+p_infection_in_interval <- head(p_of_having_an_interval/sum(p_of_having_an_interval),-1)
 
-tarmcv <- generation_time$mean_sd/generation_time$mean
-tarscv <- generation_time$sd_sd/generation_time$sd
-tarcv <- generation_time$sd/generation_time$mean
+gi_sample <- sample(
+  seq(0,by=pop$time_step,length.out = length(p_infection_in_interval)),
+  size = 1e4, replace = T,
+  prob = p_infection_in_interval
+) + sample(
+  seq(0,by=pop$time_step,length.out = length(pop$pop[[1]]$dE)),
+  size = 1e4, replace = T,
+  prob = pop$pop[[1]]$dE
+)
 
-generation_time$mean <- mean_generation_interval
-generation_time$mean_sd <- generation_time$mean * tarmcv
-generation_time$sd <- generation_time$mean * tarcv
-generation_time$sd_sd <- generation_time$sd * tarscv
+generation_time <- bootstrapped_dist_fit(
+  gi_sample, dist = "gamma", samples = 4000,
+  max_value = (length(pop$pop[[1]]$dIa)+length(pop$pop[[1]]$dE)-2)*pop$time_step,
+  verbose = TRUE
+)
 
 incubation_period <- estimate_delay(
-  sample(length(pop$dE), 100000, replace = T, prob = pop$dE)*tstep
+  sample(length(pop$pop[[1]]$dE), 1e4, replace = TRUE, prob = pop$pop[[1]]$dE)*pop$time_step
 )
 
 est.window <- 30
@@ -116,38 +134,3 @@ for (grpi in lims.dt[era != "censor", sort(unique(period))]) {
 ret <- rbindlist(results)
 
 saveRDS(ret, tail(.args, 1))
-
-# ret <- dcast(results[era != "transition"], sample ~ era, value.var = "value")
-
-#' @examples 
-#' require(ggplot2)
-#' ggplot(results[era != "variant"][sample %in% sample(.N, 2000)]) + aes(date, value, group = sample) +
-#'  geom_line(alpha = 0.05) + theme_minimal()
-#' ggplot(results[!(era %in% c("variant", "transition"))][sample %in% sample(.N/2, 100)]) + aes(era, value, group = sample) +
-#'  geom_line(alpha = 0.05) + theme_minimal()
-#' ggplot(ret[, .(preq=order(pre)/.N, postq=order(post)/.N)]) +
-#'  aes(preq, postq) + geom_point() + theme_minimal()
-#' ggplot(ret[, .(pre, post)]) +
-#'  aes(pre, post) + geom_point() + theme_minimal()
-#' ggplot(ret[, .(post, variant)]) +
-#'  aes(post, variant) + geom_point() + theme_minimal()
-
-#' smp <- sample(16000, 1000)
-#' ext <- 16
-#' tst <- results[(sample %in% smp) & (era != "variant")][,
-#'   .(
-#'     date = c(date[1] - c(ext:1), date, date[.N] + c(1:ext)),
-#'     v = (c(rep(value[1], ext), value, rep(value[.N], ext)))
-#'   ),
-#'   by=sample
-#' ][, .(date, v = cumsum((v-1)/generation_time$mean)), by=sample]
-#' dr <- tst[, range(date)]
-#' epi.dt <- readRDS(
-#'   "~/Dropbox/Covid_LMIC/All_Africa_paper/inputs/epi_data.rds")[
-#'     iso3 == "ZAF" & between(date, dr[1], dr[2]),
-#'     .(date, v = log(cases + exp(tst[date == min(date), mean(v)])), sample = 0)
-#' ]
-#' p <- ggplot(tst) + aes(date, group = sample) +
-#'   geom_line(aes(y=v-1.5), alpha = 0.05) +
-#'   geom_line(aes(y=v), data = epi.dt, color = "red") +
-#'   theme_minimal()
