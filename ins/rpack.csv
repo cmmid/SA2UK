@@ -9,4 +9,6 @@ cran, countrycode
 cran, lubridate
 cran, optimization
 cran, remotes
+cran, HDInterval
+cran, RcppGSL
 github, epiforecasts/EpiNow2
