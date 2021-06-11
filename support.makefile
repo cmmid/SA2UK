@@ -43,7 +43,7 @@ alliso = $(patsubst %,$(1)/%.$(2),${ISOS})
 # default assumption: covidm is the version shipped with this repository
 # but could be defined to live elsewhere in local.makefile
 COVIDM ?= ${PROJRT}/covidm
-COVIDMGIT := https://github.com/nicholasdavies/covidm
+COVIDMGIT := git@github.com:nicholasdavies/covidm.git
 
 # TODO correct these - seems to clone in this folder instead?
 ${COVIDM}:
