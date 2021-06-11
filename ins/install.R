@@ -5,7 +5,7 @@
 
 pcks <- read.csv(.args[1], header = FALSE, col.names = c("source", "name"))
 cranset <- subset(pcks, source == "cran")
-install.packages(cranset$name, dependencies = TRUE)
+install.packages(cranset$name, dependencies = TRUE, repos = "https://cloud.r-project.org/")
 
 cm_path <- .args[2]
 
