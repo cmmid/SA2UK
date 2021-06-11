@@ -43,15 +43,6 @@ ISOS = NGA GHA PAK
 # n.b. this is reloaded in sub-make files
 include support.makefile
 
-# very basic R package installation; THIS MAY NOT "JUST WORK"
-# checks availability of packages (via require)
-# attempts to install any not available
-# performs compile step for covidm repo
-# writes .install if it succeeds otherwise errors uninformatively
-.install: get_install.R rpack.txt | ${COVIDM}
-	${Rpipe}
-
-
 SM = ${MAKE} -wC $(notdir $|)
 
 ${SOURCE}/%: | ${SOURCE}

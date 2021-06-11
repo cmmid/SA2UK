@@ -1,4 +1,6 @@
 
+require(jsonlite)
+
 .args <- if (interactive()) c(
   "rpack.txt", "covidm", ".install"
 ) else commandArgs(trailingOnly = TRUE)

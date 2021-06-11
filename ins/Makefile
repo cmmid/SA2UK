@@ -1,5 +1,5 @@
 
-insdefault: ${RAWDATA} ${EPIDATA} $(addprefix ${SOURCE}/,\
+insdefault: ${SOURCE}/.install ${RAWDATA} ${EPIDATA} $(addprefix ${SOURCE}/,\
 	phylo.rds sampling.json google_mobility.csv ox_si_schools.csv ox_si_schools_flag.csv lifetables.csv\
 	sampling.json\
 )
@@ -7,6 +7,15 @@ insdefault: ${RAWDATA} ${EPIDATA} $(addprefix ${SOURCE}/,\
 # provides non-analysis support
 # n.b. this is reloaded in sub-make files
 include ../support.makefile
+
+# very basic R package installation; THIS MAY NOT "JUST WORK"
+# checks availability of packages (via require)
+# attempts to install any not available
+# performs compile step for covidm repo
+# writes .install if it succeeds otherwise errors uninformatively
+${SOURCE}/.install: get_install.R ${SOURCE}/rpack.txt | ${COVIDM}
+	${Rpipe}
+
 
 ${RAWDATA}: epi_data.R | ${SOURCE}
 	${R}

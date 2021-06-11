@@ -1,0 +1,15 @@
+{
+ "cran": [
+    "data.table",
+    "qs",
+    "jsonlite",
+    "ggplot2",
+    "ggrepel",
+    "patchwork",
+    "wpp2019",
+    "countrycode",
+    "lubridate",
+    "optimization"
+  ],
+ "github": [ "EpiNow2" ]
+}
