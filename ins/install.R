@@ -3,9 +3,12 @@
   "ins/rpack.csv", "covidm", ".install"
 ) else commandArgs(trailingOnly = TRUE)
 
-pcks <- read.csv(.args[1], header = FALSE, col.names = c("source", "name"))
+pcks <- read.csv(.args[1], header = FALSE, strip.white = TRUE, col.names = c("source", "name"))
 cranset <- subset(pcks, source == "cran")
 install.packages(cranset$name, dependencies = TRUE, repos = "https://cloud.r-project.org/")
+
+githubset <- subset(pcks, source == "github")
+for (i in 1:nrow(githubset)) remotes::install_github(githubset$name[i])
 
 cm_path <- .args[2]
 

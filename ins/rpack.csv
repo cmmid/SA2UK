@@ -9,4 +9,4 @@ cran, countrycode
 cran, lubridate
 cran, optimization
 cran, remotes
-github, EpiNow2
+github, epiforecasts/EpiNow2
