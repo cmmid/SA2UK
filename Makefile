@@ -15,6 +15,9 @@ PROJRT := $(shell pwd)
 # root filesystem location for inputs & outputs
 DATART ?= ${PROJRT}/analysis
 # example local.makefile overrides this to point to a Dropbox folder
+ACCT ?= TESTTESTTEST
+# for HPC submission script generation
+
 
 # directories for the various tasks in the analysis
 # grouped by kind, not order, though order is generally:
