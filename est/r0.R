@@ -57,6 +57,8 @@ pop <- readRDS(.args[4])
 p_of_having_an_interval <- 1-cumsum(c(0, pop$pop[[1]]$dIa))
 p_infection_in_interval <- head(p_of_having_an_interval/sum(p_of_having_an_interval),-1)
 
+warning("...sampling generation interval.")
+
 gi_sample <- sample(
   seq(0,by=pop$time_step,length.out = length(p_infection_in_interval)),
   size = 1e4, replace = T,
@@ -72,6 +74,8 @@ generation_time <- bootstrapped_dist_fit(
   max_value = (length(pop$pop[[1]]$dIa)+length(pop$pop[[1]]$dE)-2)*pop$time_step,
   verbose = TRUE
 )
+
+warning("...sampling incubation period.")
 
 incubation_period <- estimate_delay(
   sample(length(pop$pop[[1]]$dE), 1e4, replace = TRUE, prob = pop$pop[[1]]$dE)*pop$time_step
