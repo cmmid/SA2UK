@@ -2,6 +2,7 @@ suppressPackageStartupMessages({
   require(data.table)
   require(jsonlite)
   require(EpiNow2)
+  require(future)
 })
 
 .debug <- c("analysis", "PAK")
@@ -57,8 +58,6 @@ pop <- readRDS(.args[4])
 p_of_having_an_interval <- 1-cumsum(c(0, pop$pop[[1]]$dIa))
 p_infection_in_interval <- head(p_of_having_an_interval/sum(p_of_having_an_interval),-1)
 
-warning("...sampling generation interval.")
-
 gi_sample <- sample(
   seq(0,by=pop$time_step,length.out = length(p_infection_in_interval)),
   size = 1e4, replace = T,
@@ -68,6 +67,10 @@ gi_sample <- sample(
   size = 1e4, replace = T,
   prob = pop$pop[[1]]$dE
 )
+
+warning("...sampling generation interval.")
+
+plan(multicore, workers = crs)
 
 generation_time <- bootstrapped_dist_fit(
   gi_sample, dist = "gamma", samples = 4000,
@@ -80,6 +83,8 @@ warning("...sampling incubation period.")
 incubation_period <- estimate_delay(
   sample(length(pop$pop[[1]]$dE), 1e4, replace = TRUE, prob = pop$pop[[1]]$dE)*pop$time_step
 )
+
+plan(sequential)
 
 est.window <- 30
 
