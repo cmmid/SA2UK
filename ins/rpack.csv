@@ -12,4 +12,5 @@ cran, remotes
 cran, HDInterval
 cran, RcppGSL
 cran, socialmixr
+cran, doParallel
 github, epiforecasts/EpiNow2

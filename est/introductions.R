@@ -2,28 +2,27 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
+.debug <- c("analysis", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/yuqs/%s.rds", #' estimated
-  "%s/outputs/r0/%s.rds", #' estimated
-  "%s/inputs/populations.rds", #' assembled from other inputs, no estimation
-  "%s/inputs/pops/%s.rds", #' assembled from other inputs, no estimation
-  "%s/outputs/adj_data.rds", #' cleaned input
+  "%s/gen/intervention_timing/%s.rds",
+  "%s/gen/yuqs/%s.rds", #' estimated elsewhere
+  "%s/gen/pops/%s.rds", #' assembled from other inputs, no estimation
+  "%s/est/r0/%s.rds", #' estimated
+  "%s/ins/adj_data.rds", #' cleaned input
   "ene-ifr.csv", #' input sourced from mbevands estimate
-  "%s/outputs/intervention_timing/%s.rds",
   .debug[2],
-  "%s/outputs/introductions/%s.rds"
+  "%s/est/introductions/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 #' given covidm assumptions,
 #' (namely, event time distributions insensitive to age
 #' and asymptomatic vs symptomatic paths leading to same generation time)
 #' yu distinctions are irrelevant. so can just pick one
-yuref <- readRDS(.args[1])[order(eqs)][which.max(eqs >= .5)]
+yuref <- readRDS(.args[2])[order(eqs)][which.max(eqs >= .5)]
 us <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
 ys <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
 
-Rs <- readRDS(.args[2])[era == "pre" & period == 1]
+Rs <- readRDS(.args[4])[era == "pre" & period == 1]
 window_start <- readRDS(.args[7])[era == "pre" & period == 1, end]
 
 tariso <- tail(.args, 2)[1]

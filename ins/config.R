@@ -11,8 +11,7 @@ require(jsonlite)
 write_json(
   x = list(
     samplen = as.integer(.args[1]),
-    rtsamplemul = 10,
-    cores = getDTthreads()
+    rtsamplemul = 5
   ),
   path = tail(.args, 1),
   pretty = TRUE, auto_unbox = TRUE

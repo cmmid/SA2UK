@@ -18,7 +18,10 @@ suppressPackageStartupMessages({
 sampler <- read_json(.args[2])
 
 smps <- sampler$samplen * sampler$rtsamplemul
-crs <- sampler$cores
+crs <- fcoalesce(
+  as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE")),
+  getDTthreads()
+)
 
 tariso <- tail(.args, 2)[1]
 

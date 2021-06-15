@@ -46,25 +46,23 @@ ISOS = NGA GHA PAK
 # n.b. this is reloaded in sub-make files
 include support.makefile
 
-SM = ${MAKE} -wC $(notdir $|)
-
 ${SOURCE}/%: | ${SOURCE}
-	${SM} $@
+	${MAKE} -wC $(notdir $|) $@
 
 setup: | ${SOURCE}
-	${SM}
+	${MAKE} -wC $(notdir $|)
 
 ${GEND}/%: | ${GEND}
-	${SM} $@
+	${MAKE} -wC $(notdir $|) $@
 
 generate: | ${GEND}
-	${SM}
+	${MAKE} -wC $(notdir $|)
 
 ${ESTD}/%: | ${ESTD}
-	${SM} $@
+	${MAKE} -wC $(notdir $|) $@
 
 estimate allr0: | ${ESTD}
-	${SM}
+	${MAKE} -wC $(notdir $|)
 
 ${FIGS}/%: | ${FIGS}
 	${SM} $@

@@ -267,6 +267,11 @@ dtfun <- function(sdt, pars, seeds, post) {
   as.list(pars)
 }
 
+cores <- fcoalesce(
+  as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE")),
+  getDTthreads()
+)
+
 .cl <- makeCluster(getDTthreads())
 clusterExport(.cl, ls(), environment())
 clusterEvalQ(.cl, {
