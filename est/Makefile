@@ -1,5 +1,7 @@
 
-allest: allr0 allintros allsamples allparams
+TARISO ?= PAK
+
+defest: ${ESTD}/sample/${TARISO}.rds
 
 MKDIRS := $(addprefix ${ESTD}/,r0 introductions sample params)
 
@@ -11,13 +13,15 @@ GENITEMS := ${GEND}/intervention_timing/%.rds ${GEND}/pops/%.rds ${GEND}/yuqs/%.
 ${ESTD}/r0/%.rds: r0.R ${EPIDATA} ${SOURCE}/sampling.json ${GENITEMS} | ${ESTD}/r0
 	${RSCRIPT} $^ $* $@
 
-${ESTD}/introductions/%.rds: introductions.R ${GENITEMS} ${ESTD}/r0/%.rds ${EPIDATA} ${PROJRT}/ene-ifr.csv | ${SINK}/introductions
+${ESTD}/introductions/%.rds: introductions.R ${GENITEMS} ${ESTD}/r0/%.rds ${EPIDATA} ${PROJRT}/ene-ifr.csv | ${ESTD}/introductions
 	${Rstar}
 
-${SINK}/sample/%.rds: sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SINK}/sample
+${ESTD}/sample/%.rds: sample.R ${GEND}/yuqs/%.rds ${ESTD}/r0/%.rds | ${ESTD}/sample
 	${R}
 
-${SINK}/params/%.rds: parameters.R ${SOURCE}/pops/%.rds ${SINK}/r0/%.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${COVIDM} ${SINK}/params
+.PRECIOUS: ${ESTD}/r0/%.rds ${ESTD}/introductions/%.rds ${ESTD}/sample/%.rds
+
+${ESTD}/params/%.rds: parameters.R ${SOURCE}/pops/%.rds ${ESTD}/r0/%.rds ${ESTD}/intervention_timing/%.rds ${ESTD}/introductions/%.rds ${ESTD}/sample/%.rds ${GEND}/mobility.rds | ${COVIDM} ${ESTD}/params
 	Rscript $^ $* $(firstword $|) $@
 
 allr0: $(call alliso,${ESTD}/r0,rds)
