@@ -4,28 +4,23 @@ suppressPackageStartupMessages({
   require(doParallel)
 })
 
-#' fixed stride of 5, so adjust starting point; TODO: unfix
-.stride <- 5
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","PAK","0001")
+.debug <- c("analysis", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/pops/%s.rds",
-  "%s/outputs/r0/%s.rds",
+  "%s/gend/pops/%s.rds",
+  "%s/gend/intervention_timing/%s.rds",
+  "%s/gend/yuqs/%s.rds",
   "%s/inputs/mobility.rds",
-  "%s/outputs/intervention_timing/%s.rds",
+  "%s/outputs/r0/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/outputs/sample/%s.rds",
   .debug[2], # ZAF
-  .debug[3], # the id
   "covidm",
   "%s/outputs/params/%s_%s.rds"
 ), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
 
-fitslc <- seq(as.integer(tail(.args, 3)[1]), by=1, length.out = .stride)
-tariso <- tail(.args, 4)[1]
-
-mob <- readRDS(.args[3])[iso3 == tariso]
-
-timings <- readRDS(.args[4])
+timings <- readRDS(.args[2])
+tariso <- tail(.args, 3)[1]
+mob <- readRDS(.args[4])[iso3 == tariso]
 
 #' MAGIC NUMBER: average delay from infection -> reporting
 rep_delay <- 7
@@ -44,15 +39,15 @@ post_contact_reductions <- timings[(period == 1) & (era == "post")][
 
 tarwindow <- timings[era == "relaxation", c(start, end)]
 
-case.dt <- readRDS(.args[2])[
+case.dt <- readRDS(.args[5])[
   variable == "infections" &
   between(date, tarwindow[1]-6, tarwindow[2]),
   .(croll = median(value)),
   by=.(date)
 ]
 
-intros.dt <- readRDS(.args[5])[iso3 == tariso][sample %in% fitslc]
-bootstrap.dt <- readRDS(.args[6])[sample %in% fitslc][period == 1]
+intros.dt <- readRDS(.args[6])[iso3 == tariso]
+bootstrap.dt <- readRDS(.args[7])[period == 1]
 
 day0 <- as.Date(intros.dt[, min(date)])
 
@@ -267,12 +262,12 @@ dtfun <- function(sdt, pars, seeds, post) {
   as.list(pars)
 }
 
-cores <- fcoalesce(
+.cores <- fcoalesce(
   as.integer(Sys.getenv("SLURM_JOB_CPUS_PER_NODE")),
   getDTthreads()
 )
 
-.cl <- makeCluster(getDTthreads())
+.cl <- makeCluster(.cores)
 clusterExport(.cl, ls(), environment())
 clusterEvalQ(.cl, {
   require(data.table)
@@ -282,6 +277,7 @@ clusterEvalQ(.cl, {
 span <- nrow(bootstrap.dt)
 #' span <- 2
 
+#' TODO revisit using future?
 fits.dt <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
   suppressPackageStartupMessages({
     source(file.path(cm_path, "R", "covidm.R"))

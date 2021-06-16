@@ -21,7 +21,7 @@ ${ESTD}/sample/%.rds: sample.R ${GEND}/yuqs/%.rds ${ESTD}/r0/%.rds | ${ESTD}/sam
 
 .PRECIOUS: ${ESTD}/r0/%.rds ${ESTD}/introductions/%.rds ${ESTD}/sample/%.rds
 
-${ESTD}/params/%.rds: parameters.R ${SOURCE}/pops/%.rds ${ESTD}/r0/%.rds ${ESTD}/intervention_timing/%.rds ${ESTD}/introductions/%.rds ${ESTD}/sample/%.rds ${GEND}/mobility.rds | ${COVIDM} ${ESTD}/params
+${ESTD}/params/%.rds: parameters.R ${GENITEMS} ${GEND}/mobility.rds ${ESTD}/r0/%.rds ${ESTD}/introductions/%.rds ${ESTD}/sample/%.rds | ${COVIDM} ${ESTD}/params
 	Rscript $^ $* $(firstword $|) $@
 
 allr0: $(call alliso,${ESTD}/r0,rds)

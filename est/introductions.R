@@ -5,8 +5,8 @@ suppressPackageStartupMessages({
 .debug <- c("analysis", "PAK")
 .args <- if (interactive()) sprintf(c(
   "%s/gen/intervention_timing/%s.rds",
-  "%s/gen/yuqs/%s.rds", #' estimated elsewhere
   "%s/gen/pops/%s.rds", #' assembled from other inputs, no estimation
+  "%s/gen/yuqs/%s.rds", #' estimated elsewhere
   "%s/est/r0/%s.rds", #' estimated
   "%s/ins/adj_data.rds", #' cleaned input
   "ene-ifr.csv", #' input sourced from mbevands estimate
@@ -18,7 +18,7 @@ suppressPackageStartupMessages({
 #' (namely, event time distributions insensitive to age
 #' and asymptomatic vs symptomatic paths leading to same generation time)
 #' yu distinctions are irrelevant. so can just pick one
-yuref <- readRDS(.args[2])[order(eqs)][which.max(eqs >= .5)]
+yuref <- readRDS(.args[3])[order(eqs)][which.max(eqs >= .5)]
 us <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
 ys <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
 
