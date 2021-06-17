@@ -13,4 +13,5 @@ cran, HDInterval
 cran, RcppGSL
 cran, socialmixr
 cran, doParallel
+cran, wpp2019
 github, epiforecasts/EpiNow2

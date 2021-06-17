@@ -13,11 +13,11 @@ GENITEMS := ${GEND}/intervention_timing/%.rds ${GEND}/pops/%.rds ${GEND}/yuqs/%.
 ${ESTD}/r0/%.rds: r0.R ${EPIDATA} ${SOURCE}/sampling.json ${GENITEMS} | ${ESTD}/r0
 	${RSCRIPT} $^ $* $@
 
-${ESTD}/introductions/%.rds: introductions.R ${GENITEMS} ${ESTD}/r0/%.rds ${EPIDATA} ${PROJRT}/ene-ifr.csv | ${ESTD}/introductions
-	${Rstar}
-
 ${ESTD}/sample/%.rds: sample.R ${GEND}/yuqs/%.rds ${ESTD}/r0/%.rds | ${ESTD}/sample
 	${R}
+
+${ESTD}/introductions/%.rds: introductions.R ${GENITEMS} ${ESTD}/sample/%.rds ${EPIDATA} ${PROJRT}/ene-ifr.csv | ${COVIDM} ${ESTD}/introductions
+	${RSCRIPT} $^ $* $| $@
 
 .PRECIOUS: ${ESTD}/r0/%.rds ${ESTD}/introductions/%.rds ${ESTD}/sample/%.rds
 

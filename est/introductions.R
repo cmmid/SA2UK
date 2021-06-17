@@ -1,5 +1,7 @@
 suppressPackageStartupMessages({
   require(data.table)
+  require(wpp2019)
+  require(countrycode)
 })
 
 .debug <- c("analysis", "PAK")
@@ -7,29 +9,49 @@ suppressPackageStartupMessages({
   "%s/gen/intervention_timing/%s.rds",
   "%s/gen/pops/%s.rds", #' assembled from other inputs, no estimation
   "%s/gen/yuqs/%s.rds", #' estimated elsewhere
-  "%s/est/r0/%s.rds", #' estimated
+  "%s/est/sample/%s.rds", #' estimated
   "%s/ins/adj_data.rds", #' cleaned input
   "ene-ifr.csv", #' input sourced from mbevands estimate
   .debug[2],
+  "covidm",
   "%s/est/introductions/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-#' given covidm assumptions,
-#' (namely, event time distributions insensitive to age
-#' and asymptomatic vs symptomatic paths leading to same generation time)
-#' yu distinctions are irrelevant. so can just pick one
-yuref <- readRDS(.args[3])[order(eqs)][which.max(eqs >= .5)]
-us <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
-ys <- rep(yuref[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
+cm_path = tail(.args, 2)[1]
+cm_force_rebuild = F;
+cm_build_verbose = F;
+cm_force_shared = T
+cm_version = 2
+source(file.path(cm_path, "R", "covidm.R"))
+
+tariso <- tail(.args, 3)[1]
+
+data(popM)[countrycode(country_code)]
+
+pop <- readRDS(.args[2])
+samples.dt <- readRDS(.args[4])[period == 1]
+
+ifr <- fread(.args[6])$ifr/100
+pop_vs_ifr <- 2 #' pop age categories per IFR age category
+ifr.ext <- rep(ifr, each = pop_vs_ifr)
+#' however, will need to consolidate upper categories
+consol.inds <- length(pop$pop[[1]]$size):length(ifr.ext)
+
+samples.dt[, {
+  #' umod unnecessary here - ss unaffected by R0
+  us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
+  ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
+  #' ASSUMING: transmission largely at steady state by the time the infections which lead
+  #' to detected deaths has occurred
+  ss <- cm_eigen_ngm(pop, uval = us, yval = ys)$ss
+  #' determine the expected aggregate IFR
+
+}, by=.(sample)]
 
 Rs <- readRDS(.args[4])[era == "pre" & period == 1]
 window_start <- readRDS(.args[7])[era == "pre" & period == 1, end]
 
-tariso <- tail(.args, 2)[1]
-pop <- readRDS(.args[3])[iso3 == tariso]
 pars <- readRDS(.args[4])
-
-load("NGM.rda")
 
 #' the stable age distribution of infection in the exponential growth period
 #' == the principle eigenvector
