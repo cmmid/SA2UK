@@ -143,6 +143,6 @@ for (grpi in lims.dt[era != "censor", sort(unique(period))]) {
   }
 }
 
-ret <- rbindlist(results)
+ret <- rbindlist(results)[sample <= sampler$samplen]
 
 saveRDS(ret, tail(.args, 1))
