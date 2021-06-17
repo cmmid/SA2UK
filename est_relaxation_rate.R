@@ -51,7 +51,6 @@ urbfrac <- readRDS(.args[6])[iso3 == tariso, value / 100]
 
 params$pop[[1]]$seed_times <- intros
 params$pop[[1]]$size <- round(params$pop[[1]]$size*urbfrac)
-# params$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
 
 params$pop <- lapply(
   params$pop,

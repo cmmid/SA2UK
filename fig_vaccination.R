@@ -29,8 +29,6 @@ intros <- intros.dt[,
 
 popsetup <- function(basep, urbanfraction, day0) {
   basep$date0 <- day0
-  basep$pop[[1]]$size <- round(basep$pop[[1]]$size*urbanfraction)
-  basep$pop[[1]]$dist_seed_ages <- c(rep(0,4), rep(1, 6), rep(0, 6))
   basep
 }
 
