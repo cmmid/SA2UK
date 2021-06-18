@@ -50,17 +50,6 @@ pop <- readRDS(.args[2])
 consol.inds <- length(pop$pop[[1]]$size):length(ifr.ext)
 ifr.ext[consol.inds[1]] <- sum(popMF[consol.inds]*ifr.ext[consol.inds])/sum(popMF[consol.inds])
 ifr.ext <- ifr.ext[1:length(pop$pop[[1]]$size)]
-
-# if ifr were purely from initially random, population-weighted exposure:
-subus <- us[seq(2,by=2,length.out=8)]
-subus[9:10] <- subus[8]
-alt.exp.ifr <- sum(ifr*subus/sum(subus))
-mix.exp.ifr <- sqrt(exp.ifr*alt.exp.ifr)
-
-#' assume early transmission is a mixture
-exp.infs <- 1/mix.exp.ifr
-
-
 #' that gives us IFR by age, which we can then weight according
 #' to steady-state distribution of infections in each generation
 #' 
@@ -82,7 +71,7 @@ ref <- readRDS(.args[5])[
 samples.dt <- readRDS(.args[4])[period == 1]
 
 window_start <- readRDS(.args[1])[era == "pre" & period == 1, end]
-slc <- ref[which.max(deaths > 0):.N][1:(gen_int/2)][deaths > 0]
+slc <- ref[which.max(deaths > 0):.N][1:(gen_int.mu/2)][deaths > 0]
 
 #' MAGIC NUMBERS WARNING
 inf2death_dur <- 22
@@ -90,9 +79,10 @@ death_underreporting <- 2.7 #' assume initially no under-reporting vs later esti
 
 if (slc[.N, date] - inf2death_dur < window_start) {
   expansion <- samples.dt[, {
+    yuref <- colnames(.SD)
     #' umod unnecessary here - ss unaffected by R0
-    us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", colnames(yuref))], each = 2)
-    ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_", colnames(yuref))], each = 2)
+    us <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^u_", yuref)], each = 2)
+    ys <- rep(.SD[, as.numeric(.SD), .SDcols = grep("^y_", yuref)], each = 2)
     #' ASSUMING: transmission largely at steady state by the time the infections which lead
     #' to detected deaths has occurred
     ss <- cm_eigen_ngm(pop, uval = us, yval = ys)$ss
@@ -106,7 +96,7 @@ if (slc[.N, date] - inf2death_dur < window_start) {
     gens <- cumsum(R0^(0:10))
     # how many generations until enough infections to (eventually) have a death?
     ind <- which.max(gens > mu.infections)-1
-    missing <- exp.infs/sum(R0^(0:(ind-1)))
+    missing <- mu.infections/sum(R0^(0:(ind-1)))
     infs <- missing*R0^(ind-1)
     .(tot.infs = infs*death_underreporting)
   }, by=.(sample)]
