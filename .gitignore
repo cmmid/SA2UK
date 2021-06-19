@@ -8,3 +8,5 @@ tmp.urban.zip
 *.rda
 *.png
 local.makefile
+*.out
+*.err
