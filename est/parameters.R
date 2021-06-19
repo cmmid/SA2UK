@@ -6,19 +6,19 @@ suppressPackageStartupMessages({
 
 .debug <- c("analysis", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/gend/pops/%s.rds",
   "%s/gend/intervention_timing/%s.rds",
+  "%s/gend/pops/%s.rds",
   "%s/gend/yuqs/%s.rds",
   "%s/inputs/mobility.rds",
   "%s/outputs/r0/%s.rds",
-  "%s/outputs/introductions/%s.rds",
   "%s/outputs/sample/%s.rds",
+  "%s/outputs/introductions/%s.rds",
   .debug[2], # ZAF
   "covidm",
   "%s/outputs/params/%s_%s.rds"
 ), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
 
-timings <- readRDS(.args[2])
+timings <- readRDS(.args[1])
 tariso <- tail(.args, 3)[1]
 mob <- readRDS(.args[4])[iso3 == tariso]
 
@@ -46,8 +46,8 @@ case.dt <- readRDS(.args[5])[
   by=.(date)
 ]
 
-intros.dt <- readRDS(.args[6])[iso3 == tariso]
-bootstrap.dt <- readRDS(.args[7])[period == 1]
+bootstrap.dt <- readRDS(.args[6])[period == 1]
+intros.dt <- readRDS(.args[7])[iso3 == tariso]
 
 day0 <- as.Date(intros.dt[, min(date)])
 
@@ -101,7 +101,6 @@ params$schedule <- list(
     times = 0:(length(contact_schedule)-1)
   )
 )
-
 
 #' assert: fIs reduction is related to number of observed cases
 #' more cases == higher percent of peak reduction
