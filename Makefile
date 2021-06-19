@@ -61,8 +61,8 @@ generate: | ${GEND}
 ${ESTD}/%: | ${ESTD}
 	${MAKE} -wC $(notdir $|) $@
 
-estimate allr0: | ${ESTD}
-	${MAKE} -wC $(notdir $|)
+estimate r0 intros params: | ${ESTD}
+	${MAKE} -wC $(notdir $|) $@
 
 ${FIGS}/%: | ${FIGS}
 	${SM} $@

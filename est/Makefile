@@ -1,7 +1,10 @@
 
 TARISO ?= PAK
 
-defest: ${ESTD}/sample/${TARISO}.rds
+estimate: params
+r0: ${ESTD}/r0/${TARISO}.rds
+intros: ${ESTD}/introductions/${TARISO}.rds
+params: ${ESTD}/params/${TARISO}.rds
 
 MKDIRS := $(addprefix ${ESTD}/,r0 introductions sample params)
 
