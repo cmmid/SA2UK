@@ -20,7 +20,7 @@ ${ESTD}/sample/%.rds: sample.R ${GEND}/yuqs/%.rds ${ESTD}/r0/%.rds | ${ESTD}/sam
 	${R}
 
 ${ESTD}/introductions/%.rds: introductions.R ${GENITEMS} ${ESTD}/sample/%.rds ${EPIDATA} ${PROJRT}/ene-ifr.csv | ${COVIDM} ${ESTD}/introductions
-	${RSCRIPT} $^ $* $| $@
+	${RSCRIPT} $^ $* $(firstword $|) $@
 
 .PRECIOUS: ${ESTD}/r0/%.rds ${ESTD}/introductions/%.rds ${ESTD}/sample/%.rds
 

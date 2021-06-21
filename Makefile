@@ -70,3 +70,5 @@ ${FIGS}/%: | ${FIGS}
 figures: | ${FIGS}
 	${SM}
 
+hpcclean:
+	rm *.out *.err
