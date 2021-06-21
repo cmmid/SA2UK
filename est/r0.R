@@ -96,7 +96,7 @@ Rtcalc <- function(case.dt, gp = NULL, rt = rt_opts()) estimate_infections(
   delays = delay_opts(incubation_period),
   rt = rt,
   stan = stan_opts(
-    samples = smps*2,
+    samples = smps,
     warmup = 200, 
     cores = crs,
     control = list(adapt_delta = 0.99, max_treedepth = 20)
