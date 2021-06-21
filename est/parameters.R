@@ -6,16 +6,16 @@ suppressPackageStartupMessages({
 
 .debug <- c("analysis", "PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/gend/intervention_timing/%s.rds",
-  "%s/gend/pops/%s.rds",
-  "%s/gend/yuqs/%s.rds",
-  "%s/inputs/mobility.rds",
-  "%s/outputs/r0/%s.rds",
-  "%s/outputs/sample/%s.rds",
-  "%s/outputs/introductions/%s.rds",
+  "%s/gen/intervention_timing/%s.rds",
+  "%s/gen/pops/%s.rds",
+  "%s/gen/yuqs/%s.rds",
+  "%s/gen/mobility.rds",
+  "%s/est/r0/%s.rds",
+  "%s/est/sample/%s.rds",
+  "%s/est/introductions/%s.rds",
   .debug[2], # ZAF
   "covidm",
-  "%s/outputs/params/%s_%s.rds"
+  "%s/est/params/%s_%s.rds"
 ), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
 
 timings <- readRDS(.args[1])
@@ -66,7 +66,7 @@ popsetup <- function(basep, day0) {
   basep
 }
 
-params <- popsetup(readRDS(.args[1]), day0)
+params <- popsetup(readRDS(.args[2]), day0)
 
 #' TODO: fix warning here; providing correct value, however
 startpost <- as.integer(timings[era == "transition" & period == 1, start[1]] - day0)
