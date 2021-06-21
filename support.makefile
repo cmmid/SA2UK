@@ -49,5 +49,5 @@ COVIDMGIT := git@github.com:nicholasdavies/covidm.git
 ${COVIDM}:
 	cd $(dir $@); git clone --single-branch --branch ngmupdate ${COVIDMGIT} $(notdir $@)
 
-rsync:
+rsync: | ${DATART}
 	rsync -a ${HPCDIR} ${DATART}
