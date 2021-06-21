@@ -177,7 +177,7 @@ ascll <- function(asc, sim.cases) -sum(dpois(case.slc, sim.cases*asc, log = TRUE
 underlying <- function(
   p, case0, k, baseline, asc, startt = startpost
 ) cm_backend_sample_fit_test(
-  R_base_parameters = p,
+  R_base_parameters = cm_check_parameters(p),
   posterior = data.frame(
     placeholder0=1, placeholder1=1, placeholder2=1, placeholder3=1,
     case0=case0, k=k, baseline=baseline, asc=asc, startt=startt
@@ -273,7 +273,8 @@ clusterEvalQ(.cl, {
 })
 
 span <- nrow(bootstrap.dt)
-#' span <- 2
+#' @example 
+#' span <- .cores*2
 
 #' TODO revisit using future?
 fits.dt <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
@@ -281,7 +282,7 @@ fits.dt <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
     source(file.path(cm_path, "R", "covidm.R"))
   })
   sdt <- bootstrap.dt[i,]
-  res <- dtfun(sdt, params, intros[sdt$sample == sid, t], sdt$post)
+  res <- dtfun(sdt, pars = params, seeds = intros[sdt$sample == sid, t], post = sdt$post)
   res$sample <- sdt$sample
   res
 }))
