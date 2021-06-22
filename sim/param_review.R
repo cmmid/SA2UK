@@ -4,13 +4,13 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","PAK")
+.debug <- c("analysis", "GHA")
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/pops/%s.rds",
-  "%s/outputs/params/%s_consolidated.rds",
-  "%s/inputs/mobility.rds",
-  "%s/outputs/intervention_timing/%s.rds",
-  "%s/outputs/introductions/%s.rds",
+  "%s/gen/pops/%s.rds",
+  "%s/gen/mobility.rds",
+  "%s/est/introductions/%s.rds",
+  "%s/est/params/%s.rds",
+  "%s/gen/intervention_timing/%s.rds",
   .debug[2], # PAK
   "covidm",
   "%s/outputs/projections/%s.rds"
