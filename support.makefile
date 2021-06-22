@@ -51,3 +51,6 @@ ${COVIDM}:
 
 rsync: | ${DATART}
 	rsync -a ${HPCDIR} ${DATART}
+
+rsyncvn: | ${DATART}
+	rsync -avn ${HPCDIR} ${DATART}
