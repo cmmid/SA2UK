@@ -25,13 +25,14 @@ ACCT ?= TESTTESTTEST
 SOURCE := ${DATART}/ins
 GEND   := ${DATART}/gen
 ESTD   := ${DATART}/est
+SIMD   := ${DATART}/sim
 FIGS   := ${DATART}/fig
 
 RAWDATA := ${SOURCE}/epi_data.rds
 EPIDATA := ${SOURCE}/adj_data.rds
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${FIGS} ${GEND} ${ESTD}
+MKDIRS := ${SOURCE} ${GEND} ${ESTD} ${SIMD} ${FIGS}
 
 # override with local.makefile
 NSAMPLES ?= 4000
@@ -45,6 +46,11 @@ ISOS = NGA GHA PAK
 # provides non-analysis support
 # n.b. this is reloaded in sub-make files
 include support.makefile
+
+# n.b. while the following all have the same recipe structure
+# can't define a variable like, e.g., ${R}, because make explicitly
+# looks for ${MAKE} when following special sub-make capabilities
+# e.g. continuing with a `-n` option
 
 ${SOURCE}/%: | ${SOURCE}
 	${MAKE} -wC $(notdir $|) $@
@@ -62,6 +68,9 @@ ${ESTD}/%: | ${ESTD}
 	${MAKE} -wC $(notdir $|) $@
 
 estimate r0 intros params: | ${ESTD}
+	${MAKE} -wC $(notdir $|) $@
+
+${SIMD}/%: | ${SIMD}
 	${MAKE} -wC $(notdir $|) $@
 
 ${FIGS}/%: | ${FIGS}

@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(doParallel)
 })
 
-.debug <- c("analysis", "PAK")
+.debug <- c("analysis", "NGA")
 .args <- if (interactive()) sprintf(c(
   "%s/gen/intervention_timing/%s.rds",
   "%s/gen/pops/%s.rds",
@@ -13,6 +13,7 @@ suppressPackageStartupMessages({
   "%s/est/r0/%s.rds",
   "%s/est/sample/%s.rds",
   "%s/est/introductions/%s.rds",
+  "%s/ins/adj_data.rds",
   .debug[2], # ZAF
   "covidm",
   "%s/est/params/%s_%s.rds"
@@ -40,11 +41,18 @@ post_contact_reductions <- timings[(period == 1) & (era == "post")][
 tarwindow <- timings[era == "relaxation", c(start, end)]
 
 case.dt <- readRDS(.args[5])[
-  variable == "infections" &
-  between(date, tarwindow[1]-6, tarwindow[2]),
+  variable == "infections",
   .(croll = median(value)),
   by=.(date)
 ]
+
+adj.case.dt <- readRDS(.args[8])[tariso == iso3 & between(date, tarwindow[1]-rep_delay, tarwindow[2]-rep_delay)]
+
+llsd <- function(sdlog) {
+  -sum(dlnorm(adj.case.dt$adj, log(case.dt$croll)-sdlog^2/2, sdlog = sdlog, log = TRUE))
+}
+sdlog.est <- optimize(llsd, interval = c(0.1, 5))$minimum
+ascll <- function(asc, sim.cases) -sum(dlnorm(adj.case.dt$adj, log(sim.cases*asc)-sdlog.est^2/2, sdlog=sdlog.est, log = TRUE))
 
 bootstrap.dt <- readRDS(.args[6])[period == 1]
 intros.dt <- readRDS(.args[7])[iso3 == tariso]
@@ -69,11 +77,12 @@ popsetup <- function(basep, day0) {
 params <- popsetup(readRDS(.args[2]), day0)
 
 #' TODO: fix warning here; providing correct value, however
-startpost <- as.integer(timings[era == "transition" & period == 1, start[1]] - day0)
-startrelax <- as.integer(timings[period == 2, start[1]] - day0)
+startpost <- as.integer(timings[era == "transition" & period == 1, as.Date(start[1])] - day0)
+startrelax <- as.integer(timings[period == 2, as.Date(start[1])] - day0)
 
 tart <- as.numeric(tarwindow - day0)
 case.slc <- case.dt[between(date, tarwindow[1], tarwindow[2]), round(croll)]
+case.ref <- readRDS(.args[8])[tariso == iso3 & date == timings[period == 1 & era == "post", start], adj]
 endrelax <- as.integer(min(timings[era == "relaxation", end], tarwindow[2]) - day0)
 params$time1 <- endrelax
 
@@ -119,51 +128,14 @@ params$schedule <- list(
 #'  (ref_red*(1+exp(-k(ref_cases-cases0))) - 1)/(exp(-k(ref_cases-cases0)) = baseline 
 #'  
 
-fIs_baseline <- function(
-  case0, k, reff, refcase = case.slc[1]
-) {
-  M <- exp(-k*(refcase-case0))
-  if (is.infinite(M)) {
-    reff
-  } else {
-    (reff*(1+M) - 1)/M
-  }
-}
-
-#' need (reff*(1+exp(-k*(refcase-case0))) - 1)/exp(-k*(refcase-case0)) > epsilon
-suggest_k <- function(
-  reff, 
-  case0 = 10^(mean(log10(range(case.slc)))),
-  refcase = case.slc[1]
-) -log(1/reff-1)/(refcase-case0) + c(1e-4,-1e-4)[(reff > 0.5)+1]
-
-
-fIs_amp <- function(
-  case0, k, # fit elements
-  reff, # sampling element: value of function at css[1]
-  css = case.slc, # data element
-  baseline = fIs_baseline(case0, k, reff, css[1]) # entailed remaining coefficient
-) (1-baseline)/(1+exp(-k*(css-case0))) + baseline
-
-#   case0 = 10^mean(range(log10(case.slc)))
-
-# add_fIs <- function(
-#   case0, k, # fit elements
-#   fIs_reduction_at_post, # value at post-intervention
-#   model_t = startpost, d0 = startrelax, df = endrelax
-# ) {
-#   reds <- fIs_amp(case0, k, fIs_reduction_at_post)
-#   vals <- c(list(rep(1-fIs_reduction_at_post, 16)), lapply(reds, function(d) rep(1-d, 16)))
-#   # vals <- c(list(rep(1-fIs_reduction_at_post, 16)), list(rep(0, 16)))
-#   return(list(
-#     parameter = "fIs",
-#     pops = numeric(),
-#     mode = "multiply",
-#     values = vals,
-#     times = day0 + c(model_t, d0:df)
-#     #times = day0 + c(model_t, model_t+30)
-#   ))
-# }
+#' want:
+#'  - target fIs reduction when cases @ the level observed during post-period == sympt estimate
+#'  - more reduction when more cases
+#'  - less reduction when fewer cases
+#' sympt = fIs_reduction => 1-fIs_reduction = multiplier on fIs
+#' so fIs = logistic of k > 0 => increasing cases == increasing reduction
+#' if post R0 estimate indicates sympt > 0.5, then case0 < reference cases
+#' and vice versa
 
 # load covidm
 cm_path = tail(.args, 2)[1]
@@ -172,27 +144,21 @@ cm_build_verbose = F;
 cm_force_shared = T
 cm_version = 2
 
-ascll <- function(asc, sim.cases) -sum(dpois(case.slc, sim.cases*asc, log = TRUE))
-
 underlying <- function(
-  p, case0, k, baseline, asc, startt = startpost
+  p, case0, k, asc, startt = startpost, symp
 ) cm_backend_sample_fit_test(
   R_base_parameters = cm_check_parameters(p),
   posterior = data.frame(
     placeholder0=1, placeholder1=1, placeholder2=1, placeholder3=1,
-    case0=case0, k=k, baseline=baseline, asc=asc, startt=startt
+    case0=case0, k=k, asc=asc, startt=startt, symp=symp
   ),
   n = 1, seed = 42L
 )[[1]]
 
-altunderlying <- function(p, ..., comps = "cases") cm_simulate(p, 1, model_seed = 42L)$dynamics[
-  compartment %in% comps
-]
-
 sim_step <- function(
-  p, case0, k, baseline, asc, startt = startpost,
+  p, case0, k, asc, startt = startpost, sym,
   keepoutcomes = "cases"
-) melt(underlying(p, case0, k, baseline, asc, startt = startpost), id.vars = c("t","group"), measure.vars = keepoutcomes, variable.name = "compartment")[
+) melt(underlying(p, case0, k, asc, startt, symp = sym), id.vars = c("t","group"), measure.vars = keepoutcomes, variable.name = "compartment")[
   , .(value = sum(value)), by=.(t, compartment)
 ]
 
@@ -218,45 +184,48 @@ dtfun <- function(sdt, pars, seeds, post) {
     #, fIa_reductions = symp, fIp_reductions = symp
   )$R0/post-1), c(0.1, 0.9))$minimum
   
-  cmin <- c(10,case.slc[1]+1)[(symp < 0.5)+1]
-  cmax <- c(case.slc[1]-1,1e5)[(symp < 0.5)+1]
-  cmed <- sqrt(cmin*cmax)
-  ks <- sort(suggest_k(symp, c(cmin, cmed, cmax)))
+  # cmin <- c(10,case.slc[1]+1)[(symp < 0.5)+1]
+  # cmax <- c(case.slc[1]-1,1e5)[(symp < 0.5)+1]
+  # cmed <- sqrt(cmin*cmax)
+  # ks <- sort(suggest_k(symp, c(cmin, cmed, cmax)))
   
   ofun <- function(ps) {
-    k <- ps[1]; case0 <- ps[2]; asc <- ps[3]
-    baseline <- fIs_baseline(case0, k, symp)
-    if (baseline >= 0) {
+    k <- exp(ps[1]); case0 <- ps[2]; asc <- exp(ps[3])
+    # baseline <- fIs_baseline(case0, k, symp)
+    # if (baseline >= 0) {
       #' project and compare to relaxation period
       # pop$schedule[[2]] <- add_fIs(case0, k, symp)
-      est <- sim_step(pop, case0, k, baseline, asc)[between(t, tart[1], tart[2]), value]
+      est <- sim_step(pop, case0, k, asc, sym=symp)[between(t, tart[1], tart[2]), value]
       ret <- ascll(asc, est)
       if (is.infinite(ret) | is.na(ret)) ret <- .Machine$integer.max
       ret
-    } else .Machine$integer.max
+    # } else .Machine$integer.max
   }
   
-  pars_int <- optim_sa(
-    start = c(
-      k = suggest_k(symp, cmed),
-      case0 = cmed,
-      asc = 0.05
+  kguess <- -6
+  case0guess = case.ref + log(1/symp-1)/exp(kguess)
+  
+  pars_int <- optim(
+    par = c(
+      k = kguess,
+      case0 = case0guess,
+      asc = -2
     ),
-    fun = ofun,
+    fn = ofun,
     #method = "L-BFGS-B",
-    lower = c(k = ks[1], case0 = cmin, asc = 0.005),
-    upper = c(k = ks[3], case0 = cmax, asc = 0.80)
-    ,control = list(
-      nlimit = 300, ac_acc = 1
-    )
+    lower = c(k = -10, case0 = 0, asc = -6),
+    upper = c(k = -2, case0 = case0guess*10, asc = -1)
+    # ,control = list(
+    #   nlimit = 300, ac_acc = 1
+    # )
   )
   
   #lrg <- pars_int$par[1]; sml <- pars_int$par[2];
-  k <- pars_int$par[1]; case0 <- pars_int$par[2] # also has asc as par 3
+  k <- exp(pars_int$par[1]); case0 <- pars_int$par[2] # also has asc as par 3
 
-  pars <- c(symp, pars_int$par, fIs_baseline(case0, k, symp, case.slc[1]))
+  pars <- c(symp, k, case0, exp(pars_int$par[3]))
   #names(pars) <- c("large", "small", "sympt", "rel_delay", "rel_frac", "rel_dur", "asc")
-  names(pars) <- c("sympt", "k", "case0", "asc", "fIsbaseline")
+  names(pars) <- c("sympt", "k", "case0", "asc")
   as.list(pars)
 }
 
@@ -274,10 +243,10 @@ clusterEvalQ(.cl, {
 
 span <- nrow(bootstrap.dt)
 #' @example 
-#' span <- .cores*2
+#' span <- 3
 
 #' TODO revisit using future?
-fits.dt <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
+fits.dt <- bootstrap.dt[rbindlist(parLapply(.cl, X = 1:span, function(i) {
   suppressPackageStartupMessages({
     source(file.path(cm_path, "R", "covidm.R"))
   })
@@ -285,9 +254,9 @@ fits.dt <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
   res <- dtfun(sdt, pars = params, seeds = intros[sdt$sample == sid, t], post = sdt$post)
   res$sample <- sdt$sample
   res
-}))
+})), on = .(sample)]
 
-saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))
+saveRDS(fits.dt, tail(.args, 1))
 
 # stop()
 # 
@@ -331,3 +300,4 @@ saveRDS(bootstrap.dt[fits.dt, on = .(sample)], tail(.args, 1))
 #  scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
 #  scale_y_log10() +
 #  theme_minimal()
+1/(1+exp(-0.01*(434-331)))
