@@ -1,7 +1,5 @@
 #!/bin/bash
-if [ $# == 0 ]; then
-	squeue -u $UID
-else
+if [ $# -gt 0 ]; then
 	echo "sbatch $1 | grep -P -o '\d+'"
 	jobid=`sbatch $1 | grep -P -o '\d+'`
 	echo $jobid
@@ -16,3 +14,4 @@ else
 		done
 	fi
 fi
+squeue -u $UID
