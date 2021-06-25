@@ -137,7 +137,7 @@ params$schedule <- list(
 #' if post R0 estimate indicates sympt > 0.5, then case0 < reference cases
 #' and vice versa
 
-# load covidm
+#' load covidm
 cm_path = tail(.args, 2)[1]
 cm_force_rebuild = F;
 cm_build_verbose = F;
