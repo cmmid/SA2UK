@@ -5,8 +5,9 @@ estimate: params
 r0: ${ESTD}/r0/${TARISO}.rds
 intros: ${ESTD}/introductions/${TARISO}.rds
 params: ${ESTD}/params/${TARISO}.rds
+variant: ${ESTD}/variant/${TARISO}.rds
 
-MKDIRS := $(addprefix ${ESTD}/,r0 introductions sample params)
+MKDIRS := $(addprefix ${ESTD}/,r0 introductions sample params variant)
 
 include ../support.makefile
 
@@ -27,7 +28,5 @@ ${ESTD}/introductions/%.rds: introductions.R ${GENITEMS} ${ESTD}/sample/%.rds ${
 ${ESTD}/params/%.rds: parameters.R ${GENITEMS} ${GEND}/mobility.rds ${ESTD}/r0/%.rds ${ESTD}/sample/%.rds ${ESTD}/introductions/%.rds | ${COVIDM} ${ESTD}/params
 	Rscript $^ $* $(firstword $|) $@
 
-allr0: $(call alliso,${ESTD}/r0,rds)
-allintros: $(call alliso,${ESTD}/r0,rds)
-allsamples: $(call alliso,${ESTD}/sample,rds)
-allparams: $(call alliso,${ESTD}/params,rds)
+${ESTD}/variant/%.rds: variant.R ${GENITEMS} ${ESTD}/params/%.rds ${SIMD}/history/%.rds ${ESTD}/sample/%.rds | ${ESTD}/variant
+	${Rstar}

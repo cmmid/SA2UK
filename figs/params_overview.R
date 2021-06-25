@@ -5,7 +5,7 @@ suppressPackageStartupMessages({
 
 .debug <- c("analysis","PAK")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/projections/%s.rds",
+  "%s/outputs/history/%s.rds",
   "%s/outputs/adj_data.rds",
   .debug[2], # PAK
   "%s/outputs/params/%s.png"
@@ -23,6 +23,28 @@ case.dt <- readRDS(.args[2])[
   (iso3 == tariso),
   .(date, croll = frollmean(cases, 7, align = "center"))
 ]
+
+#' @examples 
+#' TODO: from debugging
+#' ggplot(est[compartment == "cases"][, .(asc.value = sum(value), rv = sum(rv)), by=.(sample, date)]) +
+#'   aes(date, asc.value, group = sample) +
+#'   geom_line(alpha = 0.1) +
+#'   geom_line(aes(y=rv), alpha = 0.1, color = "red") +
+#'   geom_line(
+#'     aes(date, adj),
+#'     data = readRDS(file.path(.debug[1], "ins", "adj_data.rds"))[iso3 == .debug[2]],
+#'     color = "black", inherit.aes = FALSE
+#'   ) +
+#'   geom_line(
+#'     aes(date, value),
+#'     data = readRDS(file.path(.debug[1], "est", "r0", paste0(.debug[2],".rds")))[variable == "infections" & sample < 100],
+#'     color = "green", alpha = 0.1
+#'   ) +
+#'   annotate("rect", xmin=as.Date("2020-09-01"), xmax =as.Date("2020-10-01"), ymin = 0.01, ymax = Inf, alpha = 0.2, fill = "dodgerblue") +
+#'   scale_x_date(NULL, date_breaks = "month", date_minor_breaks = "week", date_labels = "%b") +
+#'   scale_y_log10(labels = scales::label_number_si()) +
+#'   coord_cartesian(ylim = c(1, NA)) +
+#'   theme_minimal()
 
 parplot <- ggplot(est) +
  aes(date, rv, group = sample) +
