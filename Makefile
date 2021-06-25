@@ -67,7 +67,7 @@ generate: | ${GEND}
 ${ESTD}/%: | ${ESTD}
 	${MAKE} -wC $(notdir $|) $@
 
-estimate r0 intros params: | ${ESTD}
+estimate r0 intros params clean_params: | ${ESTD}
 	${MAKE} -wC $(notdir $|) $@
 
 ${SIMD}/%: | ${SIMD}
