@@ -16,7 +16,7 @@ suppressPackageStartupMessages({
   "%s/ins/adj_data.rds",
   .debug[2], # ZAF
   "covidm",
-  "%s/est/params/%s_%s.rds"
+  "%s/est/params/%s.rds"
 ), .debug[1], .debug[2], .debug[3]) else commandArgs(trailingOnly = TRUE)
 
 timings <- readRDS(.args[1])

@@ -30,3 +30,6 @@ ${ESTD}/params/%.rds: parameters.R ${GENITEMS} ${GEND}/mobility.rds ${ESTD}/r0/%
 
 ${ESTD}/variant/%.rds: variant.R ${GENITEMS} ${ESTD}/params/%.rds ${SIMD}/history/%.rds ${ESTD}/sample/%.rds | ${ESTD}/variant
 	${Rstar}
+
+clean_params:
+	rm ${ESTD}/params/*.rds
