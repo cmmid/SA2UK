@@ -149,7 +149,7 @@ popnorm <- function(x, seed_cases = 50, urbfrac, introages = 4:13) {
 
   #' distribute proportionally to size, though for (15, 65) only [by default]
   x$dist_seed_ages <- rep(0, length(x$size))
-  x$dist_seed_ages <- x$size[introages]/sum(x$size[introages])
+  x$dist_seed_ages[introages] <- x$size[introages]/sum(x$size[introages])
   
   #' seed cases
   x$seed_times <- rep(0, seed_cases)
