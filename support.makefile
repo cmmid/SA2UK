@@ -34,6 +34,8 @@ Rsp = ${RSCRIPT} $^ $* $| $@
 
 FROMDIR ?= override/path/on/commandline
 
+FORCE:
+
 xfer: | ${FROMDIR}
 	rsync -rv $|/ ${SINK}
 
@@ -50,7 +52,7 @@ ${COVIDM}:
 	cd $(dir $@); git clone --single-branch --branch ngmupdate ${COVIDMGIT} $(notdir $@)
 
 rsync: | ${DATART}
-	rsync -a ${HPCDIR} ${DATART}
+	rsync -av ${HPCDIR} ${DATART}
 
-rsyncvn: | ${DATART}
+rsyncavn: | ${DATART}
 	rsync -avn ${HPCDIR} ${DATART}

@@ -74,10 +74,11 @@ ${SIMD}/%: | ${SIMD}
 	${MAKE} -wC $(notdir $|) $@
 
 ${FIGS}/%: | ${FIGS}
-	${SM} $@
+	${MAKE} -wC $(notdir $|) $@
 
 figures: | ${FIGS}
-	${SM}
+	${MAKE} -wC $(notdir $|) $@
+
 
 hpcclean:
 	rm *.out *.err

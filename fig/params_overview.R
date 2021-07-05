@@ -26,7 +26,7 @@ case.dt <- readRDS(.args[2])[
 
 #' @examples 
 #' TODO: from debugging
-#' ggplot(est[compartment == "cases"][, .(asc.value = sum(value), rv = sum(rv)), by=.(sample, date)]) +
+#' ggplot(est[compartment == "cases"][sample < 101][, .(asc.value = sum(value), rv = sum(rv)), by=.(sample, date)]) +
 #'   aes(date, asc.value, group = sample) +
 #'   geom_line(alpha = 0.1) +
 #'   geom_line(aes(y=rv), alpha = 0.1, color = "red") +

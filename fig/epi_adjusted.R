@@ -3,11 +3,11 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
+.debug <- c("analysis", "ZMB")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/adj_data.rds",
+  "%s/ins/adj_data.rds",
   .debug[2],
-  "%s/inputs/figs/adjusted/%s.png"
+  "%s/fig/adjusted/%s.png"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 tariso <- tail(.args, 2)[1]
