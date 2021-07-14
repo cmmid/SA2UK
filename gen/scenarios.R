@@ -2,15 +2,34 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/SA2UK/outputs","ZAF")
+.debug <- c("analysis", "GHA")
 .args <- if (interactive()) sprintf(c(
-  "%s/params/%s.rds",
-  "%s/r0/%s.rds",
+  "%s/ins/interventions.rds",
+  "%s/gen/pops/%s.rds",
   .debug[2],
   "%s/scenarios/%s.rds"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
 tariso <- tail(.args, 2)[1]
+pop <- readRDS(.args[1])
+
+#' scenarios for population targets
+
+scenarios <- list(
+  efficacy = list(),
+  rollout = list(),
+  rolloutspeed = list()
+)
+
+
+names(pop$pop[[1]]$size) <- pop$pop[[1]]$group_names
+scen1 <- round(sum(pop$pop[[1]]$size[13:16])*.9)
+scen2 <- scen1 + sum(pop$pop[[1]]$size[4:12])*.2
+scen3per <- scen2 / sum(pop$pop[[1]]$size[4:16])
+
+sprintf("%s: %f", tariso, scen3per)
+
+stop()
 
 #' parameter fitting results
 fit.dt <- readRDS(.args[1])

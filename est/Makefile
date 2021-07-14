@@ -28,8 +28,14 @@ ${ESTD}/introductions/%.rds: introductions.R ${GENITEMS} ${ESTD}/sample/%.rds ${
 ${ESTD}/params/%.rds: parameters.R ${GENITEMS} ${GEND}/mobility.rds ${ESTD}/r0/%.rds ${ESTD}/sample/%.rds ${ESTD}/introductions/%.rds ${EPIDATA} | ${COVIDM} ${ESTD}/params
 	${RSCRIPT} $^ $* $(firstword $|) $@
 
-${ESTD}/variant/%.rds: variant.R ${GENITEMS} ${ESTD}/params/%.rds ${SIMD}/history/%.rds ${ESTD}/sample/%.rds | ${ESTD}/variant
+${ESTD}/variant/%.rds: variant.R ${GENITEMS} ${GEND}/mobility.rds ${ESTD}/params/%.rds ${SIMD}/history/%.rds ${ESTD}/sample/%.rds | ${ESTD}/variant
 	${Rstar}
 
 clean_params:
 	rm ${ESTD}/params/*.rds
+
+${GEND}/%:
+	${MAKE} -wC .. $@
+
+${SIMD}/%:
+	${MAKE} -wC .. $@

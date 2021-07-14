@@ -49,7 +49,7 @@ COVIDMGIT := git@github.com:nicholasdavies/covidm.git
 
 # TODO correct these - seems to clone in this folder instead?
 ${COVIDM}:
-	cd $(dir $@); git clone --single-branch --branch ngmupdate ${COVIDMGIT} $(notdir $@)
+	cd $(dir $@); git -C $(notdir $@) pull || git clone --single-branch --branch ngmupdate ${COVIDMGIT} $(notdir $@)
 
 rsync: | ${DATART}
 	rsync -av ${HPCDIR} ${DATART}

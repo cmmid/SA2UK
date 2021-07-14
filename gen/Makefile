@@ -33,6 +33,9 @@ ${GEND}/pops/%.rds: covidm_pop.R ${REFDATA} | ${COVIDM} ${GEND}/pops
 ${GEND}/yuqs/%.rds: reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/sampling.json ${GEND}/pops/%.rds ${GEND}/intervention_timing/%.rds ${GEND}/mobility.rds | ${COVIDM} ${GEND}/yuqs
 	${RSCRIPT} $^ $* $(firstword $|) $@
 
+${GEND}/scenarios/%.rds: scenarios.R ${GEND}/pops/%.rds
+	${Rstar}
+
 allints: $(call alliso,${GEND}/intervention_timing,rds)
 allpops: $(call alliso,${GEND}/pops,rds)
 allyuqs: $(call alliso,${GEND}/yuqs,rds)

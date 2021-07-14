@@ -3,7 +3,7 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("analysis","PAK")
+.debug <- c("analysis","GHA")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/history/%s.rds",
   "%s/outputs/adj_data.rds",

@@ -26,25 +26,23 @@ double k = x[1];
 double asc = x[2];
 double modstartt = x[3];
 double refsympt = x[4];
-//if (t == 1) {
-//  std::cout << \"refsympt, modstartt, asc, k, case0:\";
-//  for (size_t i=4;i--;) std::cout << ' ' << x[i];
-//  std::cout << std::endl << \"t, ocases, mod\" << std::endl;
-//}
-double baseline;
-auto fIs_reduction = [&](double obscases) {
-  return 1/(1+exp(-k*(obscases-case0)));
-};
-if (t == modstartt) {
-  auto ocases = dyn(\"cases\", t, {}, {})*asc;
-  baseline = (refsympt - fIs_reduction(ocases))/(1 - fIs_reduction(ocases));
-}
 if (x.size() && t >= modstartt) { // if past the intervention start
   if (t < P.changes.ch.front().values.size()-2) { // if there is a tomorrow
+    auto fIs_reduction = [&](double cases) {
+      return 1/(1+exp(-k*(cases-case0)));
+    };
+    auto refred = fIs_reduction(dyn(\"cases\", modstartt, {}, {}));
+
     // the fI *reduction* model
-    auto ocases = dyn(\"cases\", t, {}, {})*asc; // Ia (prevalence of active infections) * ascertainment
-//    auto ocases = dyn(\"cases\", t, {}, {}); // Ia (prevalence of active infections) * ascertainment
-    auto newmul = 1.0 - (baseline + (1-baseline)*fIs_reduction(ocases));
+    auto nowred = fIs_reduction(dyn(\"cases\", t, {}, {}));
+    double newmul = 1.0;
+    if (refsympt <= refred) {
+      newmul -= refsympt/refred * nowred;
+    } else {
+      auto flr = (refsympt-refred)/(1-refred);
+      newmul -= flr + (1-flr)*nowred;
+    }
+    
     P.changes.ch.front().values[t+1].assign(16, newmul);
 //    std::cout << t << ' ' << ocases << ' ' << newmul << std::endl;
     // fIa, fIp

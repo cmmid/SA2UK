@@ -58,6 +58,9 @@ ${SOURCE}/%: | ${SOURCE}
 setup: | ${SOURCE}
 	${MAKE} -wC $(notdir $|)
 
+install: | ${SOURCE}
+	${MAKE} -wC $(notdir $|) ${SOURCE}/.$@
+
 ${GEND}/%: | ${GEND}
 	${MAKE} -wC $(notdir $|) $@
 
@@ -78,7 +81,6 @@ ${FIGS}/%: | ${FIGS}
 
 figures: | ${FIGS}
 	${MAKE} -wC $(notdir $|) $@
-
 
 hpcclean:
 	rm *.out *.err

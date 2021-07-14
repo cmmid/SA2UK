@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("analysis", "NGA")
+.debug <- c("analysis", "GHA")
 .args <- if (interactive()) sprintf(c(
   "%s/gen/intervention_timing/%s.rds",
   "%s/gen/pops/%s.rds",

@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(doParallel)
 })
 
-.debug <- c("analysis", "NGA")
+.debug <- c("analysis", "GHA")
 .args <- if (interactive()) sprintf(c(
   "%s/gen/intervention_timing/%s.rds",
   "%s/gen/pops/%s.rds",
@@ -203,21 +203,22 @@ dtfun <- function(sdt, pars, seeds, post) {
   }
   
   kguess <- -6
-  case0guess = case.ref + log(1/symp-1)/exp(kguess)
+  asc.guess <- -2
+  case0guess = case.ref/exp(asc.guess) + log(1/symp-1)/exp(kguess)
   
-  pars_int <- optim(
-    par = c(
+  pars_int <- optim_sa(
+    start = c(
       k = kguess,
       case0 = case0guess,
-      asc = -2
+      asc = asc.guess
     ),
-    fn = ofun,
+    fun = ofun,
     #method = "L-BFGS-B",
-    lower = c(k = -10, case0 = 0, asc = -6),
-    upper = c(k = -2, case0 = case0guess*10, asc = -1)
-    # ,control = list(
-    #   nlimit = 300, ac_acc = 1
-    # )
+    lower = c(k = -10, case0 = -abs(case0guess*10), asc = -6),
+    upper = c(k = -2, case0 = abs(case0guess*10), asc = -1)
+    ,control = list(
+      nlimit = 300, ac_acc = 1
+    )
   )
   
   #lrg <- pars_int$par[1]; sml <- pars_int$par[2];

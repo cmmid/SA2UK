@@ -1,7 +1,7 @@
 
 insdefault: ${SOURCE}/.install ${RAWDATA} ${EPIDATA} $(addprefix ${SOURCE}/,\
 	phylo.rds sampling.json google_mobility.csv ox_si_schools.csv ox_si_schools_flag.csv lifetables.csv\
-	sampling.json\
+	sampling.json scenario_reference.rds\
 )
 
 # provides non-analysis support
@@ -16,6 +16,8 @@ include ../support.makefile
 ${SOURCE}/.install: install.R ${PROJRT}/ins/rpack.csv | ${COVIDM}
 	${Rpipe}
 
+${SOURCE}/shared_funs.rda: shared_funs.R
+	${R}
 
 ${RAWDATA}: epi_data.R | ${SOURCE}
 	${R}
@@ -51,3 +53,17 @@ ${SOURCE}/fertility.csv:
 
 ${SOURCE}/sampling.json: config.R
 	${RSCRIPT} $^ ${NSAMPLES} $@
+
+#' this sets up the intervention scenarios to be considered
+
+#' these provide tables of vaccine efficacy, by product, dose[, and variant?]
+${SOURCE}/vaccines.rds: vaccines.R
+	${R}
+
+#' this is a function for generating the campaign scenarios in covidm-ready format,
+#' from covidm parameter object + campaign number
+${SOURCE}/campaign_function.rds: campaign_function.R
+	${R}
+
+${SOURCE}/scenario_reference.rds: generic_scenarios.R $(patsubst %, ${SOURCE}/%.rds,vaccines campaign_function)
+	${R}
