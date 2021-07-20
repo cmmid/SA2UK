@@ -34,6 +34,11 @@ ${ESTD}/variant/%.rds: variant.R ${GENITEMS} ${GEND}/mobility.rds ${ESTD}/params
 clean_params:
 	rm ${ESTD}/params/*.rds
 
+.PRECIOUS: ${SOURCE}/% ${GEND}/% ${SIMD}/%
+
+${SOURCE}/%:
+	${MAKE} -wC .. $@
+
 ${GEND}/%:
 	${MAKE} -wC .. $@
 
