@@ -3,10 +3,10 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- "~/Dropbox/Covid_LMIC/All_Africa_paper"
+.debug <- "analysis"
 .args <- if (interactive()) sprintf(c(
-  "%s/inputs/epi_data.rds", # this is the JHU
-  "%s/outputs/adj_data.rds"
+  "%s/ins/epi_data.rds", # this is the JHU
+  "%s/est/adj_data.rds"
 ), .debug) else commandArgs(trailingOnly = TRUE)
 
 raw.dt <- readRDS(.args[1])
@@ -91,9 +91,9 @@ detect.asri <- function(
 #' for each iso, look at the time series subset from first case
 #' and evaluate ASRI
 asri.dt <- raw.dt[,
-  .SD[which.max(cases > 0):.N,
+  if (sum(cases) != 0) .SD[which.max(cases > 0):.N,
     .(date, asri = detect.asri(cases))
-  ], by=iso3
+  ] else .SD[,.(date, asri = NA_integer_)], by=iso3
 ]
 
 #' if there is a short gap in asri, link up series; basically assumes
