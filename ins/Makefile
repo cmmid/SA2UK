@@ -8,6 +8,9 @@ insdefault: ${SOURCE}/.install ${RAWDATA} ${EPIDATA} $(addprefix ${SOURCE}/,\
 # n.b. this is reloaded in sub-make files
 include ../support.makefile
 
+aptsetup:
+	sudo apt install libgsl-dev libv8-dev libxml2-dev
+
 # very basic R package installation; THIS MAY NOT "JUST WORK"
 # checks availability of packages (via require)
 # attempts to install any not available
