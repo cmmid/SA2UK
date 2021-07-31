@@ -7,11 +7,12 @@
 
 # root filesystem location for inputs & outputs
 # TODO: make this point to Covid-WHO-vax/nigeria
-DATART ?= .
+DATART ?= ~/Dropbox/Covid-WHO-vax/nigeria
 # example local.makefile overrides this to point to a Dropbox folder
 
 SOURCE := ${DATART}/inputs
 SINK   := ${DATART}/outputs
+FIG    := ${DATART}/fig
 
 NCORES ?= 4
 NSAMPS ?= 4e3
@@ -29,7 +30,7 @@ ${COVIDM}:
 GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
-MKDIRS := ${SOURCE} ${SINK} \
+MKDIRS := ${SOURCE} ${SINK} ${FIG} \
 	$(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections \
 	figs variant scenario acc_scen econ_scen) \
 	$(addprefix ${SOURCE}/,pops yuqs figs/epi) ${MIRDIR}

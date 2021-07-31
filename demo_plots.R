@@ -2,6 +2,8 @@
 require(data.table)
 require(ggplot2)
 
+figrt <- file.path("~", "Dropbox", "Covid-WHO-vax", "nigeria")
+
 scen.dt <- rbind(
   data.table(vax_mech = "none", vax_eff = 0, coverage = 0),
   data.table(expand.grid(
@@ -11,7 +13,9 @@ scen.dt <- rbind(
   ))
 )[, id := (1:.N)-1 ]
 
-episrc <- "./outputs/acc_scen"
+episrc <- file.path(figrt, "outputs", "acc_scen")
+fig.path <- function(fn) file.path(figrt, "fig", fn)
+
 epi.dt <- rbindlist(lapply(list.files(episrc, full.names = TRUE), readRDS))
 epi.ref <- epi.dt[epi_id == 0, .SD, .SDcols = -c('epi_id') ]
 epi.int <- epi.dt[epi_id != 0][epi.ref, on=.(sample, iyear, compartment, group)]
@@ -39,7 +43,7 @@ epi.p <- ggplot(
     guide = guide_legend(override.aes = list(alpha=1))
   )
 
-ggsave("cases_slide.png", epi.p, width = 15, height = 8, units = "in")
+ggsave(fig.path("cases_slide.png"), epi.p, width = 15, height = 8, units = "in")
 
 epi.del <- ggplot(
   epi.int[ iyear >= 1 & compartment == "cases", .(value = sum(averted)), by=.(epi_id, sample, iyear, compartment) ][scen.dt[id!=0], on=.(epi_id = id)]
@@ -60,7 +64,7 @@ epi.del <- ggplot(
                      guide = guide_legend(override.aes = list(alpha=1))
   )
 
-ggsave("cases_averted.png", epi.del, width = 15, height = 8, units = "in")
+ggsave(fig.path("cases_averted.png"), epi.del, width = 15, height = 8, units = "in")
 
 epi.cdel <- ggplot(
   epi.int[ iyear >= 1 & compartment == "cases", .(
@@ -86,9 +90,9 @@ epi.cdel <- ggplot(
     guide = guide_legend(override.aes = list(alpha=1))
   )
 
-ggsave("ccases_averted.png", epi.cdel, width = 15, height = 8, units = "in")
+ggsave(fig.path("ccases_averted.png"), epi.cdel, width = 15, height = 8, units = "in")
 
-src <- "./outputs/econ_scen/NGA.rds"
+src <- file.path(figrt, "outputs", "econ_scen", "NGA.rds")
 
 dt <- readRDS(src)[view == "incremental" & econ_id == 1]
 
@@ -128,7 +132,7 @@ ccost.p <- ggplot(r.dt[variable == "ccosts"]) + aes(anni_year) +
                      aesthetics = c("color","fill")
   )
 
-ggsave("ccost_incremental.png", ccost.p, width = 15, height = 8, units = "in")
+ggsave(fig.path("ccost_incremental.png"), ccost.p, width = 15, height = 8, units = "in")
 
 cdaly.p <- ggplot(r.dt[variable == "cdalys"]) + aes(anni_year) +
   geom_ribbon(aes(ymin=lo95, ymax=hi95, fill=vax_mech), alpha = 0.1) +
@@ -146,10 +150,10 @@ cdaly.p <- ggplot(r.dt[variable == "cdalys"]) + aes(anni_year) +
                      aesthetics = c("color","fill")
   )
 
-ggsave("cdalys_averted.png", cdaly.p, width = 15, height = 8, units = "in")
+ggsave(fig.path("cdalys_averted.png"), cdaly.p, width = 15, height = 8, units = "in")
 
 icer.tab <- fulle.dt[variable == "icer" & anni_year == 5, .(
   sprintf("%.1f (50Q %.1f - %.1f, 95Q %.1f - %.1f; mean %.1f)", md, lo50, hi50, lo95, hi95, mn)
 ), by=.(vax_mech, vax_eff, coverage, econ_id)]
 
-fwrite(icer.tab, "icers.csv")
+fwrite(icer.tab, fig.path("icers.csv"))
