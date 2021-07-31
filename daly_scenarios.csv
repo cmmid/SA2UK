@@ -1,0 +1,193 @@
+iso3,country,age_cat,age_desc,daly_scenario,dalys_death,disc_rate,comment,dalys_case,dalys_hospital,dalys_icu
+PAK,pakistan,1,0 to 4,high,25.66112854,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,2,5 to 9,high,25.00371594,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,3,10 to 14,high,23.63823862,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,4,15 to 19,high,22.06025262,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,5,20 to 24,high,20.84644347,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,6,25 to 29,high,19.68193763,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,7,30 to 34,high,18.36879314,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,8,35 to 39,high,16.9779828,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,9,40 to 44,high,15.57362891,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,10,45 to 49,high,14.03296785,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,11,50 to 54,high,12.37422854,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,12,55 to 59,high,10.64723042,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,13,60 to 64,high,8.92524821,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,14,65 to 69,high,7.349722539,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,15,70 to 74,high,6.114509708,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,16,75+,high,4.194935914,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,1,0 to 4,low,22.33089403,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,2,5 to 9,low,21.92315104,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,3,10 to 14,low,20.65162708,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,4,15 to 19,low,19.17050336,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,5,20 to 24,low,18.01594512,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,6,25 to 29,low,16.90297859,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,7,30 to 34,low,15.64957046,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,8,35 to 39,low,14.32398002,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,9,40 to 44,low,12.98878197,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,10,45 to 49,low,11.53962398,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,11,50 to 54,low,10.00037973,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,12,55 to 59,low,8.422233867,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,13,60 to 64,low,6.878659072,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,14,65 to 69,low,5.494280945,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,15,70 to 74,low,4.446172736,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,16,75+,low,3.059825535,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,1,0 to 4,high,57.51121212,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,2,5 to 9,high,53.95071414,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,3,10 to 14,high,49.18655018,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,4,15 to 19,high,44.39610254,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,5,20 to 24,high,40.18872554,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,6,25 to 29,high,36.20317782,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,7,30 to 34,high,32.25021815,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,8,35 to 39,high,28.42921229,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,9,40 to 44,high,24.81035133,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,10,45 to 49,high,21.29273652,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,11,50 to 54,high,17.91752898,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,12,55 to 59,high,14.75322959,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,13,60 to 64,high,11.87755705,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,14,65 to 69,high,9.425684203,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,15,70 to 74,high,7.532902072,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,16,75+,high,4.881461888,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+PAK,pakistan,1,0 to 4,low,48.07245779,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,2,5 to 9,low,45.40034238,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,3,10 to 14,low,41.19747506,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,4,15 to 19,low,36.94906757,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,5,20 to 24,low,33.23632775,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,6,25 to 29,low,29.73002193,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,7,30 to 34,low,26.25417067,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,8,35 to 39,low,22.90521289,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,9,40 to 44,low,19.75155654,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,10,45 to 49,low,16.7074113,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,11,50 to 54,low,13.81422318,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,12,55 to 59,low,11.1346874,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,13,60 to 64,low,8.739324517,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,14,65 to 69,low,6.739422765,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,15,70 to 74,low,5.25249553,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+PAK,pakistan,16,75+,low,3.453245463,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,1,0 to 4,high,23.06264299,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,2,5 to 9,high,22.65527427,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,3,10 to 14,high,21.37679103,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,4,15 to 19,high,19.77918487,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,5,20 to 24,high,18.64911792,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,6,25 to 29,high,17.6193363,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,7,30 to 34,high,16.45789013,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,8,35 to 39,high,15.20580334,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,9,40 to 44,high,13.92999604,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,10,45 to 49,high,12.49095061,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,11,50 to 54,high,10.9046149,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,12,55 to 59,high,9.236551537,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,13,60 to 64,high,7.572978872,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,14,65 to 69,high,6.074828053,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,15,70 to 74,high,4.96876094,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,16,75+,high,3.636350733,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,1,0 to 4,low,19.24410727,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,2,5 to 9,low,19.14708812,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,3,10 to 14,low,18.01205241,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,4,15 to 19,low,16.53417502,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,5,20 to 24,low,15.51260456,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,6,25 to 29,low,14.59816613,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,7,30 to 34,low,13.56691054,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,8,35 to 39,low,12.44883405,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,9,40 to 44,low,11.3096594,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,10,45 to 49,low,10.0235294,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,11,50 to 54,low,8.609777577,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,12,55 to 59,low,7.13645208,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,13,60 to 64,low,5.687494502,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,14,65 to 69,low,4.40294398,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,15,70 to 74,low,3.487182933,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,16,75+,low,2.543277485,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,1,0 to 4,high,47.72305341,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,2,5 to 9,high,45.30820108,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,3,10 to 14,high,41.3634471,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,4,15 to 19,high,37.16591812,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,5,20 to 24,high,33.7117054,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,6,25 to 29,high,30.50762999,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,7,30 to 34,high,27.29481963,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,8,35 to 39,high,24.12536782,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,9,40 to 44,high,21.07895239,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,10,45 to 49,high,18.03787808,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,11,50 to 54,high,15.05287324,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,12,55 to 59,high,12.22352687,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,13,60 to 64,high,9.649314986,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,14,65 to 69,high,7.492277291,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,15,70 to 74,high,5.923961558,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,16,75+,high,4.163746227,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+NGA,nigeria,1,0 to 4,low,37.63902931,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,2,5 to 9,low,36.23879891,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,3,10 to 14,low,33.00460676,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,4,15 to 19,low,29.45172523,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,5,20 to 24,low,26.61933001,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,6,25 to 29,low,24.02476154,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,7,30 to 34,low,21.41026756,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,8,35 to 39,low,18.814249,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,9,40 to 44,low,16.31579881,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,10,45 to 49,low,13.80843593,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,11,50 to 54,low,11.34325376,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,12,55 to 59,low,9.01765722,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,13,60 to 64,low,6.923245253,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,14,65 to 69,low,5.196152685,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,15,70 to 74,low,3.987378293,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+NGA,nigeria,16,75+,low,2.817474907,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,1,0 to 4,high,24.91863172,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,2,5 to 9,high,24.0681063,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,3,10 to 14,high,22.69496769,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,4,15 to 19,high,21.08315629,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,5,20 to 24,high,19.88584861,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,6,25 to 29,high,18.77355897,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,7,30 to 34,high,17.51463376,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,8,35 to 39,high,16.1727607,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,9,40 to 44,high,14.81371189,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,10,45 to 49,high,13.31006467,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,11,50 to 54,high,11.67600841,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,12,55 to 59,high,9.96527048,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,13,60 to 64,high,8.24452366,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,14,65 to 69,high,6.662430392,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,15,70 to 74,high,5.453500212,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,16,75+,high,3.890728796,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,1,0 to 4,low,21.46957696,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,2,5 to 9,low,20.81125526,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,3,10 to 14,low,19.54378001,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,4,15 to 19,low,18.03428055,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,5,20 to 24,low,16.91653921,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,6,25 to 29,low,15.88707725,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,7,30 to 34,low,14.7211525,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,8,35 to 39,low,13.47737658,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,9,40 to 44,low,12.22038324,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,10,45 to 49,low,10.83983747,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,11,50 to 54,low,9.353911119,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,12,55 to 59,low,7.817621446,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,13,60 to 64,low,6.29433818,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,14,65 to 69,low,4.913620373,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,15,70 to 74,low,3.891110551,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,16,75+,low,2.769922989,0.03,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,1,0 to 4,high,53.93487292,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,2,5 to 9,high,50.19442134,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,3,10 to 14,high,45.68979397,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,4,15 to 19,high,41.10867993,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,5,20 to 24,high,37.20130689,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,6,25 to 29,high,33.55700714,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,7,30 to 34,high,29.91939026,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,8,35 to 39,high,26.37729893,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,9,40 to 44,high,23.00579745,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,10,45 to 49,high,19.69947738,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,11,50 to 54,high,16.49841428,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,12,55 to 59,high,13.48056199,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,13,60 to 64,high,10.71868817,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,14,65 to 69,high,8.362309269,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,15,70 to 74,high,6.59765783,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,16,75+,high,4.491099588,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx",0.008,0.018,0.15
+GHA,ghana,1,0 to 4,low,44.36763373,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,2,5 to 9,low,41.43090701,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,3,10 to 14,low,37.54369738,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,4,15 to 19,low,33.54817742,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,5,20 to 24,low,30.19648752,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,6,25 to 29,low,27.09959736,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,7,30 to 34,low,24.00022614,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,8,35 to 39,low,20.98129021,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,9,40 to 44,low,18.11714069,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,10,45 to 49,low,15.31657648,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,11,50 to 54,low,12.61918269,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,12,55 to 59,low,10.09814279,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,13,60 to 64,low,7.816569473,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,14,65 to 69,low,5.899086627,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,15,70 to 74,low,4.512462578,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15
+GHA,ghana,16,75+,low,3.095988332,0,"Briggs method, UN 2015-2020 LT, average per age group weighted by lx, 50% comorbid with 90 reduction in QoL + 1.5 SMR",0.008,0.018,0.15

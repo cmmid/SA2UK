@@ -1,9 +1,10 @@
 
 suppressPackageStartupMessages({
   require(data.table)
+  require(doParallel)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
+.debug <- c(".", "NGA", "1")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/pops/%s.rds",
   "%s/outputs/params/%s_consolidated.rds",
@@ -11,6 +12,7 @@ suppressPackageStartupMessages({
   "%s/outputs/intervention_timing/%s.rds",
   "%s/outputs/introductions/%s.rds",
   "%s/outputs/variant/%s.rds",
+  .debug[3],
   .debug[2], # PAK
   "covidm",
   "%s/outputs/scenarios/%s.rds"
@@ -19,6 +21,7 @@ suppressPackageStartupMessages({
 fits.dt <- readRDS(.args[2])
 
 tariso <- tail(.args, 3)[1]
+scenid <- as.integer(tail(.args, 4)[1])
 
 mob <- readRDS(.args[3])[iso3 == tariso]
 timings <- readRDS(.args[4])
@@ -57,13 +60,16 @@ variants.dt <- readRDS(.args[6])
 vocday <- timings[period == 3 & era == "pre", as.numeric(start - day0)]
 
 #' start day of period of interest; in analysis, will work from end
-reft <- as.numeric(Sys.Date()-day0)
+reft <- as.numeric(as.Date("2021-09-01")-day0)
 
-params$time1 <- reft + 365
+years <- 5
+params$time1 <- reft + 365*years
 
 alltms <- 0:params$time1
 pretms <- (1:startpost)-1
 posttms <- startpost:params$time1
+
+lastmonth_gm_contacts <- list(Reduce(`*`, contact_schedule[length(contact_schedule)-(0:30)])^(1/30))
 
 params$schedule <- list(
   list(
@@ -79,8 +85,9 @@ params$schedule <- list(
     parameter = "contact",
     pops = numeric(),
     mode = "multiply",
-    values = contact_schedule,
-    times = 0:(length(contact_schedule)-1)
+    #values = contact_schedule,
+    values = c(contact_schedule, rep(lastmonth_gm_contacts, length(alltms)-length(contact_schedule))),
+    times = alltms
   )
 )
 
@@ -92,32 +99,18 @@ vocintro <- function(vocmul, tm = vocday) lapply(c("fIs", "fIa", "fIp"), functio
   times = vocday
 ))
 
-redistance <- function(fromt = reft, work = Inf, other = Inf, school = Inf) list(
-  parameter = "contact", pops = numeric(),
-  mode = "lowerto",
-  values = list(c(1, work, other, school)),
-  times = fromt
-)
-
-
-noschool <- function(fromt = reft) list(
-  parameter = "contact", pops = numeric(),
-  mode = "multiply",
-  values = list(c(1, 1, 1, 0)),
-  times = fromt
-)
-
 vaccination <- function(
-  dpd = 4000*216.6/47.89*.3691, fromt = reft, ages = 14:16, agedisto = params$pop[[1]]$size
+  coverage,
+  fromt = reft, duration = 365,
+  ages = 4:16, agedistro = params$pop[[1]]$size
 ) {
-  refpop <- sum(agedisto[ages])
-  agedisto[-ages] <- 0
-  dpage <- round(agedisto/refpop*dpd)
+  agedistro[-ages] <- 0
+  agedistro[ages] <- round(agedistro[ages]*coverage/duration)
   list(
     parameter = 'v', pops = numeric(),
     mode = "assign",
-    values = list(dpage),
-    times = reft
+    values = list(agedistro, rep(0, length(agedistro))),
+    times = c(fromt, fromt+duration)
   )
 }
 
@@ -146,9 +139,13 @@ sim_step <- function(
   startt = startpost,
   keepoutcomes = "cases",
   idv = c("t", "group")
-) melt(underlying(p, case0, k, baseline, asc, startt = startpost), id.vars = c("t", "group"), measure.vars = keepoutcomes, variable.name = "compartment")[
+) {
+  res <- underlying(p, case0, k, baseline, asc, startt = startpost)
+#  browser()
+  melt(res, id.vars = c("t", "group"), measure.vars = keepoutcomes, variable.name = "compartment")[
   , .(value = sum(value)), by=c(idv, "compartment")
-]
+  ]
+}
 
 us <- function(sdt.row, umod = sdt.row[1, umod]) {
   rep(sdt.row[, as.numeric(.SD), .SDcols = grep("^u_",names(sdt.row))], each = 2)*umod
@@ -158,9 +155,28 @@ ys <- function(sdt.row) {
   rep(sdt.row[, as.numeric(.SD), .SDcols = grep("^y_",names(sdt.row))], each = 2)
 }
 
-keepers <- c("cases", "death_o", "R", "nonicu_p", "icu_p")
+keepers <- c("cases", "death_o", "R", "nonicu_p", "nonicu_i", "icu_p", "icu_i", "Sv")
 
-.cl <- makeCluster(getDTthreads())
+scen.dt <- rbind(
+  data.table(vax_mech = "none", vax_eff = 0, coverage = 0),
+  data.table(expand.grid(
+    vax_mech = c("infection", "disease"),
+    vax_eff = c(.5, .9),
+    coverage = c(.25, .90)
+  ))
+)[, epi_id := (1:.N)-1 ][ epi_id == scenid ]
+
+params$processes[[2]]$report <- "ip"
+params$processes[[3]]$report <- "ip"
+
+if (scen.dt$epi_id != 0) {
+  params$schedule <- c(params$schedule, list(vaccination(scen.dt$coverage)))
+  params$pop[[1]]$ev <- rep(scen.dt$vax_eff, params$pop[[1]]$n_groups)
+  if (scen.dt$vax_mech == "infection") params$pop[[1]]$uv <- rep(0, params$pop[[1]]$n_groups)
+  if (scen.dt$vax_mech == "disease") params$pop[[1]]$yv <- rep(0, params$pop[[1]]$n_groups)
+}
+
+.cl <- makeCluster(getDTthreads()-2)
 clusterExport(.cl, ls(), environment())
 clusterEvalQ(.cl, { 
   require(data.table)
@@ -168,7 +184,7 @@ clusterEvalQ(.cl, {
 })
 
 span <- nrow(fits.dt)
-#' span <- 2
+# span <- 2
 
 #' scenarios
 #'  - no change (may not appropriately reflect natural shifts in contact patterns)
@@ -177,65 +193,38 @@ span <- nrow(fits.dt)
 #'  - no school, peak workplace / other reductions
 #'  - minimal vaccination scenario - slow dosage, but: high eff, no waning
 
-est <- rbindlist(parLapply(.cl, X = 1:span, function(i) {
+est <- rbindlist(parLapply(.cl, X = 1:span, function(i) with(scen.dt, {
   suppressPackageStartupMessages({
     source(file.path(cm_path, "R", "covidm.R"))
   })
   sdt <- fits.dt[i]
   testpop <- params;
   testpop$pop[[1]]$y <- ys(sdt)
+  if (scen.dt$vax_mech != "disease") testpop$pop[[1]]$yv <- testpop$pop[[1]]$y
   testpop$pop[[1]]$u <- us(sdt)
+  if (scen.dt$vax_mech != "infection") testpop$pop[[1]]$uv <- testpop$pop[[1]]$u
   testpop$pop[[1]]$seed_times <- intros[i == sid, t]
   testpop$schedule <- c(testpop$schedule, vocintro(variants.dt[i, withdepl]))
+  res <- sim_step(
+    testpop, case0 = sdt$case0, k = sdt$k, baseline = sdt$fIsbaseline, asc = sdt$asc,
+    keepoutcomes = keepers
+  )[order(t), .(
+    sample = i, date = t + day0, group, compartment,
+    rv = value, value = value*sdt$asc, asc = sdt$asc
+  )]
+  res
+})))[, epi_id := scenid ]
 
-  scen0 <- sim_step(
-    testpop, case0 = sdt$case0, k = sdt$k, baseline = sdt$fIsbaseline, asc = sdt$asc,
-    keepoutcomes = keepers
-  )[order(t), .(
-    sample = i, scenario = "none", date = t + day0, group, compartment,
-    rv = value, value = value*sdt$asc, asc = sdt$asc
-  )]
-  
-  testpop$schedule <- c(testpop$schedule, list(noschool()))
-  scen1 <- sim_step(
-    testpop, case0 = sdt$case0, k = sdt$k, baseline = sdt$fIsbaseline, asc = sdt$asc,
-    keepoutcomes = keepers
-  )[order(t), .(
-    sample = i, scenario = "noschool", date = t + day0, group, compartment,
-    rv = value, value = value*sdt$asc, asc = sdt$asc
-  )]
-  
-  testpop$schedule[[length(testpop$schedule)]] <- redistance(work = peak.dist$workr)
-  scen2 <- sim_step(
-    testpop, case0 = sdt$case0, k = sdt$k, baseline = sdt$fIsbaseline, asc = sdt$asc,
-    keepoutcomes = keepers
-  )[order(t), .(
-    sample = i, scenario = "peakworkred", date = t + day0, group, compartment,
-    rv = value, value = value*sdt$asc, asc = sdt$asc
-  )]
-  
-  testpop$schedule[[length(testpop$schedule)]] <- redistance(work = peak.dist$workr, other = peak.dist$otherr, school = 0)
-  scen3 <- sim_step(
-    testpop, case0 = sdt$case0, k = sdt$k, baseline = sdt$fIsbaseline, asc = sdt$asc,
-    keepoutcomes = keepers
-  )[order(t), .(
-    sample = i, scenario = "peakred", date = t + day0, group, compartment,
-    rv = value, value = value*sdt$asc, asc = sdt$asc
-  )]
-  
-  testpop$pop[[1]]$ev = rep(.80, 16) #' TODO mods by age?
-  testpop$pop[[1]]$wv = rep(0, 16)
-  testpop$schedule[[length(testpop$schedule)]] <- vaccination()
-  scen4 <- sim_step(
-    testpop, case0 = sdt$case0, k = sdt$k, baseline = sdt$fIsbaseline, asc = sdt$asc,
-    keepoutcomes = keepers
-  )[order(t), .(
-    sample = i, scenario = "vaccination", date = t + day0, group, compartment,
-    rv = value, value = value*sdt$asc, asc = sdt$asc
-  )]
-  
-  rbind(scen0, scen1, scen2, scen3, scen4)
-  
-}))
+#' @examples
+#' ggplot(res[,.(value = sum(rv)), by=.(date, compartment)]) + 
+#'   aes(date, value) + 
+#'   facet_grid(compartment ~ ., scales = "free_y", switch="y") + 
+#'   geom_line() + scale_x_date() + 
+#'   theme_minimal() + 
+#'   scale_y_log10("count of ...", labels = scales::label_number_si(), minor_breaks = NULL) +
+#'   geom_vline(xintercept = day0+vocday, color = "red") + 
+#'   geom_vline(xintercept = day0+length(contact_schedule)-1, color="green") +
+#'   geom_vline(xintercept = day0+reft, color="blue")
+
 
 saveRDS(est, tail(.args, 1))

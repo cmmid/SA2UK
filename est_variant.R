@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   require(data.table)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
+.debug <- c(".", "NGA")
 .args <- if (interactive()) sprintf(c(
   "%s/outputs/params/%s_consolidated.rds",
   "%s/inputs/pops/%s.rds",

@@ -6,6 +6,7 @@
 # elements assigned via `?=` (e.g. default variables, paths)
 
 # root filesystem location for inputs & outputs
+# TODO: make this point to Covid-WHO-vax/nigeria
 DATART ?= .
 # example local.makefile overrides this to point to a Dropbox folder
 
@@ -29,13 +30,14 @@ GITLIBS := ${COVIDM}
 
 # support.makefile will provide a directory target for all of these
 MKDIRS := ${SOURCE} ${SINK} \
-	$(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections figs variant) \
+	$(addprefix ${SINK}/,intervention_timing r0 introductions sample params projections \
+	figs variant scenario acc_scen econ_scen) \
 	$(addprefix ${SOURCE}/,pops yuqs figs/epi) ${MIRDIR}
 
 africaisos.txt: gen_isos.R ${SOURCE}/epi_data.rds
 	${R}
 
-ISOS = PAK
+ISOS = NGA
 # ISOS ?= $(shell cat africaisos.txt) PAK
 
 # provides non-analysis support
@@ -145,63 +147,91 @@ ${SOURCE}/yuqs/%.rds: gen_reference_qs.R ${SOURCE}/covidm_fit_yu.qs ${SOURCE}/po
 ${SINK}/r0/%.rds: est_r0.R ${EPIDATA} ${SINK}/intervention_timing/%.rds ${SOURCE}/yuqs/%.rds ${SOURCE}/pops/%.rds | ${SINK}/r0
 	${RSCRIPT} $^ ${NCORES} ${NSAMPS} $* $@
 
-int_r0: $(patsubst %,${SINK}/r0/%.rds,PAK)
+int_r0: $(patsubst %,${SINK}/r0/%.rds,${ISOS})
 
 ${SINK}/introductions/%.rds: est_introductions.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds ${SOURCE}/populations.rds ${SOURCE}/pops/%.rds ${EPIDATA} ene-ifr.csv ${SINK}/intervention_timing/%.rds | ${SINK}/introductions
 	${Rstar}
 
-intros: $(patsubst %,${SINK}/introductions/%.rds,PAK)
+intros: $(patsubst %,${SINK}/introductions/%.rds,${ISOS})
 
 STARTID ?= 0001
 
 ${SINK}/sample/%.rds: gen_sample.R ${SOURCE}/yuqs/%.rds ${SINK}/r0/%.rds | ${SINK}/sample
 	${R}
 
-samples: $(patsubst %,${SINK}/sample/%.rds,PAK)
+samples: $(patsubst %,${SINK}/sample/%.rds,${ISOS})
 
 ${SINK}/params/%.rds: est_parameters.R ${SOURCE}/pops/%.rds ${SINK}/r0/%.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/sample/%.rds | ${SINK}/params ${COVIDM}
 	Rscript $^ $* ${STARTID} ${COVIDM} $(subst $*,$*_${STARTID},$@)
 
 pars:
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0006
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0011
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0016
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0021
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0026
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0031
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0036
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0041
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0046
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0051
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0056
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0061
-	make $(patsubst %,${SINK}/params/%.rds,PAK) STARTID=0066
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0006
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0011
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0016
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0021
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0026
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0031
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0036
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0041
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0046
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0051
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0056
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0061
+	make $(patsubst %,${SINK}/params/%.rds,${ISOS}) STARTID=0066
 
 .SECONDEXPANSION:
 ${SINK}/params/%_consolidated.rds: gen_consolidate.R $$(wildcard ${SINK}/params/%_*.rds)
 	Rscript $< $(@D) $* $@
 
-testpars: ${SINK}/params/ZAF.rds
-conspars: ${SINK}/params/PAK_consolidated.rds
+conspars: $(patsubst %,${SINK}/params/%_consolidated.rds,${ISOS})
 
 ${SINK}/params/%.png: fig_params_overview.R ${SINK}/params/%_consolidated.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${EPIDATA} | ${SINK}/params ${COVIDM}
 	Rscript $^ $* ${COVIDM} $@
 
+parsoverview: $(patsubst %,${SINK}/params/%.png,${ISOS})
+
 ${SINK}/scenarios.rds: gen_scenarios.R ${SINK}/fits/%.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/scenarios
 	${Rstar}
 
-${SINK}/projections/%.rds: sim_relax.R ${SINK}/params/%_consolidated.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${EPIDATA} | ${SINK}/projections ${COVIDM}
+${SINK}/projections/%.rds: sim_relax.R ${SOURCE}/pops/%.rds ${SINK}/params/%_consolidated.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds | ${SINK}/projections ${COVIDM}
 	${RSCRIPT} $^ $* ${COVIDM} $@
 
-${SINK}/variant/%.rds: est_variant.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SOURCE}/urbanization.rds ${SINK}/projections/%.rds ${SINK}/sample/%.rds | ${SINK}/variant
+${SINK}/variant/%.rds: est_variant.R ${SINK}/params/%_consolidated.rds ${SOURCE}/pops/%.rds ${SINK}/projections/%.rds ${SINK}/sample/%.rds ${SOURCE}/mobility.rds ${EPIDATA} | ${SINK}/variant
+	${RSCRIPT} $^ $* ${COVIDM} $@
+
+SCENID ?= 0
+
+${SINK}/scenario/%.rds: sim_scenarios.R ${SOURCE}/pops/%.rds ${SINK}/params/%_consolidated.rds ${SOURCE}/mobility.rds ${SINK}/intervention_timing/%.rds ${SINK}/introductions/%.rds ${SINK}/variant/%.rds | ${SINK}/scenario
+	${RSCRIPT} $^ ${SCENID} $* ${COVIDM} $(subst $*,$*_${SCENID},$@)
+
+${SINK}/acc_scen/%.rds: gen_acc_scen.R ${SINK}/scenario/%.rds | ${SINK}/acc_scen
+	${R}
+
+COSTDATA := covid_other_costs.csv covid_vac_costs_per_dose.csv daly_scenarios.csv
+
+${SINK}/econ_scen/%_baseline.rds: econ_scen.R ${COSTDATA} ${SINK}/acc_scen/%_0.rds | ${SINK}/econ_scen
 	${Rstar}
 
-${SINK}/scenario/%.rds: sim_scenarios.R ${SINK}/pops/%.rds ${SINK}/params/%_consolidated.rds ${SINK}/projections/%.rds ${SINK}/sample/%.rds | ${SINK}/variant
-	${RSCRIPT} $^ $* ${COVIDM} $@
+.PRECIOUS: ${SINK}/econ_scen/%_baseline.rds
 
-int_scen: ${SINK}/scenarios/ZAF.rds
-int_proj: ${SINK}/projections/ZAF.rds
-int_var: ${SINK}/variant/ZAF.rds
+${SINK}/econ_scen/%.rds: econ_scen.R ${COSTDATA} ${SINK}/acc_scen ${SINK}/econ_scen/%_baseline.rds | ${SINK}/econ_scen
+	${R}
+
+int_proj: ${SINK}/projections/${ISOS}.rds
+int_var: ${SINK}/variant/${ISOS}.rds
+int_scen:
+	make ${SINK}/scenario/${ISOS}.rds SCENID=0
+	make ${SINK}/scenario/${ISOS}.rds SCENID=1
+	make ${SINK}/scenario/${ISOS}.rds SCENID=2
+	make ${SINK}/scenario/${ISOS}.rds SCENID=3
+	make ${SINK}/scenario/${ISOS}.rds SCENID=4
+	make ${SINK}/scenario/${ISOS}.rds SCENID=5
+	make ${SINK}/scenario/${ISOS}.rds SCENID=6
+	make ${SINK}/scenario/${ISOS}.rds SCENID=7
+	make ${SINK}/scenario/${ISOS}.rds SCENID=8
+
+acc_scen: $(patsubst %,${SINK}/acc_scen/${ISOS}_%.rds,0 1 2 3 4 5 6 7 8)
+econ_scen: ${SINK}/econ_scen/${ISOS}.rds
 
 ${SINK}/figs/timeseries.rds: fig_relax_proj.R ${SOURCE}/epi_data.rds ${SINK}/intervention_timing/ZAF.rds ${SINK}/phylo.rds ${SINK}/projections/ZAF.rds | ${SINK}/figs
 	${Rstar}

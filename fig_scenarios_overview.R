@@ -3,15 +3,39 @@ suppressPackageStartupMessages({
   require(ggplot2)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper","PAK")
+.debug <- c(".","NGA")
 .args <- if (interactive()) sprintf(c(
-  "%s/outputs/scenarios/%s.rds",
+  "%s/outputs/scenario/%s",
   "%s/outputs/adj_data.rds",
   .debug[2], # PAK
   "%s/outputs/scenarios/%s.png"
 ), .debug[1], .debug[2]) else commandArgs(trailingOnly = TRUE)
 
-est <- readRDS(.args[1])[
+est <- rbindlist(lapply(
+  list.files(dirname(.args[1]), sprintf("%s_\\d\\.rds", basename(.args[1])), full.names = TRUE),
+  function(fn) readRDS(fn)[compartment == "cases", .(epi_id, sample, date, group, cases = rv)]
+))
+
+allages <- est[, .(cases = sum(cases)), by=.(epi_id, sample, date)]
+allages[
+  date > "2021-09-01", .(
+    date, ccases=cumsum(cases)
+  ), by=.(epi_id, sample)
+]
+
+
+[date == max(date), as.list(
+  quantile(ccases, probs = c(0.025,0.25,0.5,0.75,0.975))
+), by=epi_id]
+ggplot(allages) + aes(date, cases, group=sample) +
+  facet_grid(epi_id ~ .) +
+  geom_line(alpha = 0.1) +
+  scale_x_date() +
+  scale_y_log10(labels = scales::label_number_si()) +
+  coord_cartesian(xlim = as.Date(c("2021-09-01","2022-01-01")), ylim = c(1e3, NA)) +
+  theme_minimal()
+
+readRDS(.args[1])[
   compartment == "cases",
   .(rv = sum(rv), value = sum(value), asc = unique(asc)),
   by=.(scenario, sample, date)

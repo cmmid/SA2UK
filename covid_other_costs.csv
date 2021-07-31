@@ -1,0 +1,181 @@
+country,perspective,perspective_desc,name,long_desc,cost,ref_cost
+pakistan,health_system,health system costs only,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0,778.9
+pakistan,health_system,health system costs only,cost_hs_one_erm,one-off cost per site for training / health staff,0,8096.53
+pakistan,health_system,health system costs only,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0,91.67
+pakistan,health_system,health system costs only,cost_hs_per_traced,cost per contact traced,2.54,2.54
+pakistan,health_system,health system costs only,cost_hs_per_quarantined,cost per contact quarantined,2.35,2.35
+pakistan,health_system,health system costs only,cost_hs_treat_home,cost per patient for home based care,12.45,12.45
+pakistan,health_system,health system costs only,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,33.32,33.32
+pakistan,health_system,health system costs only,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,221.28,221.28
+pakistan,health_system,health system costs only,cost_hs_per_test,cost per patient tested,26.98,26.98
+pakistan,health_system,health system costs only,cost_hs_per_death,cost per death,64.52,64.52
+pakistan,health_system,health system costs only,cost_hh_death_funeral,cost of funeral to household (one-off),0,273.75
+pakistan,health_system,health system costs only,cost_hh_death_income,cost of lost income to household due to death (one-off),0,650.7
+pakistan,health_system,health system costs only,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0,0.25
+pakistan,health_system,health system costs only,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0,0.14
+pakistan,health_system,health system costs only,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,0,4.62
+pakistan,health_system,health system costs only,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,0,2.08
+pakistan,health_system,health system costs only,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,0,4.61
+pakistan,health_system,health system costs only,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,0,2.07
+pakistan,health_system,health system costs only,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0,2.96
+pakistan,health_system,health system costs only,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0,7.22
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0,778.9
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_one_erm,one-off cost per site for training / health staff,0,8096.53
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0,91.67
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_per_traced,cost per contact traced,2.54,2.54
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_per_quarantined,cost per contact quarantined,2.35,2.35
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_treat_home,cost per patient for home based care,12.45,12.45
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,33.32,33.32
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,221.28,221.28
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_per_test,cost per patient tested,26.98,26.98
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hs_per_death,cost per death,64.52,64.52
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_death_funeral,cost of funeral to household (one-off),273.75,273.75
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_death_income,cost of lost income to household due to death (one-off),0,650.7
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0.25,0.25
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0.14,0.14
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,4.62,4.62
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,2.08,2.08
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,4.61,4.61
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,2.07,2.07
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0,2.96
+pakistan,societal_direct,direct costs including hs and hh costs,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0,7.22
+pakistan,societal,societal costs including income loss,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0,778.9
+pakistan,societal,societal costs including income loss,cost_hs_one_erm,one-off cost per site for training / health staff,0,8096.53
+pakistan,societal,societal costs including income loss,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0,91.67
+pakistan,societal,societal costs including income loss,cost_hs_per_traced,cost per contact traced,2.54,2.54
+pakistan,societal,societal costs including income loss,cost_hs_per_quarantined,cost per contact quarantined,2.35,2.35
+pakistan,societal,societal costs including income loss,cost_hs_treat_home,cost per patient for home based care,12.45,12.45
+pakistan,societal,societal costs including income loss,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,33.32,33.32
+pakistan,societal,societal costs including income loss,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,221.28,221.28
+pakistan,societal,societal costs including income loss,cost_hs_per_test,cost per patient tested,26.98,26.98
+pakistan,societal,societal costs including income loss,cost_hs_per_death,cost per death,64.52,64.52
+pakistan,societal,societal costs including income loss,cost_hh_death_funeral,cost of funeral to household (one-off),273.75,273.75
+pakistan,societal,societal costs including income loss,cost_hh_death_income,cost of lost income to household due to death (one-off),650.7,650.7
+pakistan,societal,societal costs including income loss,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0.25,0.25
+pakistan,societal,societal costs including income loss,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0.14,0.14
+pakistan,societal,societal costs including income loss,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,4.62,4.62
+pakistan,societal,societal costs including income loss,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,2.08,2.08
+pakistan,societal,societal costs including income loss,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,4.61,4.61
+pakistan,societal,societal costs including income loss,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,2.07,2.07
+pakistan,societal,societal costs including income loss,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,2.96,2.96
+pakistan,societal,societal costs including income loss,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,7.22,7.22
+ghana,health_system,health system costs only,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0,2585.83
+ghana,health_system,health system costs only,cost_hs_one_erm,one-off cost per site for training / health staff,0,18256.88
+ghana,health_system,health system costs only,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0,224.96
+ghana,health_system,health system costs only,cost_hs_per_traced,cost per contact traced,5.77,5.77
+ghana,health_system,health system costs only,cost_hs_per_quarantined,cost per contact quarantined,6.40,6.40
+ghana,health_system,health system costs only,cost_hs_treat_home,cost per patient for home based care,29.66,29.66
+ghana,health_system,health system costs only,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,38.70,38.70
+ghana,health_system,health system costs only,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,274.73,274.73
+ghana,health_system,health system costs only,cost_hs_per_test,cost per patient tested,31.59,31.59
+ghana,health_system,health system costs only,cost_hs_per_death,cost per death,64.52,64.52
+ghana,health_system,health system costs only,cost_hh_death_funeral,cost of funeral to household (one-off),0,0.00
+ghana,health_system,health system costs only,cost_hh_death_income,cost of lost income to household due to death (one-off),0,0.00
+ghana,health_system,health system costs only,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0,0.00
+ghana,health_system,health system costs only,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0,0.00
+ghana,health_system,health system costs only,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,0,0.00
+ghana,health_system,health system costs only,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,0,0.00
+ghana,health_system,health system costs only,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,0,0.00
+ghana,health_system,health system costs only,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,0,0.00
+ghana,health_system,health system costs only,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0,0.00
+ghana,health_system,health system costs only,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0,2585.83
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_one_erm,one-off cost per site for training / health staff,0,18256.88
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0,224.96
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_per_traced,cost per contact traced,5.77,5.77
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_per_quarantined,cost per contact quarantined,6.40,6.40
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_treat_home,cost per patient for home based care,29.66,29.66
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,38.70,38.70
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,274.73,274.73
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_per_test,cost per patient tested,31.59,31.59
+ghana,societal_direct,direct costs including hs and hh costs,cost_hs_per_death,cost per death,64.52,64.52
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_death_funeral,cost of funeral to household (one-off),0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_death_income,cost of lost income to household due to death (one-off),0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0.00,0.00
+ghana,societal_direct,direct costs including hs and hh costs,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0.00,0.00
+ghana,societal,societal costs including income loss,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0.00,2585.83
+ghana,societal,societal costs including income loss,cost_hs_one_erm,one-off cost per site for training / health staff,0.00,18256.88
+ghana,societal,societal costs including income loss,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0.00,224.96
+ghana,societal,societal costs including income loss,cost_hs_per_traced,cost per contact traced,5.77,5.77
+ghana,societal,societal costs including income loss,cost_hs_per_quarantined,cost per contact quarantined,6.40,6.40
+ghana,societal,societal costs including income loss,cost_hs_treat_home,cost per patient for home based care,29.66,29.66
+ghana,societal,societal costs including income loss,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,38.70,38.70
+ghana,societal,societal costs including income loss,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,274.73,274.73
+ghana,societal,societal costs including income loss,cost_hs_per_test,cost per patient tested,31.59,31.59
+ghana,societal,societal costs including income loss,cost_hs_per_death,cost per death,64.52,64.52
+ghana,societal,societal costs including income loss,cost_hh_death_funeral,cost of funeral to household (one-off),0,0
+ghana,societal,societal costs including income loss,cost_hh_death_income,cost of lost income to household due to death (one-off),0,0
+ghana,societal,societal costs including income loss,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0,0
+ghana,societal,societal costs including income loss,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0,0
+ghana,societal,societal costs including income loss,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,0,0
+ghana,societal,societal costs including income loss,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,0,0
+ghana,societal,societal costs including income loss,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,0,0
+ghana,societal,societal costs including income loss,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,0,0
+ghana,societal,societal costs including income loss,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0,0
+ghana,societal,societal costs including income loss,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0,0
+nigeria,health_system,health system costs only,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0,2477.88
+nigeria,health_system,health system costs only,cost_hs_one_erm,one-off cost per site for training / health staff,0,17593.74
+nigeria,health_system,health system costs only,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0,216.20
+nigeria,health_system,health system costs only,cost_hs_per_traced,cost per contact traced,5.77,5.77
+nigeria,health_system,health system costs only,cost_hs_per_quarantined,cost per contact quarantined,6.40,6.40
+nigeria,health_system,health system costs only,cost_hs_treat_home,cost per patient for home based care,29.66,29.66
+nigeria,health_system,health system costs only,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,38.70,38.70
+nigeria,health_system,health system costs only,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,274.73,274.73
+nigeria,health_system,health system costs only,cost_hs_per_test,cost per patient tested,31.59,31.59
+nigeria,health_system,health system costs only,cost_hs_per_death,cost per death,64.52,64.52
+nigeria,health_system,health system costs only,cost_hh_death_funeral,cost of funeral to household (one-off),0,273.75
+nigeria,health_system,health system costs only,cost_hh_death_income,cost of lost income to household due to death (one-off),0,650.7
+nigeria,health_system,health system costs only,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0,0.25
+nigeria,health_system,health system costs only,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0,0.14
+nigeria,health_system,health system costs only,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,0,4.62
+nigeria,health_system,health system costs only,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,0,2.08
+nigeria,health_system,health system costs only,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,0,4.61
+nigeria,health_system,health system costs only,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,0,2.07
+nigeria,health_system,health system costs only,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0,2.96
+nigeria,health_system,health system costs only,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0,7.22
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0,2477.88
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_one_erm,one-off cost per site for training / health staff,0,17593.74
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0,216.20
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_per_traced,cost per contact traced,5.77,5.77
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_per_quarantined,cost per contact quarantined,6.40,6.40
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_treat_home,cost per patient for home based care,29.66,29.66
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,38.70,38.70
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,274.73,274.73
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_per_test,cost per patient tested,31.59,31.59
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hs_per_death,cost per death,64.52,64.52
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_death_funeral,cost of funeral to household (one-off),0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_death_income,cost of lost income to household due to death (one-off),0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0.00,0.00
+nigeria,societal_direct,direct costs including hs and hh costs,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hs_day_erm,cost per country per day for WHO emergency response mechanism,0.00,2477.88
+nigeria,societal,societal costs including income loss,cost_hs_one_erm,one-off cost per site for training / health staff,0.00,17593.74
+nigeria,societal,societal costs including income loss,cost_hs_day_comms,cost per country per day for risk communication and community engagement,0.00,216.20
+nigeria,societal,societal costs including income loss,cost_hs_per_traced,cost per contact traced,5.77,5.77
+nigeria,societal,societal costs including income loss,cost_hs_per_quarantined,cost per contact quarantined,6.40,6.40
+nigeria,societal,societal costs including income loss,cost_hs_treat_home,cost per patient for home based care,29.66,29.66
+nigeria,societal,societal costs including income loss,cost_hs_day_treat_general,cost per patient per day of general hospital care - real world,38.70,38.70
+nigeria,societal,societal costs including income loss,cost_hs_day_treat_critical,cost per patient per day of critical hospital care - real world,274.73,274.73
+nigeria,societal,societal costs including income loss,cost_hs_per_test,cost per patient tested,31.59,31.59
+nigeria,societal,societal costs including income loss,cost_hs_per_death,cost per death,64.52,64.52
+nigeria,societal,societal costs including income loss,cost_hh_death_funeral,cost of funeral to household (one-off),0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_death_income,cost of lost income to household due to death (one-off),0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_treat_home_med_per_day,cost oop medical care at home per day,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_treat_home_non_med_per_day,cost oop non-medical care at home per day,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_treat_general_med_per_day,cost oop medical care general ward per day,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_treat_general_non_med_per_day,cost oop non-medical care general ward per day,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_treat_critical_med_per_day,cost oop medical care icu ward per day,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_treat_critical_non_med_per_day,cost oop non-medical care icu ward per day,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_individual_income_per_case,cost of individual income loss per day while symptomatic,0.00,0.00
+nigeria,societal,societal costs including income loss,cost_hh_caregiver_income_per_case,cost of caregiver income loss per day while symptomatic,0.00,0.00

@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(wpp2019)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "GHA")
+.debug <- c(".", "NGA")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/mortality.rds",
   "%s/inputs/fertility.rds",

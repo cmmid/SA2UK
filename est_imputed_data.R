@@ -91,9 +91,9 @@ detect.asri <- function(
 #' for each iso, look at the time series subset from first case
 #' and evaluate ASRI
 asri.dt <- raw.dt[,
-  .SD[which.max(cases > 0):.N,
+  if (sum(cases) != 0) .SD[which.max(cases > 0):.N,
     .(date, asri = detect.asri(cases))
-  ], by=iso3
+  ] else .SD[,.(date, asri = NA_integer_)], by=iso3
 ]
 
 #' if there is a short gap in asri, link up series; basically assumes

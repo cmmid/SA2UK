@@ -1,0 +1,22 @@
+scenario,country,dose_per_vial,vac_price,cost_vac_dose
+campaign,ghana,1,10, $14.58 
+campaign,ghana,1,6, $9.02 
+campaign,ghana,1,3, $4.84 
+fixed site,ghana,1,10, $15.07 
+fixed site,ghana,1,6, $9.50 
+fixed site,ghana,1,3, $5.32 
+campaign,pakistan,1,10, $14.58 
+campaign,pakistan,1,6, $9.02 
+campaign,pakistan,1,3, $4.84 
+fixed site,pakistan,1,10, $15.07 
+fixed site,pakistan,1,6, $9.50 
+fixed site,pakistan,1,3, $5.32 
+campaign,nigeria,1,10, $14.58 
+campaign,nigeria,1,6, $9.02 
+campaign,nigeria,1,3, $4.84 
+fixed site,nigeria,1,10, $15.07 
+fixed site,nigeria,1,6, $9.50 
+fixed site,nigeria,1,3, $5.32
+blended,nigeria,1,10, $15.98 
+blended,nigeria,1,6, $10.29 
+blended,nigeria,1,3, $6.02

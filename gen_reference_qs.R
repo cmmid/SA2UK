@@ -4,7 +4,7 @@ suppressPackageStartupMessages({
   require(qs)
 })
 
-.debug <- c("~/Dropbox/Covid_LMIC/All_Africa_paper", "PAK")
+.debug <- c(".", "NGA")
 .args <- if (interactive()) sprintf(c(
   "%s/inputs/covidm_fit_yu.qs",
   "%s/inputs/pops/%s.rds",
