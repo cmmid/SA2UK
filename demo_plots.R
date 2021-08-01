@@ -25,6 +25,35 @@ sx <- function(name="Years since start of vaccination", ...) scale_x_continuous(
 
 thm <- theme_minimal(base_size = 14)
 
+raw.dt <- readRDS(file.path(figrt, "outputs", "scenario", "NGA_0.rds"))[compartment == "R" & date == "2021-09-01"]
+epi.pre <- ggplot(
+  raw.dt[
+    compartment == "R",
+    .(
+      value = median(rv)/params$pop[[1]]$size[group],
+      proptot = params$pop[[1]]$size[group]/sum(params$pop[[1]]$size),
+      age = factor(
+        params$pop[[1]]$group_names[group],
+        levels = params$pop[[1]]$group_names,
+        ordered = TRUE
+      )
+    ),
+    by=group
+  ][, non := 1-value ][, upper := cumsum(proptot) ][, lower := c(0, cumsum(proptot[-.N]))]
+) + geom_rect(
+  aes(xmin = lower, xmax = upper, ymin = 0, ymax = value, fill = age)
+) + geom_rect(
+  aes(xmin = lower, xmax = upper, ymin = value, ymax = 1, fill = age), alpha = 0.2
+) + coord_cartesian(
+  expand = FALSE, xlim = c(0, 1), ylim = c(0, 1)
+) +
+  theme_minimal() +
+  scale_x_continuous("Proportion of Total Population") +
+  scale_y_continuous("SARS-CoV-2 Attack Fraction @ 2021-09-01")
+
+ggsave(fig.path("attack_frac.png"), epi.pre, width = 15, height = 8, units = "in")
+
+
 epi.p <- ggplot(
   epi.dt[ iyear > 0 & compartment == "cases", .(value = sum(value)), by=.(epi_id, sample, iyear, compartment) ][scen.dt, on=.(epi_id = id)]
 ) + aes(
