@@ -2,7 +2,14 @@
 require(data.table)
 require(ggplot2)
 
-figrt <- file.path("~", "Dropbox", "Covid-WHO-vax", "nigeria")
+.debug <- c(file.path("~", "Dropbox", "Covid-WHO-vax", "nigeria", "fig"), "NGA")
+.args <- if (interactive()) c(
+  file.path(dirname(.debug[1]), "inputs", "pops", sprintf("%s.rds", .debug[2])),
+  .debug[1]
+) else commandArgs(trailingOnly = TRUE)
+
+params <- readRDS(.args[1])
+figrt <- .args[2]
 
 scen.dt <- rbind(
   data.table(vax_mech = "none", vax_eff = 0, coverage = 0),
@@ -13,8 +20,8 @@ scen.dt <- rbind(
   ))
 )[, id := (1:.N)-1 ]
 
-episrc <- file.path(figrt, "outputs", "acc_scen")
-fig.path <- function(fn) file.path(figrt, "fig", fn)
+episrc <- file.path(dirname(figrt), "outputs", "acc_scen")
+fig.path <- function(fn) file.path(figrt, fn)
 
 epi.dt <- rbindlist(lapply(list.files(episrc, full.names = TRUE), readRDS))
 epi.ref <- epi.dt[epi_id == 0, .SD, .SDcols = -c('epi_id') ]
@@ -23,9 +30,9 @@ epi.int[, averted := i.value - value ]
 
 sx <- function(name="Years since start of vaccination", ...) scale_x_continuous(name=name, ...)
 
-thm <- theme_minimal(base_size = 14)
+thm <- theme_minimal(base_size = 14) + theme(axis.text = element_text(size=rel(1)))
 
-raw.dt <- readRDS(file.path(figrt, "outputs", "scenario", "NGA_0.rds"))[compartment == "R" & date == "2021-09-01"]
+raw.dt <- readRDS(file.path(dirname(episrc), "scenario", "NGA_0.rds"))[compartment == "R" & date == "2021-09-01"]
 epi.pre <- ggplot(
   raw.dt[
     compartment == "R",
@@ -47,7 +54,7 @@ epi.pre <- ggplot(
 ) + coord_cartesian(
   expand = FALSE, xlim = c(0, 1), ylim = c(0, 1)
 ) +
-  theme_minimal() +
+  thm +
   scale_x_continuous("Proportion of Total Population") +
   scale_y_continuous("SARS-CoV-2 Attack Fraction @ 2021-09-01")
 
@@ -121,7 +128,7 @@ epi.cdel <- ggplot(
 
 ggsave(fig.path("ccases_averted.png"), epi.cdel, width = 15, height = 8, units = "in")
 
-src <- file.path(figrt, "outputs", "econ_scen", "NGA.rds")
+src <- file.path(dirname(episrc), "econ_scen", "NGA.rds")
 
 dt <- readRDS(src)[view == "incremental" & econ_id == 1]
 

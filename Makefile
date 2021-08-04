@@ -251,6 +251,9 @@ ${SINK}/figs/relaxed_rt.rds: fig_relaxed_rt.R ${SOURCE}/nextstrain_groups_ngs-sa
 
 figpieces: $(patsubst %,${SINK}/figs/%.rds,phylo cfr timeseries AR)
 
+demofigs: demo_plots.R ${SOURCE}/pops/${ISOS}.rds | ${FIG}
+	${RSCRIPT} $^ $|
+
 ########################## CONVENIENCE TARGETS ###########################################
 
 popprep: $(patsubst %,${SOURCE}/%.rds,mortality fertility urbanization matrices)
